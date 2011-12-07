@@ -61,6 +61,11 @@ AX_BLAS([], [AC_MSG_ERROR([BLAS was not found!])])
 AX_LAPACK([], [AC_MSG_ERROR([LAPACK was not found!])])
 LIBS="$LAPACK_LIBS $BLAS_LIBS $LIBS $FLIBS"
 
+#AC_ARG_ENABLE(blacs, AS_HELP_STRING([--with-blacs], [Blacs support]))
+#AC_ARG_ENABLE(scalapack, AS_HELP_STRING([--with-scalapack], [ScaLAPACK support, add before --with-blacs]))
+#ACX_BLACS
+#ACX_SCALAPACK
+
 ##############################################################################
 # Checks for math library:
 AC_CHECK_LIB([m], [sqrt])
