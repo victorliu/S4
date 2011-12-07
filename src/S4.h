@@ -167,6 +167,25 @@ typedef struct Solution_{
 
 struct FieldCache;
 
+typedef struct Excitation_Planewave_{
+	double hx[2],hy[2]; // re,im components of H_x,H_y field
+} Excitation_Planewave;
+
+typedef struct Excitation_Dipole_{
+	double pos[2];
+	double moment[6]; // dipole moment (jxr, jxi, jyr, jyi, jzr, jzi)
+	// The source is at the layer interface after the layer specified by ex_layer.
+} Excitation_Dipole;
+
+typedef struct Excitation_{
+	union{
+		Excitation_Planewave planewave; // type 0
+		Excitation_Dipole dipole; // type 1
+	} sub;
+	int type;
+	char *layer; // name of layer after which excitation is applied
+} Excitation;
+
 typedef struct Simulation_{
 	double Lr[4]; // real space lattice:
 	              //  {Lr[0],Lr[1]} is the first basis vector's x and y coords.
@@ -182,13 +201,7 @@ typedef struct Simulation_{
 	// Excitation
 	double omega[2]; // real and imaginary parts of omega
 	double k[2]; // xy components of k vector, as fraction of k0 = omega
-	double hx[2]; // re,im components of H_x field
-	double hy[2]; // re,im components of H_y field
-	char *ex_layer; // name of layer after which excitation is applied
-	// If ex_layer is NULL or the first layer, ex and ey are interpreted as the xy components
-	//  of the electric field for an incident planewave.
-	// Otherwise, ex and ey are the xy components of the electric field at the layer interface
-	//  after the layer specified by ex_layer.
+	Excitation exc;
 	
 	Solution *solution; // The solution object is not allocated until needed.
 	Options options;
@@ -267,6 +280,7 @@ int Simulation_RemoveLayerPatterns(Simulation *S, Layer *layer);
 
 // Returns 14 if no layers present
 int Simulation_MakeExcitationPlanewave(Simulation *S, const double angle[2], const double pol_s[2], const double pol_p[2]);
+int Simulation_MakeExcitationDipole(Simulation *S, const double k[2], const char *layer, const double pos[2], const double moment[6]);
 
 
 // Internal functions
