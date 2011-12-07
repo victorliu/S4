@@ -124,7 +124,7 @@ static void MakeKPMatrix(
 //    = omega^2 + [ -ky ] [ epsinv ] [ ky -kx ]
 //                [  kx ]
 
-static void MultKPMatrix(
+void MultKPMatrix(
 	const std::complex<double> omega,
 	const size_t n,
 	const double *kx,

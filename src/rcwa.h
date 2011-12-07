@@ -143,6 +143,61 @@ void SolveLayerEigensystem_uniform(
 	std::complex<double> *phi = NULL // size (2*glist.n)^2 (optional)
 );
 
+
+// Purpose
+// =======
+// Multiplies a matrix by the k-parallel matrix (kp), as passed
+// to SolveLayerEigensystem.
+//
+// Arguments
+// =========
+// omega       - (INPUT) The operating angular frequency.
+// n           - (INPUT) The number of Fourier orders used in the
+//               dielectric expansion. We will denote 2*n as 2n,
+//               and 4*n as 4n.
+// kx, ky      - (INPUT) Arrays of length n. The x- and y-components
+//               of the Fourier k-vectors of the dielectric expansion.
+// Epsilon_inv - (INPUT) Matrix of size n x n. The inverse of the
+//               Fourier dielectric constant coupling matrix. The non-
+//               inverse version is denoted Epsilon:
+//                 Epsilon_{ij} = \int_{unit cell}
+//                   \epsilon(x,y) \exp[ i(kx[i]-kx[j])x
+//                                     + i(ky[i]-ky[j])y] dx dy
+// Epsilon2_type - (INPUT) Ignored if kp is not NULL. When kp is NULL,
+//               and Epsilon2_type is EPSILON2_TYPE_BLKDIAG1_SCALAR or
+//               EPSILON2_TYPE_BLKDIAG2_SCALAR, Epsilon_inv is assumed
+//               to be a scalar value and only its first element is
+//               accessed.
+// kp          - (INPUT) Matrix of size 2n x 2n. The matrix
+//                 omega^2 - [  ky ] Epsilon_inv [ ky  -kx ]
+//                           [ -kx ]
+//               where kx and ky are to be interpreted as diagonal
+//               matrices.
+//               If NULL, then this parameter is not accessed (See
+//               Epsilon2_type).
+// ncols       - (INPUT) Number of columns of the target matrix.
+// a           - (INPUT) Pointer to the first element of the target
+//               matrix. Number of rows should be 2*n.
+// lda         - (INPUT) Leading dimension of matrix a, >= 2*n.
+// y           - (OUTPUT) Pointer to first element of the resulting
+//               matrix. (y = kp.a) Dimension should be 2*n by ncols.
+// ldy         - (INPUT) Leading dimension of matrix y.
+
+void MultKPMatrix(
+	const std::complex<double> omega,
+	const size_t n,
+	const double *kx,
+	const double *ky,
+	const std::complex<double> *Epsilon_inv, // size (glist.n)^2; inv of usual dielectric Fourier coupling matrix
+	const int Epsilon2_type,
+	const std::complex<double> *kp, // kp if exists. Can be NULL
+	const size_t ncols,
+	const std::complex<double> *a,
+	const size_t lda,
+	std::complex<double> *y, // same size as a, y <- kp*a
+	const size_t ldy
+);
+
 // Purpose
 // =======
 // Initialize an S-Matrix to the identity matrix.
