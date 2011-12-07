@@ -1,0 +1,32 @@
+* Add SetLayerPatternMap:
+	S:SetLayerPatternMap{
+		Layer = 'whichlayer',
+		Bitmap = 'bitmap.bmp',
+		Format = 'BMP',
+		ColorMap = {
+			{{1,1,1}, 'Air'},
+			{{0,0,0}, 'Silicon'}
+		}
+		-- Or instead of ColorMap, use ColorRange for smooth functions:
+		ColorRange = {
+			{'mat1', 'mat2'}, -- red component interpolates from first value to second
+			{'mat3', 'mat4'} -- green component interpolates from first value to second
+			}
+		} -- up to n linear combinations depending on file format
+	}
+
+* Add SetExcitationDipole
+
+* Special case Hermitian matrices; keep track of Hermiticity of material epsilons.
+
+* Add Scalapack support
+
+* Alias GetPoyntingFlux to GetPowerFlux, etc.
+
+* Debug GetLayerEnergyDensityIntegral, etc. for z-components
+
+* Add Lua wrapper for HDF5.
+
+* Use FFT to speed up field reconstruction.
+
+* Optimize repeated solution in different layers to use known forward/backward sets and SolveInterior.
