@@ -1,0 +1,10 @@
+simple/simple.lua	simple/simple.txt	1e-16
+Antonoyiannakis_PRB_60_1999/fig3_4.lua	Antonoyiannakis_PRB_60_1999/fig3_4.txt	1e-16
+Antonoyiannakis_PRB_60_1999/fig6.lua	Antonoyiannakis_PRB_60_1999/fig6.txt	1e-16
+fabry_perot/fresnel.lua	fabry_perot/fresnel.txt	1e-14
+fabry_perot/tir.lua	fabry_perot/tir.txt	1e-14
+fabry_perot/transmission_spectrum.lua	fabry_perot/transmission_spectrum.txt	1e-14
+magneto/halfspace.lua	magneto/halfspace.txt	1e-16
+threading/parallel.lua	threading/parallel.txt	1e-16
+1d/binary_grating.lua	1d/binary_grating.txt	1e-16
+1d/diffraction.lua	1d/diffraction.txt	1e-16

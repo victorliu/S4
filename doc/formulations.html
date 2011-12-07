@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>S4 Formulations</title>
+<style type="text/css">@import url(s4.css);</style>
+</head>
+<body>
+
+
+<p><a href="index.html">S4 Home</a> | <a href="download.html">Download</a> | <a href="s4_lua_api.html">Lua API</a> | <a href="dev_info.html">Developer information</a> | <a href="changelog.html">Changelog</a></p>
+
+<h1>Fourier Modal Method formulations</h1>
+
+<p>There has been extensive literature on the best way to generate the Fourier series coefficients for the in-plane dielectric profiles of each layer.
+S4 implements a number of different formulations.
+The following functions determine which formulation is selected:</p>
+
+<ul>
+<li><a href="s4_lua_api.html#S4_Simulation_UseDiscretizedEpsilon">UseDiscretizedEpsilon</a></li>
+<li><a href="s4_lua_api.html#S4_Simulation_UsePolarizationDecomposition">UsePolarizationDecomposition</a></li>
+<li><a href="s4_lua_api.html#S4_Simulation_UseSubpixelSmoothing">UseSubpixelSmoothing</a></li>
+<li><a href="s4_lua_api.html#S4_Simulation_UseJonesVectorBasis">UseJonesVectorBasis</a></li>
+<li><a href="s4_lua_api.html#S4_Simulation_UseNormalVectorBasis">UseNormalVectorBasis</a></li>
+</ul>
+
+
+<p>In addition, the following functions control accuracy and the lattice truncation:</p>
+
+<ul>
+<li><a href="s4_lua_api.html#S4_Simulation_SetResolution">SetResolution</a></li>
+<li><a href="s4_lua_api.html#S4_Simulation_SetLatticeTruncation">SetLatticeTruncation</a></li>
+</ul>
+
+
+<p>To simplify the choice for users, the table below summarizes the recommended settings.
+It is recommended to always use circular truncation unless there is a good reason to do otherwise.
+Speed indicates the speed of the Fourier coefficient generation, which is usually not the dominant part of the simulation time.</p>
+
+<table>
+<thead>
+<tr>
+<th>Options         </th>
+<th> Can handle Anisotropic? </th>
+<th> Recommended resolution </th>
+<th> Speed   </th>
+<th> Accuracy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>none            </td>
+<td> yes                     </td>
+<td> &ndash;                      </td>
+<td>  fast   </td>
+<td>   poor</td>
+</tr>
+<tr>
+<td>Disc            </td>
+<td> yes                     </td>
+<td> 8                      </td>
+<td>  medium </td>
+<td>   poor</td>
+</tr>
+<tr>
+<td>Subpixel        </td>
+<td> yes                     </td>
+<td> 4                      </td>
+<td>  medium </td>
+<td>  medium</td>
+</tr>
+<tr>
+<td>Pol             </td>
+<td> no                      </td>
+<td> 8                      </td>
+<td>  slow   </td>
+<td>   good</td>
+</tr>
+<tr>
+<td>Pol+Normal      </td>
+<td> no                      </td>
+<td> 8                      </td>
+<td>  slow   </td>
+<td>   good</td>
+</tr>
+<tr>
+<td>Pol+Jones       </td>
+<td> no                      </td>
+<td> 8                      </td>
+<td>  slow   </td>
+<td>   good</td>
+</tr>
+<tr>
+<td>Disc+Pol        </td>
+<td> no*                     </td>
+<td> 4                      </td>
+<td>  slow   </td>
+<td>  medium</td>
+</tr>
+<tr>
+<td>Disc+Pol+Normal </td>
+<td> no*                     </td>
+<td> 4                      </td>
+<td>  slow   </td>
+<td>  medium</td>
+</tr>
+<tr>
+<td>Disc+Pol+Jones  </td>
+<td> no*                     </td>
+<td> 4                      </td>
+<td>  slow   </td>
+<td>  medium</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>*: The formulation does not strictly work correctly for anisotropic media
+   however it may still work.
+   Proper support for anisotropic materials is in principle possible. There
+   are currently no plans for implementing generation of the proper basis
+   fields for this feature.</p>
+</body>
+</html>

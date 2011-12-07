@@ -1,0 +1,51 @@
+li a span{display: none;}
+li a:hover span{
+	display: block;
+	position: absolute;
+	left: 0; width: 8em;
+	padding: 5px;
+	margin: 10px;
+	z-index: 100;
+	color: #A00;
+	background: transparent;
+	font: 10px Comic Sans MS, Comic Sans MS5, cursive, sans-serif;
+	text-align: left;
+	text-decoration: none;
+}
+li a{text-decoration: none;}
+pre{
+	background-color: #eeeeee;
+	padding: 2px;
+}
+code{
+	background-color: #eeeeee;
+}
+body{
+	font-family: Trebuchet MS, Helvetica, sans-serif;
+	max-width: 40em;
+	margin-left: 2em;
+}
+body p{
+	text-align: justify;
+}
+body h1{
+}
+body h2{
+}
+body h3{
+}
+.greeksymbol{
+	font-family: Symbol;
+}
+.math{
+	font-family: Times New Roman, Times, serif;
+	font-style: italic;
+}
+th{
+	border-bottom: 1px solid black;
+	border-right: 1px solid black;
+}
+td{
+	border-bottom: 1px solid #cccccc;
+	border-right: 1px solid #cccccc;
+}

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>S4</title>
+<style type="text/css">@import url(s4.css);</style>
+</head>
+<body>
+
+
+<p><a href="index.html">S4 Home</a> | <a href="download.html">Download</a> | <a href="s4_lua_api.html">Lua API</a> | <a href="dev_info.html">Developer information</a> | <a href="changelog.html">Changelog</a></p>
+
+<p><img src="s4.png" title="S4 logo" alt="S4 logo" /></p>
+
+<h1>Stanford Stratified Structure Solver</h1>
+
+<p>S4 is a frequency domain code to solve layered periodic structures.
+Internally, it uses Rigorous Coupled Wave Analysis (RCWA; also called the Fourier Modal Method (FMM)) and the S-matrix algorithm. S4 was developed by Victor Liu of the Fan Group in the Stanford Electrical Engineering Department.</p>
+
+<h1>Contents</h1>
+
+<ul>
+<li><a href="download.html">Download</a></li>
+<li><a href="s4_lua_api.html">Lua API</a></li>
+<li><a href="dev_info.html">Developer information</a></li>
+<li><a href="bugs.html">Known issues</a></li>
+<li><a href="changelog.html">Changelog</a></li>
+<li><a href="formulations.html">Recommended settings</a></li>
+<li><a href="calc.html">Calculation utilities</a></li>
+<li><a href="license.html">License, Copyright, and Referencing</a></li>
+</ul>
+
+
+<h1>Program usage</h1>
+
+<p>The program may be run with a Lua script as an argument, in which case the script is run and then the program terminates, or without an argument, in which case it enters interactive mode with a Lua shell.</p>
+
+<p>The basic flow of a script is listed below.</p>
+
+<ol>
+<li>Obtain a new simulation object:
+
+<pre><code>S = S4.NewSimulation()
+</code></pre>
+
+<p>S now contains a simulation object with a blank specification, and
+no solutions.</p></li>
+<li>Define all materials:
+
+<pre><code>S:AddMaterial('name', {eps_real, eps_imag})
+</code></pre></li>
+<li>Add all layers:
+
+<pre><code>S:AddLayer('name', thickness, 'material_name')
+</code></pre></li>
+<li>Add patterning to layers:
+
+<pre><code>S:SetLayerPatternCircle('layer_name',
+                        'inside_material',
+                        {center_x, center_y},
+                        radius)
+</code></pre></li>
+<li>Specify the excitation mechanism:
+
+<pre><code>S:SetExcitationPlanewave(
+   {angle_phi, angle_theta}, -- phi in [0,180), theta in [0,360)
+   {s_pol_amp, s_pol_phase}, -- phase in degrees
+   {p_pol_amp, p_pol_phase})
+</code></pre></li>
+<li>Specify the operating frequency:
+
+<pre><code>S:SetFrequency(0.4)
+</code></pre></li>
+<li>Obtain desired output:
+
+<pre><code>forward_power, backward_power = S:GetPoyntingFlux('layer_name', z_offset)
+print(forward_power, backward_power)
+</code></pre></li>
+</ol>
+
+
+<h1>Feedback and contact</h1>
+
+<p>For support of the S4 package, contact the author Victor Liu (vkl@stanford.edu).</p>
+</body>
+</html>

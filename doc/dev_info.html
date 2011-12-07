@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>S4 Developer information</title>
+<style type="text/css">@import url(s4.css);</style>
+</head>
+<body>
+
+
+<p><a href="index.html">S4 Home</a> | <a href="download.html">Download</a> | <a href="s4_lua_api.html">Lua API</a> | <a href="dev_info.html">Developer information</a> | <a href="changelog.html">Changelog</a></p>
+
+<h1>Developer information</h1>
+
+<h2>Compiling</h2>
+
+<p>The usual <code>./configure; make; make install</code> sequence should just work. Without installing, the executable is in the <code>src/</code> directory.</p>
+
+<h3>Dependencies</h3>
+
+<ul>
+<li>Lua (5.0 or later), both headers and libraries.</li>
+<li>BLAS, or equivalent, library only.</li>
+<li>LAPACK (optional, 3.2 or later), library only.</li>
+<li>Pthreads (optional), both headers and libraries.</li>
+<li>FFTW3 (optional, 3.x), both headers and libraries.</li>
+<li>CHOLMOD (optional), both headers and libraries.</li>
+</ul>
+
+
+<h4>BLAS</h4>
+
+<p>The performance of S4 is directly dependent on the performance of the BLAS
+library that it is linked against. Without a BLAS library, the default RNP
+routines are used, which are suboptimal. It is recommended that either
+vendor specific routines (Intel MKL or AMD AMCL) are used, or tuned
+libraries such as ATLAS or GotoBLAS are used. Vendor specific routines have
+incompatible calling/naming conventions than the standard Fortran interface,
+so some porting effort is required. Note that GotoBLAS should be compiled
+without threading if threading is enabled within S4; otherwise results may
+not be correct.</p>
+
+<h4>LAPACK</h4>
+
+<p>If a precompiled LAPACK library is used, ensure ZGEEV is thread safe for
+large matrices. Specifically, bug0061 in the LAPACK errata means that the
+maximum stack space reserved by the Fortran compiler used to build LAPACK
+must be sufficient to hold certain temporaries on the stack instead of in
+static (shared) memory. The best way to avoid this with GFortran is to use
+the -frecursive flag. A simple test of thread safety is provided in the
+testing/Lapack_thread_test/ directory.</p>
+
+<p>If no LAPACK library is available, the default RNP routines are used, which
+are suboptimal due to lack of blocked routines. However, they are definitely
+thread-safe.</p>
+
+<h4>CHOLMOD</h4>
+
+<p>Although not required, it is recommended when polarization decomposition
+settings are enabled, since without it, a conjugate gradient solver is used
+instead. The conjugate gradient solver does not always converge for fine
+discretizations.</p>
+
+<h4>FFTW</h4>
+
+<p>This library is optional; the Kiss FFT library is used instead when FFTW
+is not present. When available the version must be 3.x. This does not have
+a great effect on simulation speed since the FFT is required only a handful
+of times, and tends to be rather small in problem size.</p>
+
+<h3>Installing</h3>
+
+<ol>
+<li>Copy <code>Makefile.inc.Template</code> to <code>Makefile.inc</code>, and change the variables appropriately.</li>
+<li>Run <code>make</code> in the <code>src/</code> directory.</li>
+</ol>
+
+
+<h3>Porting</h3>
+
+<p>The code is developed in Windows under MinGW+MSYS and runs primarily in UNIX-like environments. For other platforms, the following list details the main problem areas.</p>
+
+<ol>
+<li>In main.c near the top dealing with threads (this is not a problem if Pthreads are disabled).</li>
+<li>In pattern/predicates.c, the settings may need modification to enable robust computations.</li>
+<li>In numalloc.c, a more efficient aligned allocator may be supplied instead of the default.</li>
+</ol>
+
+
+<h2>Program structure</h2>
+
+<p>S4 is built as a library on top of the Lua programming language.</p>
+
+<p>S4 has 3 main layers:</p>
+
+<dl>
+<dt>main.c</dt>
+<dd>Specifies the Lua interface, which passes arguments on to the S4 layer.</dd>
+<dt>S4.cpp</dt>
+<dd>The glue between the user specified information and the RCWA
+specification. The heavy lifting here is mainly determining which
+Fourier orders to use, and generating the Fourier dielectric matrices.
+The header S4.h is C-compatible and allows binding of a custom
+interface to the internals, or use programmatically as a component.</dd>
+<dt>rcwa.cpp</dt>
+<dd>The real RCWA and S-matrix algorithms are contained here. The main
+functions are solving the layer band structure, composing S-matrices
+for stacks of layers, and solving for solutions given input fields.
+Also contained within here are functions for manipulating solution
+vectors and computing various quantities of interest.</dd>
+</dl>
+
+<p>Auxilliary functions:</p>
+
+<dl>
+<dt>pattern.c/intersection.c</dt>
+<dd>A self-contained library for representing layer patterning, as well as
+generating proper discretizations, Fourier transforms of the patterns,
+and quasiharmonic conformal flow fields.</dd>
+<dt>fmm</dt>
+<dd>A set of different formulations to generate the Fourier components of
+the dielectric function.</dd>
+<dt>kiss_fft</dt>
+<dd>A simple FFT library for performing numerical Fourier transforms of the
+conformal vector fields.</dd>
+<dt>RNP</dt>
+<dd>A library of numerical linear algebra functions, and a thin layer over
+the BLAS and LAPACK libraries.</dd>
+<dt>SpectrumSampler/Interpolator</dt>
+<dd>These are addtional convenience modules to perform commonly needed tasks.</dd>
+</dl>
+
+<h2>Areas of improvement</h2>
+
+<ul>
+<li><strong>Robustness and efficiency of G-vector selection.</strong> The current
+implementation is likely unnecessarily slow. Robustness of the algorithm
+for a very wide variety of lattices remains to be investigated.</li>
+<li><strong>Conjugate Gradient implementation in <code>pattern.c</code>.</strong> The current CG
+implementation is a textbook implementation, with hard coded regularization.</li>
+<li><strong>Workspace pre-allocation for repeated calls.</strong> Currently, many workspace
+parameters in <code>rcwa.cpp</code> are ignored, defaulting to automatic allocation.
+For repeated small calls, the allocation overhead may be substantial.
+Profiling is needed.</li>
+<li><strong>A full programming API in <code>S4.h</code>.</strong> The current Lua interface reaches
+into the <code>Simulation</code> structure for certain functions. It is best to hide
+the details of the <code>Simulation</code> structure behind an opaque pointer and fix
+an API.</li>
+<li><strong>Parallelization over layer band structure computations.</strong> For a large
+number of non-trivial layers, a rather simple parallelization would be to
+compute the bands of the layers in parallel. It is unclear whether this
+requires an invasive modification of S4.cpp.</li>
+<li><strong>Parallelization over S-matrix assembly.</strong> The construction of the
+S-matrix should be parallelizable by a divide-and-conquer algorithm.
+Furthermore, it ought to be possible to cache intermediate results to
+speed up computing many S-matrices.</li>
+<li><strong>Graceful handling of diffraction threshold frequencies.</strong> If a frequency
+happens to cause a zero eigenvalue in a layer&rsquo;s band structure, some
+internal matrices become singular, and no solution is obtainable. This
+requires a thorough theoretical investigation.</li>
+</ul>
+
+
+<h2>Coding conventions</h2>
+
+<p>The code is mostly C-styled C++. The need to use C++ is mainly for the complex number type. There should never be non-trivial objects (only Plain Old Data structs), and certainly no inheritance, polymorphism, or templates (except in RNP).</p>
+
+<p>Indentation should be 4 spaces per tab. Always use tabs instead of spaces. The actual tab width should never matter for readability, meaning tabs can only exist contiguously starting from the left-most column, and comment blocks should never sit at the end of lines of code. Lines should be kept to around 72 or 80 characters in length if possible, especially for comment blocks.</p>
+
+<p>Functions generally are in Lapack-style, where there are a large number of well defined inputs, and a number of outputs returned by pointers. Functions return an integer code, with negative values corresponding to invalid parameters. When appropriate, workspaces can be passed in to reduce the number of dynamic allocations. Also, when convenient, workspace querying should be supported.</p>
+
+<p>The code should compile cleanly with all warnings enabled. The only exemptions are external libraries like Kiss FFT or the geometric predicates sources.</p>
+</body>
+</html>

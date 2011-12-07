@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>S4 Changelog</title>
+<style type="text/css">@import url(s4.css);</style>
+</head>
+<body>
+
+
+<p><a href="index.html">S4 Home</a> | <a href="download.html">Download</a> | <a href="s4_lua_api.html">Lua API</a> | <a href="dev_info.html">Developer information</a> | <a href="changelog.html">Changelog</a></p>
+
+<h1>Changelog</h1>
+
+<dl>
+<dt>2011-11-21</dt>
+<dd>Fixed bug with rotation and translation in OutputPatternDescription (thanks Aaswath).</dd>
+<dt>2011-09-16</dt>
+<dd>Eigenvector basis for uniform layers not stored (identity matrix). Added option UseLessMemory to not store kp (k-cross) matrices.</dd>
+<dt>2011-09-06</dt>
+<dd>Fixed minor bugs and passes Valgrind without problems (for a few test runs).</dd>
+<dt>2011-08-31</dt>
+<dd>Added GetDiffractionOrder().</dd>
+<dt>2011-08-30</dt>
+<dd>Fixed normal-vector bug, resolving convergence issues with subpixel-smoothing and rectangular shapes.</dd>
+<dt>2011-08-25</dt>
+<dd>Added CHOLMOD direct solver to pattern.c.</dd>
+<dt>2011-08-23</dt>
+<dd>Fixed segment-segment intersection code. Several cases of incorrect dielectric discretization have been fixed.
+Changed Enable/Disable<em> functions to Use</em>.</dd>
+<dt>2011-06-20</dt>
+<dd>Added MPI support. Compile with HAVE_MPI. S4.MPIRank and MPISize are available regardless of MPI support.</dd>
+<dt>2011-04-22</dt>
+<dd>Halved the Lanczos filter spatial width. This seems to improve convergence.
+Changed default resolution to 8 from 64.</dd>
+<dt>2011-04-21</dt>
+<dd>Added Kottke&rsquo;s subpixel smoothing method. Disabled by default.
+SetLattice can now take a single number for 1D periodicity.
+SpectrumSampler can now be parallelized.</dd>
+<dt>2011-04-20</dt>
+<dd>Changed PolarizationBasisOversamplingFactor to Resolution.</dd>
+<dt>2011-04-18</dt>
+<dd>Fixed crash when using Kiss FFT. I overzealously converted free to S4_free for kiss_fft.</dd>
+<dt>2011-03-27</dt>
+<dd>Switched numerical memory allocation to 16-byte alignment. LinearSolve&rsquo;s now use LAPACK blocked code. Fixed some memory leaks with S4_Simulation objects (field cache was not being freed).</dd>
+<dt>2011-03-20</dt>
+<dd>Added Integrate function.</dd>
+<dt>2010-10-28</dt>
+<dd>Fixed nan output due to uninitialized matrices Ml, Mlp1, Bl, Blp1 in rcwa.cpp.</dd>
+<dt>2010-09-10</dt>
+<dd>Fixed incorrect output of z-components of E- and H-fields (missing in-plane k-vector dependent phase).</dd>
+<dt>2010-08-23</dt>
+<dd>Fixed memory leak in S4_DestroySolution; kx and Bands and Solution structures were not freed.</dd>
+<dt>2010-08-10</dt>
+<dd>Fixed erroneous generation of values for Fourier transform for non-tensor materials in the context of a with-tensor stack.
+Added S4.ConvertUnits.</dd>
+<dt>2010-08-09</dt>
+<dd>Fixed a bug with S-Matrix generation between two identical layers (previous results were incorrect).</dd>
+<dt>2010-08-05</dt>
+<dd>Added anisotropic material support (currently incompatible with polarization basis, but without warning). Added cubic hermite spline interpolation.</dd>
+<dt>2010-08-04</dt>
+<dd>Added real material data for metals.</dd>
+<dt>2010-08-03</dt>
+<dd>Traced a problem with incorrect multithreaded results back to LAPACK. It is critical that LAPACK not use static allocation for local arrays (fixed with <code>-frecursive</code>).</dd>
+<dt>2010-07-29</dt>
+<dd>Fixed 1D lattice G selection (even numbers would cause duplicates)</dd>
+<dt>2010-07-28</dt>
+<dd>Fixed planewave excitation calculations for off-normal incidence. Previous s- and p-polarizations were mixed up and wrong. Added command line switches <code>a</code> and <code>t</code>.</dd>
+<dt>2010-07-26</dt>
+<dd>Fixed circular truncation code; was dropping certain orders (2,2 on a square lattice).</dd>
+<dt>2010-07-24</dt>
+<dd>Fixed polygon patterning (incorrect Fourier transform formulation).</dd>
+<dt>2010-07-23</dt>
+<dd>Added ability to output diffraction efficiency, obtain the G-vector list, and fixed the Fourier transforms for non-unit area unit cells.</dd>
+<dt>2010-07-22</dt>
+<dd>Added caching of polarization basis vector field Fourier transform matrices.
+Repeated computation of the same structure at different frequencies or k-vectors is much faster now that the vector field does not need to be recreated each time.</dd>
+<dt>2010-07-21</dt>
+<dd>Initial announcement of S4. Supports multithreading.</dd>
+</dl>
+</body>
+</html>

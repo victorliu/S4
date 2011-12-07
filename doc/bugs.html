@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>S4 Known issues</title>
+<style type="text/css">@import url(s4.css);</style>
+</head>
+<body>
+
+
+<p><a href="index.html">S4 Home</a> | <a href="download.html">Download</a> | <a href="s4_lua_api.html">Lua API</a> | <a href="dev_info.html">Developer information</a> | <a href="changelog.html">Changelog</a></p>
+
+<h1>Known issues</h1>
+
+<ul>
+<li><p>Vector field generation in pattern.c fails for large discretization sizes without CHOLMOD.</p>
+
+<p>The iteration limit of the conjugate gradient solver may need to scale up
+faster at large grid sizes.</p></li>
+<li><p>Crash on unknown material name in GetEpsilon.</p>
+
+<p>There is no stringent checking to make sure all materials referenced in
+layers are defined. This needs to be fixed.</p></li>
+<li><p>Incorrect results when using multithreading (<code>SolveInParallel</code>).</p>
+
+<p>This is most likely an indication of a poorly compiled LAPACK library.
+Make sure to compile LAPACK with no static variables. This means using
+the <code>-frecursive</code> flag with gfortran, or else manually patching up the
+functions which get called (mainly <code>zgeev</code> and its callees).</p></li>
+<li><p>Vector field generation in pattern.c does not correctly handle shapes
+which have portions extremely far outside the unit cell.</p>
+
+<p><strong>Workaround</strong>: When defining shapes, do not allow the extent of the
+shapes to extend beyond the 8 neighbors of the real space lattice&rsquo;s
+(origin centered) fundamental parallelogram.</p></li>
+<li><p>Vector field generation in pattern.c currently does not support generating
+everywhere-normal fields with natural boundary conditions.</p>
+
+<p><strong>Proposal</strong>: Implementation of natural boundaries and interpolated source
+placement. Constraint computation should be similar to the
+tangential case, except cross products are taken with the pixel
+edges themselves.</p></li>
+<li><p>Vector field generation in pattern.c currently fails silently or produces
+poor output on non-orthogonal lattices with substantially different basis
+vector length to sampling ratios.</p>
+
+<p><strong>Proposal</strong>: The problem is partially mitigated by the use of circular
+G-vector truncation; the length-to-sampling ratios will usually be
+approximately equal. Correctly supporting the general case requires
+generating a non-trivial implicit mesh for the fundamental parallelogram.
+The resulting sparse matrix system would then become substantially larger
+and the overall complexity of the field generation would be much greater.
+No attempt to fix will be made any time soon.</p></li>
+<li><p>Dipole excitation source is not implemented in main.c and S4.cpp.</p>
+
+<p><strong>Proposal</strong>: Dipole sources require knowledge of (px,py,pz) instead of (hx,hy)
+in the planewave case. It may be possible to express the dipole
+as a set of tangential H field values. Further planning is needed.</p></li>
+</ul>
+
+</body>
+</html>

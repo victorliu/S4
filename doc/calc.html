@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>S4 calculation utilities</title>
+<style type="text/css">@import url(s4.css);</style>
+
+<script type="text/javascript">
+
+const PI = 3.1415926535897932385;
+
+function hypot(a,b){
+	var aa = Math.abs(a);
+	var ab = Math.abs(b);
+	if(aa > ab){
+		var r = ab/aa;
+		return aa*Math.sqrt(1.+r*r);
+	}else{
+		var r = aa/ab;
+		return ab*Math.sqrt(1.+r*r);
+	}
+}
+function cadd(a,b){
+	return [a[0]+b[0],a[1]+b[1]];
+}
+function csub(a,b){
+	return [a[0]-b[0],a[1]-b[1]];
+}
+function cmult(a,b){
+	return [a[0]*b[0]-a[1]*b[1], a[0]*b[1]+a[1]*b[0]];
+}
+function rcmult(a,b){
+	return [a*b[0], a*b[1]];
+}
+function cdiv(a,b){
+	if(0 == b[0] && 0 == b[1]){
+		return [0,0];
+	}else if(0 == b[0]){
+		return [a[1]/b[1], -(a[0]/b[1])];
+	}else if(0 == b[1]){
+		return [a[0]/b[0], a[1]/b[0]];
+	}else if(Math.abs(b[0]) >= Math.abs(b[1])){
+		var r = b[1]/b[0];
+		var d = 1./(b[0]+b[1]*r);
+		return [(a[0]+a[1]*r)*d, (a[1]-a[0]*r)*d];
+	}else{
+		var r = b[0]/b[1];
+		var d = 1./(b[0]*r+b[1]);
+		return [(a[0]*r+a[1])*d, (a[1]*r-a[0])*d];
+	}
+}
+function csqrt(z){
+	var d = hypot(z[0], z[1]);
+	var r, s;
+	if(z[0] > 0){
+		r = Math.sqrt(0.5*d + 0.5*z[0]);
+		s = (0.5*z[1])/r;
+	}else{
+		s = Math.sqrt(0.5*d - 0.5*z[0]);
+		r = Math.abs((0.5*z[1])/s);
+	}
+	if((z[1] > 0. && s < 0.) || (z[1] < 0. && s > 0.)){ s = -s; }
+	return [r,s];
+}
+function clog(z){
+	return [Math.log(hypot(z[0],z[1])), Math.atan2(z[1],z[0])]
+}
+function casinh(z){
+	var y = [(z[0]-z[1])*(z[0]+z[1])+1., 2.*z[0]*z[1]];
+	y = csqrt(y);
+	y = cadd(y, z);
+	return clog(y);
+}
+function casin(z){
+	var y = casinh([-z[1], z[0]]);
+	return [y[1], -y[0]];
+}
+
+function singularity_exponent(e1,e2,e3,e4){
+	var num = csub(cmult(e1,e3), cmult(e2,e4));
+	num = cmult(num, num);
+	var den = cmult(cadd(e1,e2),cadd(e2,e3))
+	den = cmult(den, cadd(e3,e4));
+	den = cmult(den, cadd(e4,e1));
+	var delta = csub([1.,0], cdiv(num,den));
+	var tau = rcmult(2./Math.PI, casin(csqrt(delta)));
+	if(!isNaN(tau[0]) && !isNaN(tau[1])){
+		return Math.round(1000*(tau[0]-1.))/1000 + '+' + Math.round(1000*tau[1])/1000 + 'i';
+	}else{
+		return '0';
+	}
+}
+
+function update(){
+	var e1r = parseFloat(document.getElementById('e1r').value);
+	var e1i = parseFloat(document.getElementById('e1i').value);
+	var e2r = parseFloat(document.getElementById('e2r').value);
+	var e2i = parseFloat(document.getElementById('e2i').value);
+	var e3r = parseFloat(document.getElementById('e3r').value);
+	var e3i = parseFloat(document.getElementById('e3i').value);
+	var e4r = parseFloat(document.getElementById('e4r').value);
+	var e4i = parseFloat(document.getElementById('e4i').value);
+
+	document.getElementById('tau').innerHTML = singularity_exponent(
+		[e1r,e1i],
+		[e2r,e2i],
+		[e3r,e3i],
+		[e4r,e4i]);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var hextable = ['0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'];
+function padLeft(string, character, paddedWidth){
+	if(string.length >= paddedWidth){
+		return string;
+	}else{
+		while(string.length < paddedWidth)
+			string = character + string;
+	}
+	return string;
+}
+function RGBToHex(rgbArray){
+	var retval = new Array( );
+	for(var j = 0; j < rgbArray.length; j++){
+		var result = new Array( );
+		var val = rgbArray[j];
+		var i = 0;
+		while(val > 16){
+			result[i++] = val%16;
+			val = Math.floor( val/16 );
+		}
+		result[i++] = val%16;
+		var out = '';
+		for(var k = result.length - 1; k >= 0; k--){
+			out += hextable[result[k]];
+		}
+		retval[j] = padLeft(out, '0', 2);
+	}
+	out = '#';
+	for(var i = 0; i < retval.length; i++){
+		out += retval[i];
+	}
+	return out;
+}
+
+function set_color_box(WL){
+	var intensity;
+	var R, G, B;
+	var gamma = 0.80;
+	if(WL >= 380. && WL <= 440.){
+		R = -(WL-440.)/(440.-380.);
+		G = 0.0;
+		B = 1.0;
+	}else if(WL > 440. && WL <= 490.){
+		R = 0.0;
+		G = (WL-440.)/(490.-440.);
+		B = 1.0;
+	}else if(WL > 490. && WL <= 510.){
+		R = 0.0;
+		G = 1.0;
+		B = -(WL-510.)/(510.-490.);
+	}else if(WL > 510. && WL <= 580.){
+		R = (WL-510.)/(580.-510.);
+		G = 1.0;
+		B = 0.0;
+	}else if(WL > 580. && WL <= 645.){
+		R = 1.0;
+		G = -(WL-645.)/(645.-580.);
+		B = 0.0;
+	}else if(WL > 645. && WL <= 780.){
+		R = 1.0;
+		G = 0.0;
+		B = 0.0;
+	}else{
+		R = 1.0;
+		G = 1.0;
+		B = 1.0;
+	}
+	if(WL > 700.){
+		intensity = 0.3 + 0.7*(780.-WL)/(780.-700.);
+	}else if(WL <= 420.){
+		intensity = 0.3 + 0.7*(WL-780.)/(420.-380.);
+	}else{
+		intensity = 1.0;
+	}
+	if(intensity < 0){ intensity = 0; }
+	R = Math.floor(255*Math.pow(R*intensity,gamma));
+	G = Math.floor(255*Math.pow(G*intensity,gamma));
+	B = Math.floor(255*Math.pow(B*intensity,gamma));
+	document.getElementById('spectral_color').style.backgroundColor = RGBToHex([R, G, B]);
+}
+
+// m is value in meters
+function totalUpdate(from, m){
+	if(from != 'EnergyEV'){
+		document.getElementById('EnergyEV').value = 1.2398411856429223e-6 / m;
+	}
+	if(from != 'EnergyJ'){
+		document.getElementById('EnergyJ').value = 1.9864454404374119e-25 / m;
+	}
+	if(from != 'WavelengthMicron'){
+		document.getElementById('WavelengthMicron').value = m * 1e6;
+	}
+	if(from != 'WavelengthNm'){
+		document.getElementById('WavelengthNm').value = m * 1e9;
+	}
+	if(from != 'FrequencyHz'){
+		document.getElementById('FrequencyHz').value = 2.99792458e8 / m;
+	}
+	if(from != 'FrequencyTHz'){
+		document.getElementById('FrequencyTHz').value = 0.000299792458 / m;
+	}
+	if(from != 'WavelengthM'){
+		document.getElementById('WavelengthM').value = m;
+	}
+	set_color_box(m*1e9);
+}
+
+function update2(from){
+	var num = parseFloat(document.getElementById(from).value);
+	if(!isNaN(num)){
+		var m = 0;
+		switch(from){
+		case 'EnergyEV':
+			m = 1.2398411856429223e-6 / num;
+			totalUpdate(from, m);
+			break;
+		case 'EnergyJ':
+			m = 1.9864454404374119e-25 / num;
+			totalUpdate(from, m);
+			break;
+		case 'WavelengthMicron':
+			m = 1e-6 * num;
+			totalUpdate(from, m);
+			break;
+		case 'WavelengthNm':
+			m = 1e-9 * num;
+			totalUpdate(from, m);
+			break;
+		case 'FrequencyHz':
+			m = 2.99792458e8 / num;
+			totalUpdate(from, m);
+			break;
+		case 'FrequencyTHz':
+			m = 0.000299792458 / num;
+			totalUpdate(from, m);
+			break;
+		case 'WavelengthM':
+			// Already have it
+			totalUpdate(from, num);
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+</script>
+</head>
+<body>
+
+<h1>Field singularity exponent at corners</h1>
+
+<p>When materials meet at a locally linear interface (a bunch of material wedges), fields can be singular in the radial direction. This computes the leading exponent of the singularity for 90 degree corners.</p>
+
+<table cellspacing="10" border="1" cellpadding="10">
+ <tr>
+  <td>
+   <input type="text" id="e2r" name="e2r" value="1" size="4" onkeyup="update()">+<input type="text" id="e2i" name="e2i" value="0" size="4" onkeyup="update()">i
+  </td>
+  <td>
+   <input type="text" id="e1r" name="e1r" value="1" size="4" onkeyup="update()">+<input type="text" id="e1i" name="e1i" value="0" size="4" onkeyup="update()">i
+  </td>
+ </tr>
+ <tr>
+  <td>
+   <input type="text" id="e3r" name="e3r" value="1" size="4" onkeyup="update()">+<input type="text" id="e3i" name="e3i" value="0" size="4" onkeyup="update()">i
+  </td>
+  <td>
+   <input type="text" id="e4r" name="e4r" value="1" size="4" onkeyup="update()">+<input type="text" id="e4i" name="e4i" value="0" size="4" onkeyup="update()">i
+  </td>
+ </tr>
+</table>
+
+<p>Field diverges as r<sup><span id="tau">0</span></sup>. S4 pretty much won't work if there is a 1/r divergence. The closer to that, the slower the convergence.</p>
+
+
+
+<h1>Optics and solid-state conversions</h1>
+<div id="content">
+
+<!-- To change the root directory, change the root variable, and change the stylesheet inclusion in the template, and the Home link url, and the ie7 url. -->
+
+
+<p>
+lambda nu = c
+</p>
+
+<p>
+h nu = E
+</p>
+
+<table class="converttable">
+<tr>
+	<th>Quantity</th>
+	<th>Units</th>
+	<th>Value</th>
+</tr>
+<tr>
+	<td>Energy</td>
+	<td>eV</td>
+	<td><input type="text" id="EnergyEV" onkeyup="update2('EnergyEV')" /></td>
+</tr>
+<tr>
+	<td>Energy</td>
+	<td>J</td>
+	<td><input type="text" id="EnergyJ" onkeyup="update2('EnergyJ')" /></td>
+</tr>
+<tr>
+	<td>Wavelength</td>
+	<td>microns</td>
+	<td><input type="text" id="WavelengthMicron" onkeyup="update2('WavelengthMicron')" /></td>
+</tr>
+<tr>
+	<td>Wavelength</td>
+	<td>nm</td>
+	<td><input type="text" id="WavelengthNm" onkeyup="update2('WavelengthNm')" /></td>
+</tr>
+<tr>
+	<td>Wavelength</td>
+	<td>m</td>
+	<td><input type="text" id="WavelengthM" onkeyup="update2('WavelengthM')" /></td>
+</tr>
+<tr>
+	<td>Frequency</td>
+	<td>Hz</td>
+	<td><input type="text" id="FrequencyHz" onkeyup="update2('FrequencyHz')" /></td>
+</tr>
+<tr>
+	<td>Frequency</td>
+	<td>THz</td>
+	<td><input type="text" id="FrequencyTHz" onkeyup="update2('FrequencyTHz')" /></td>
+</tr>
+</table>
+
+<div id="spectral_color">Visible spectral color</div>
+
+</div>
+</div>
+
+</body>
+</html>

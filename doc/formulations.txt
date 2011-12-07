@@ -1,0 +1,20 @@
+These are the recommended settings for the different formulations
+
+            | Use discretized |  Can handle  | Recommended |         |          |
+Formulation |    epsilon?     | Anisotropic? | Resolution  |  Speed  | Accuracy |
+------------+-----------------+--------------+-------------+---------+----------+
+Analytic    |       no        |      yes     |      -      |  fast   |   poor   |
+FFT         |       yes       |      yes     |      8      |  medium |   poor   |
+Subpixel    |       yes       |      yes     |      4      |  medium |  medium  |
+Pol-Normal  |       no        |      no      |      8      |  slow   |   good   |
+Pol-Jones   |       no        |      no      |      8      |  slow   |   good   |
+Pol-wLS     |       no        |      no      |      8      |  slow   |   good   |
+Pol-Normal  |       yes       |      no*     |      4      |  slow   |  medium  |
+Pol-Jones   |       yes       |      no*     |      4      |  slow   |  medium  |
+Pol-wLS     |       yes       |      no*     |      4      |  slow   |  medium  |
+
+*: The formulation does not strictly work correctly for anisotropic media
+   however it may still work.
+   Proper support for anisotropic materials is in principle possible. There
+   are currently no plans for implementing generation of the proper basis
+   fields for this feature.

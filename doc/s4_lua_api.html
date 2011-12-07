@@ -1,0 +1,1723 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>S4 Lua API</title>
+<style type="text/css">@import url(s4.css);</style>
+</head>
+<body>
+
+
+<p><a href="index.html">S4 Home</a> | <a href="s4_lua_api.html">Lua API</a> | <a href="dev_info.html">Developer information</a> | <a href="changelog.html">Changelog</a></p>
+
+<h1>The S4 Lua programming interface</h1>
+
+<p>S4 is built as a set of extensions to the <a href="http://www.lua.org">Lua scripting language</a>.
+Usage of S4 involves writing a Lua script to call into various parts of S4.
+Here we describe all of the S4 specific functions that can be called within the Lua environment.</p>
+
+<h1>Contents</h1>
+
+<ul>
+<li><a href="#S4_library">S4 library</a>
+
+<ul>
+<li><a href="#S4_NewSimulation">NewSimulation</a></li>
+<li><a href="#S4_NewSpectrumSampler">NewSpectrumSampler</a></li>
+<li><a href="#S4_NewInterpolator">NewInterpolator</a></li>
+<li><a href="#S4_SolveInParallel">SolveInParallel</a></li>
+<li><a href="#S4_ConvertUnits">ConvertUnits</a></li>
+<li><a href="#S4_Integrate">Integrate</a></li>
+<li><a href="#S4_arg">arg</a></li>
+<li><a href="#S4_MPIRank">MPIRank</a></li>
+<li><a href="#S4_MPISize">MPISize</a></li>
+</ul>
+</li>
+<li><a href="#Simulation">Simulation</a>
+
+<ul>
+<li>Simulation parameter specification
+
+<ul>
+<li><a href="#S4_Simulation_SetLattice">SetLattice</a></li>
+<li><a href="#S4_Simulation_SetNumG">SetNumG</a></li>
+<li><a href="#S4_Simulation_AddMaterial">AddMaterial</a></li>
+<li><a href="#S4_Simulation_SetMaterial">SetMaterial</a></li>
+<li><a href="#S4_Simulation_AddLayer">AddLayer</a></li>
+<li><a href="#S4_Simulation_SetLayer">SetLayer</a></li>
+<li><a href="#S4_Simulation_AddLayerCopy">AddLayerCopy</a></li>
+<li><a href="#S4_Simulation_SetLayerPatternCircle">SetLayerPatternCircle</a></li>
+<li><a href="#S4_Simulation_SetLayerPatternEllipse">SetLayerPatternEllipse</a></li>
+<li><a href="#S4_Simulation_SetLayerPatternRectangle">SetLayerPatternRectangle</a></li>
+<li><a href="#S4_Simulation_SetLayerPatternPolygon">SetLayerPatternPolygon</a></li>
+<li><a href="#S4_Simulation_SetExcitationPlanewave">SetExcitationPlanewave</a></li>
+<li><a href="#S4_Simulation_SetFrequency">SetFrequency</a></li>
+</ul>
+</li>
+<li>Outputs requiring no solutions
+
+<ul>
+<li><a href="#S4_Simulation_GetReciprocalLattice">GetReciprocalLattice</a></li>
+<li><a href="#S4_Simulation_GetEpsilon">GetEpsilon</a></li>
+<li><a href="#S4_Simulation_OutputLayerPatternDescription">OutputLayerPatternDescription</a></li>
+<li><a href="#S4_Simulation_OutputLayerPatternRealization">OutputLayerPatternRealization</a></li>
+</ul>
+</li>
+<li>Outputs requiring solutions
+
+<ul>
+<li><a href="#S4_Simulation_OutputStructurePOVRay">OutputStructurePOVRay</a></li>
+<li><a href="#S4_Simulation_GetNumG">GetNumG</a></li>
+<li><a href="#S4_Simulation_GetGList">GetGList</a></li>
+<li><a href="#S4_Simulation_GetDiffractionOrder">GetDiffractionOrder</a></li>
+<li><a href="#S4_Simulation_GetPoyntingFlux">GetPoyntingFlux</a></li>
+<li><a href="#S4_Simulation_GetPoyntingFluxByOrder">GetPoyntingFluxByOrder</a></li>
+<li><a href="#S4_Simulation_GetStressTensorIntegral">GetStressTensorIntegral</a></li>
+<li><a href="#S4_Simulation_GetLayerEnergyDensityIntegral">GetLayerEnergyDensityIntegral</a></li>
+<li><a href="#S4_Simulation_GetLayerElectricEnergyDensityIntegral">GetLayerElectricEnergyDensityIntegral</a></li>
+<li><a href="#S4_Simulation_GetLayerMagneticEnergyDensityIntegral">GetLayerMagneticEnergyDensityIntegral</a></li>
+<li><a href="#S4_Simulation_GetLayerElectricFieldIntensityIntegral">GetLayerElectricFieldIntensityIntegral</a></li>
+<li><a href="#S4_Simulation_GetEField">GetEField</a></li>
+<li><a href="#S4_Simulation_GetHField">GetHField</a></li>
+<li><a href="#S4_Simulation_GetFields">GetFields</a></li>
+<li><a href="#S4_Simulation_GetSMatrixDeterminant">GetSMatrixDeterminant</a></li>
+</ul>
+</li>
+<li>Simulation options
+
+<ul>
+<li><a href="#S4_Simulation_UseLanczosSmoothing">UseLanczosSmoothing</a></li>
+<li><a href="#S4_Simulation_UseDiscretizedEpsilon">UseDiscretizedEpsilon</a></li>
+<li><a href="#S4_Simulation_UsePolarizationDecomposition">UsePolarizationDecomposition</a></li>
+<li><a href="#S4_Simulation_UseSubpixelSmoothing">UseSubpixelSmoothing</a></li>
+<li><a href="#S4_Simulation_UseJonesVectorBasis">UseJonesVectorBasis</a></li>
+<li><a href="#S4_Simulation_UseNormalVectorBasis">UseNormalVectorBasis</a></li>
+<li><a href="#S4_Simulation_SetResolution">SetResolution</a></li>
+<li><a href="#S4_Simulation_SetBasisFieldDumpPrefix">SetBasisFieldDumpPrefix</a></li>
+<li><a href="#S4_Simulation_SetLatticeTruncation">SetLatticeTruncation</a></li>
+<li><a href="#S4_Simulation_SetVerbosity">SetVerbosity</a></li>
+<li><a href="#S4_Simulation_UseLessMemory">UseLessMemory</a></li>
+</ul>
+</li>
+<li>Miscellaneous
+
+<ul>
+<li><a href="#S4_Simulation_Clone">Clone</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#SpectrumSampler">SpectrumSampler</a>
+
+<ul>
+<li><a href="#S4_SpectrumSampler_IsDone">IsDone</a></li>
+<li><a href="#S4_SpectrumSampler_GetFrequency">GetFrequency</a></li>
+<li><a href="#S4_SpectrumSampler_GetFrequencies">GetFrequencies</a></li>
+<li><a href="#S4_SpectrumSampler_SubmitResult">SubmitResult</a></li>
+<li><a href="#S4_SpectrumSampler_SubmitResults">SubmitResults</a></li>
+<li><a href="#S4_SpectrumSampler_GetSpectrum">GetSpectrum</a></li>
+</ul>
+</li>
+<li><a href="#Interpolator">Interpolator</a>
+
+<ul>
+<li><a href="#S4_Interpolator_Get">Get</a></li>
+</ul>
+</li>
+</ul>
+
+
+<hr />
+
+<h1><a name="S4_library" />S4 library</h1>
+
+<p>All top level functions of S4 are located in the <code>S4</code> library.
+These functions mainly return objects which can be manipulated to obtain desired results.</p>
+
+<hr />
+
+<h2><a name="S4_NewSimulation" />NewSimulation</h2>
+
+<p>Returns a new blank <a href="#Simulation">Simulation</a> object.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S = S4.NewSimulation()
+</code></pre>
+
+<h3>Arguments</h3>
+
+<p>None.</p>
+
+<h3>Return values</h3>
+
+<dl>
+<dt>S</dt>
+<dd>A new Simulation object.</dd>
+</dl>
+
+<hr />
+
+<h2><a name="S4_NewSpectrumSampler" />NewSpectrumSampler</h2>
+
+<p>Returns a new <a href="#SpectrumSampler">SpectrumSampler</a> object.</p>
+
+<h3>Usage</h3>
+
+<pre><code>sampler = S4.NewSpectrumSampler(f_start, f_end, options)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>f_start, f_end</dt>
+<dd>(number) Starting and ending frequencies of the frequency range in which to sample.</dd>
+<dt>options</dt>
+<dd>(table) A table of options controlling the sampling behavior. The keys and expected values are described below. If any option is not specified, the default value is used. Any out-of-range values are clamped to the valid range.
+
+<dl>
+<dt>InitialNumPoints</dt>
+<dd>(integer) The initial number of (uniformly spaced) sample points to use. If this value is not large enough, fine features may be missed. The default is 33.</dd>
+<dt>RangeThreshold</dt>
+<dd>(number) The threshold below which the difference between adjacent result values will not cause an interval to be subdivided. The default is 0.001.</dd>
+<dt>MaxBend</dt>
+<dd>(number) The cosine of the maximum bend angle of the normalized angle between adjacent segments.
+For angles larger than the maximum bend angle, one of the adjacent intervals is subdivided.
+The default bend angle is 10 degrees.</dd>
+<dt>MinimumSpacing</dt>
+<dd>(number) The relative frequency space (relative to the sampling interval size) below which subdivision will not occur. The default is 1e-6.</dd>
+<dt>Parallelize</dt>
+<dd>(boolean) Allows multiple frequency points to be solved in parallel. This option affects which methods can be called for a SpectrumSampler object. The default is false.</dd>
+</dl></dd>
+</dl>
+
+<h3>Return values</h3>
+
+<dl>
+<dt>sampler</dt>
+<dd>A new SpectrumSampler object.</dd>
+</dl>
+
+<hr />
+
+<h2><a name="S4_NewInterpolator" />NewInterpolator</h2>
+
+<p>Returns a new <a href="#Interpolator">Interpolator</a> object.</p>
+
+<h3>Usage</h3>
+
+<pre><code>interpolator = S4.NewInterpolator('type', {
+  {x1, {y1_1, y1_2, ... }},
+  {x2, {y2_1, y2_2, ... }},
+  ...
+})
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>type</dt>
+<dd>(string) Type of interpolation to use.
+
+<dl>
+<dt><code>linear</code></dt>
+<dd>Performs linear interpolation (and extrapolation) between values.</dd>
+<dt><code>cubic hermite spline</code></dt>
+<dd>Uses a cubic Hermite spline interpolation with Kochanek-Bartels tangents (really just a Catmull-Rom spline).</dd>
+</dl></dd>
+</dl>
+
+<p>The second argument should be a table of tables.
+Each subtable should have as its first element the abscissa of a data sample, and the second element should be a table of all the ordinate values.
+The ordinate ordering is clearly important, and only the number of ordinate values for the first abscissa value determines the assumed number of ordinate values for the remaining abscissae.</p>
+
+<h3>Return values</h3>
+
+<dl>
+<dt>interpolator</dt>
+<dd>A new Interpolator object.</dd>
+</dl>
+
+<hr />
+
+<h2><a name="S4_SolveInParallel" />SolveInParallel</h2>
+
+<p>Forces the computation of a layer solution for several simulation objects in parallel.
+When compiled without thread support, the computations are done serially.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S4.SolveInParallel('layer', Sa, Sb, ...)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>layer</dt>
+<dd>(string) The name of the layer for which solutions should be computed. If the simulation objects do not have layer matching the provided name, then no solve is performed for that object.</dd>
+<dt>Sa, Sb, &hellip;</dt>
+<dd>(Simulation object) The set of Simulation objects for which solutions are computed. It is useful to use the <code>Clone</code> method to make copies.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None.</p>
+
+<hr />
+
+<h2><a name="S4_ConvertUnits" />ConvertUnits</h2>
+
+<p>Performs unit conversions.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S4.ConvertUnits(value, from_units, to_units)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>value</dt>
+<dd>(number) The value to convert.</dd>
+<dt>from_units, to_units</dt>
+<dd>(string) The units in which <code>value</code> is currently expressed, and the desired units.
+Currently supported units:
+
+<pre><code>Lengths: "um", "nm", "m", "cm", "mm"
+Energies: "eV", "J"
+Frequencies: "THz", "GHz", "Hz", "rad/s"
+</code></pre></dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>The converted value, or nil if no conversion was possible.</p>
+
+<hr />
+
+<h2><a name="S4_Integrate" />Integrate</h2>
+
+<p>Performs adaptive numerical integration in an arbitrary number of dimensions.</p>
+
+<h3>Usage</h3>
+
+<pre><code>integral,error = S4.Integrate(func, range1, range2, ..., opts)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>func</dt>
+<dd>(function) The function to integrate. It should take a number of arguments matching the number of range parameters passed in (the number of independent variables), and return a single number.</dd>
+<dt>range1, range2, &hellip;</dt>
+<dd>(table) Each table should contain two elements corresponding to lower and upper limits of integration for the corresponding variable.</dd>
+<dt>opts</dt>
+<dd>(table) Options to the integration routine. This table is distinguished from an integration limit range by the presence of string keys. The options are:
+
+<dl>
+<dt>MaxEval</dt>
+<dd>(integer) Default is 1000000. Places an upper limit on the number of function evaluations allowed.</dd>
+<dt>AbsoluteError</dt>
+<dd>(number) Default is 0. Sets the termination criterion for the absolute error in the integral.</dd>
+<dt>RelativeError</dt>
+<dd>(number) Default is 1e-6. Sets the termination criterion for the relative error in the integral.</dd>
+<dt>Parallelize</dt>
+<dd>(boolean) Default is false. If true, the integrand may be evaluated in parallel. In this case, the function must accept an integer as the first argument corresponding to the number of evaluations required, and subsequent parameters are tables containing the set of independent variables for each evaluation. The function should then return a table containg all the results in the same order.</dd>
+</dl></dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>Returns the integrated value and an estimate of the error.</p>
+
+<hr />
+
+<h2><a name="S4_arg" />arg</h2>
+
+<p>When used with the <code>-a</code> switch, the value of <code>S4.arg</code> is set to the command line switch argument.
+This is a convenient way of passing command line arguments to S4 scripts, or in parallel environments for specifying machine IDs.</p>
+
+<p>When no command line switch is specified, <code>S4.arg</code> is nil.</p>
+
+<p>Multiple variables may be passed in by passing in multiple Lua statements:</p>
+
+<pre><code>./S4 -a "a=1;b=2;c=3" input.lua
+</code></pre>
+
+<p>Then within the script, the variables may be set with the statement</p>
+
+<pre><code>pcall(loadstring(S4.arg))
+</code></pre>
+
+<hr />
+
+<h2><a name="S4_MPIRank" />MPIRank</h2>
+
+<p>On a version of S4 with MPI support, gives the MPI machine rank (0-based index of processor node). For versions without MPI support, this is always 0.</p>
+
+<hr />
+
+<h2><a name="S4_MPISize" />MPISize</h2>
+
+<p>On a version of S4 with MPI support, gives the MPI size (total number of processor nodes). For versions without MPI support, this is always 1.</p>
+
+<hr />
+
+<h1><a name="Simulation" />Simulation object</h1>
+
+<p>The Simulation object is the primary object which computes solutions to systems.
+When a new Simulation object is requested from <code>S4.NewSimulation()</code>, all settings are in a blank state, with no materals, layers, or excitation.
+When solutions are requested, only a minimal set of internal computations are performed in order to satisfy the request.</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_SetLattice" />SetLattice</h2>
+
+<p>Sets the real-space lattice.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:SetLattice(L)
+S:SetLattice({x1,y1}, {x2,y2})
+</code></pre>
+
+<h3>Arguments</h3>
+
+<p>This function can take a single numeric argument, which sets the period for a 1D lattice.
+This function can also take two table arguments, each of which must have two numeric elements.
+The first table specifies the x- and y-coordinates of the first lattice basis vector, while the second table specifies the second basis vector. The basis vectors should have positive orientation (the cross product of the first with the second should yield a vector with positive z-coordinate).</p>
+
+<h3>Return values</h3>
+
+<p>None</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_SetNumG" />SetNumG</h2>
+
+<p>Sets the maximum number of in-plane (x and y) Fourier expansion orders to use.
+All fields and eigenmodes of the system use the same Fourier basis of the same dimension.</p>
+
+<p>The computation time is roughly proportional to the cube of this number, and the memory usage is roughly proportional to the square.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:SetNumG(n)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>n</dt>
+<dd>(integer) The desired maximum number of Fourier orders to use. This number is an upper bound because internally, the Fourier lattice k-vectors (referred to as the G-vectors) are found in a symmetry-preserving manner starting from the origin and retaining those of shortest length. To obtain the actual number of Fourier orders used, use <code>GetNumG</code>.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_AddMaterial" />AddMaterial</h2>
+
+<p>Adds a new material with a specified dielectric constant.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:AddMaterial(name, {eps_r, eps_i})
+S:AddMaterial(name, {
+    {xx_r, xx_i}, {xy_r, xy_i}, {xz_r, xz_i},
+    {yx_r, yx_i}, {yy_r, yy_i}, {yz_r, yz_i},
+    {zx_r, zx_i}, {zy_r, zy_i}, {zz_r, zz_i}
+    })
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>name</dt>
+<dd>(string) The name of the material. Each material must have a unique name.</dd>
+<dt>eps_r, eps_r</dt>
+<dd>(number) The real and imaginary parts of the relative permittivity of the material. The imaginary part should be positive.</dd>
+<dt>xx_r, xx_i, xy_r, &hellip;</dt>
+<dd>(number) Components of the relative permittivity tensor of the material. Currently the xz, yz, zx, and zy components are ignored and assumed to be zero.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_SetMaterial" />SetMaterial</h2>
+
+<p>Updates an existing material with a new dielectric constant or adds a material if none exists.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:SetMaterial(name, {eps_r, eps_i})
+S:SetMaterial(name, {
+    {xx_r, xx_i}, {xy_r, xy_i}, {xz_r, xz_i},
+    {yx_r, yx_i}, {yy_r, yy_i}, {yz_r, yz_i},
+    {zx_r, zx_i}, {zy_r, zy_i}, {zz_r, zz_i}
+    })
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>name</dt>
+<dd>(string) The name of the material to update, or the name of a new material if no material by that name exists.</dd>
+<dt>eps_r, eps_r</dt>
+<dd>(number) The real and imaginary parts of the relative permittivity of the material. The imaginary part should be positive.</dd>
+<dt>xx_r, xx_i, xy_r, &hellip;</dt>
+<dd>(number) Components of the relative permittivity tensor of the material. Currently the xz, yz, zx, and zy components are ignored and assumed to be zero.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_AddLayer" />AddLayer</h2>
+
+<p>Adds a new unpatterned layer with a specified thickness and material.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:AddLayer(name, thickness, material)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>name</dt>
+<dd>(string) The name of the layer. Each layer must have a unique name.</dd>
+<dt>thickness</dt>
+<dd>(number) The thickness of the layer.</dd>
+<dt>material</dt>
+<dd>(string) The name of the material which comprises the layer. With patterning, this is the default (background) material of the layer.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_SetLayer" />SetLayer</h2>
+
+<p>Updates an existing layer with a new thickness.
+If no matching layer is found, adds a new unpatterned layer with a specified thickness and material.
+The behavior is undefined if the new material does not match the old material during an update (currently, the new material is ignored, but this may change in the future).</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:SetLayer(name, thickness, material)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>name</dt>
+<dd>(string) The name of the layer to update. If no layer by that name exists, a new layer is created with this name.</dd>
+<dt>thickness</dt>
+<dd>(number) The new thickness of the layer.</dd>
+<dt>material</dt>
+<dd>(string) The name of the material which comprises the layer.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_AddLayerCopy" />AddLayerCopy</h2>
+
+<p>Adds a new layer with a specified thickness, but identical patterning as another existing layer.
+Note that this merely creates a reference to the copied layer; further patterning of the copied layer also affects the new layer. Additionally, a copy of a copy cannot be made.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:AddLayerCopy(name, thickness, original_name)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>name</dt>
+<dd>(string) The name of the new layer, different from the layer being copied.</dd>
+<dt>thickness</dt>
+<dd>(number) The thickness of the new layer.</dd>
+<dt>original_name</dt>
+<dd>(string) The name of the layer which whose pattern is to be copied. That layer cannot itself be a copy of a layer.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_SetLayerPatternCircle" />SetLayerPatternCircle</h2>
+
+<p>Adds a (filled) circle of a specified material to an existing non-copy layer.
+The circle should not intersect any other patterning shapes, but may contain or be contained within other shapes.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:SetLayerPatternCircle(layer, material, center, radius)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>layer</dt>
+<dd>(string) The name of the layer to pattern. This layer cannot be a copy of another layer.</dd>
+<dt>material</dt>
+<dd>(string) The name of the material which fills the interior of the circle.</dd>
+<dt>center</dt>
+<dd>(numeric table, length 2) x- and y-coordinates of the center of the circle relative to the center of the unit cell (the origin).</dd>
+<dt>radius</dt>
+<dd>(number) Radius of the circle.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_SetLayerPatternEllipse" />SetLayerPatternEllipse</h2>
+
+<p>Adds a (filled) ellipse of a specified material to an existing non-copy layer.
+The ellipse should not intersect any other patterning shapes, but may contain or be contained within other shapes.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:SetLayerPatternEllipse(layer, material, center, angle, halfwidths)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>layer</dt>
+<dd>(string) The name of the layer to pattern. This layer cannot be a copy of another layer.</dd>
+<dt>material</dt>
+<dd>(string) The name of the material which fills the interior of the ellipse.</dd>
+<dt>center</dt>
+<dd>(numeric table, length 2) x- and y-coordinates of the center of the ellipse relative to the center of the unit cell (the origin).</dd>
+<dt>angle</dt>
+<dd>(number) The angle (in degrees) by which the x-axis of the ellipse should be rotated (CCW).</dd>
+<dt>halfwidths</dt>
+<dd>(numeric table, length 2) The lengths of the semi-major axes of the ellipse. For an angle of 0, the first length is the semi-major axis in the x-direction, and the second length is the semi-major axis in the y-direction.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_SetLayerPatternRectangle" />SetLayerPatternRectangle</h2>
+
+<p>Adds a (filled) rectangle of a specified material to an existing non-copy layer.
+The rectangle should not intersect any other patterning shapes, but may contain or be contained within other shapes.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:SetLayerPatternRectangle(layer, material, center, angle, halfwidths)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>layer</dt>
+<dd>(string) The name of the layer to pattern. This layer cannot be a copy of another layer.</dd>
+<dt>material</dt>
+<dd>(string) The name of the material which fills the interior of the rectangle.</dd>
+<dt>center</dt>
+<dd>(numeric table, length 2) x- and y-coordinates of the center of the rectangle relative to the center of the unit cell (the origin).</dd>
+<dt>angle</dt>
+<dd>(number) The angle (in degrees) by which the x-axis of the rectangle should be rotated (CCW).</dd>
+<dt>halfwidths</dt>
+<dd>(numeric table, length 2) The half-widths of the rectangle. For an angle of 0, the first length is half the width of the rectangle in the x-direction, and the second length is half the height in the y-direction.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_SetLayerPatternPolygon" />SetLayerPatternPolygon</h2>
+
+<p>Adds a (filled) polygon of a specified material to an existing non-copy layer.
+The polygon should not self-intersect nor intersect any other patterning shapes, but may contain or be contained within other shapes. The polygon must also be specified with positive orientation (the vertices circle CCW about an interior point).</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:SetLayerPatternPolygon(layer, material, center, angle, vertices)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>layer</dt>
+<dd>(string) The name of the layer to pattern. This layer cannot be a copy of another layer.</dd>
+<dt>material</dt>
+<dd>(string) The name of the material which fills the interior of the polygon.</dd>
+<dt>center</dt>
+<dd>(numeric table, length 2) x- and y-coordinates of the center of the polygon relative to the center of the unit cell (the origin).</dd>
+<dt>angle</dt>
+<dd>(number) The angle (in degrees) by which the polygon should be rotated (CCW).</dd>
+<dt>vertices</dt>
+<dd>(numeric table, length 2*vertex_count) The x- and y-coordinates of the vertices of the (unrotated) polygon, one after another. Thus, <code>vertices[1]</code> is the x-coordinate of the first vertex and <code>vertices[2]</code> is its y-coordinate, and <code>vertices[3]</code> is the x-coordinate of the second vertex, etc.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_SetExcitationPlanewave" />SetExcitationPlanewave</h2>
+
+<p>Sets the excitation to be a planewave incident upon the front (first layer specified) of the structure.
+If both tilt angles are specified to be zero, then the planewave is normally incident with the electric field polarized along the x-axis for the p-polarization.
+The phase of each polarization is defined at the origin (z = 0).</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:SetExcitationPlanewave({phi,theta}, {s_amp, s_phase}, {p_amp, p_phase})
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>phi, theta</dt>
+<dd>(number) Angles in degrees. <code>phi</code> and <code>theta</code> give the spherical coordinate angles of the planewave k-vector. For zero angles, the k-vector is assumed to be (0, 0, kz), while the electric field is assumed to be (E0, 0, 0), and the magnetic field is in (0, H0, 0). The angle <code>phi</code> specifies first the angle by which the E,H,k frame should be rotated (CW) about the y-axis, and the angle <code>theta</code> specifies next the angle by which the E,H,k frame should be rotated (CCW) about the z-axis. Note the different directions of rotations for each angle.</dd>
+<dt>s_amp, p_amp</dt>
+<dd>(number) The electric field amplitude of the s- and p-polarizations of the planewave.</dd>
+<dt>s_phase, p_phase</dt>
+<dd>(number) The phase of the s- and p-polarizations of the planewave, relative to z = 0 (the beginning of the first layer).</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_SetFrequency" />SetFrequency</h2>
+
+<p>Sets the operating frequency of the system (and excitation).</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:SetFrequency(freqr, freqi)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>freqr</dt>
+<dd>(number) The (real) frequency of the excitation. This is not the angular frequency (the angular frequency is 2pi times of this).</dd>
+<dt>freqi</dt>
+<dd>(number) The imaginary frequency of the system. This parameter is typically not specified and assumed to be zero. When specified (typically for mode solving), this parameter should be negative for a physical (decaying in time) system.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_GetReciprocalLattice" />GetReciprocalLattice</h2>
+
+<p>Retrieves the reciprocal lattice basis vectors.
+The vectors lack the scaling by 2pi (multiply them by 2pi to obtain the true reciprocal lattice basis vectors).</p>
+
+<h3>Usage</h3>
+
+<pre><code>Gu,Gv = S:GetReciprocalLattice()
+</code></pre>
+
+<h3>Arguments</h3>
+
+<p>None.</p>
+
+<h3>Return values</h3>
+
+<dl>
+<dt>Gu, Gv</dt>
+<dd>The first and second reciprocal lattice basis vectors. Their relative geometric orientation is the same as the lattice specified with <code>SetLattice</code>.
+Each vector is a table of length 2, holding the x- and y-coordinates of the vector.</dd>
+</dl>
+
+<hr />
+
+<h2><a name="S4_Simulation_GetEpsilon" />GetEpsilon</h2>
+
+<p>Retrieves the dielectric constant at a particular point in the system by reconstructing the Fourier series using the G-vectors of the system.</p>
+
+<p>Note that this reconstruction is not representative of the actual dielectric constant profile used in simulations (such a notion is not meaningful). The reconstruction is created using the closed-form Fourier series coefficients of the specified patterning, summed over the terms comprising the G-vector list obtained from lattice truncation. This function exists to provide an intuitive sense for the spatial resolution of a particular G-vector truncation order.</p>
+
+<h3>Usage</h3>
+
+<pre><code>eps_r, eps_i = S:GetEpsilon({x, y, z})
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>x, y, z</dt>
+<dd>(number) The coordinates of the point at which to retrieve the dielectric constant.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<dl>
+<dt>eps_r, eps_i</dt>
+<dd>The real and imaginary parts of the dielectric constant.</dd>
+</dl>
+
+<hr />
+
+<h2><a name="S4_Simulation_OutputLayerPatternDescription" />OutputLayerPatternDescription</h2>
+
+<p>Outputs a list of PostScript commands to render the exact layer pattern description from the specified patterning commands. Assumes letter-sized paper.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:OutputLayerPatternDescription(name, filename)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>name</dt>
+<dd>(string) Name of the layer whose pattern description should be output.</dd>
+<dt>filename</dt>
+<dd>(string, optional) Filename to which the description should be output. If this argument is not provided, standard output is used.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None.</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_OutputLayerPatternRealization" />OutputLayerPatternRealization</h2>
+
+<p>Outputs a Gnuplot format dump of the Fourier series reconstruction of the dielectric constant in the unit cell. Note that the output will appear distorted for non-orthogonal unit cells.</p>
+
+<p>Note that this reconstruction is not representative of the actual dielectric constant profile used in simulations (such a notion is not meaningful). The reconstruction is created using the closed-form Fourier series coefficients of the specified patterning, summed over the terms comprising the G-vector list obtained from lattice truncation. This function exists to provide an intuitive sense for the spatial resolution of a particular G-vector truncation order.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:OutputLayerPatternRealization(name, Nu, Nv, filename)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>name</dt>
+<dd>The name of the layer whose pattern should be output.</dd>
+<dt>Nu, Nv</dt>
+<dd>The number of discretization cells in the first and second lattice basis direction to use. The total number of output points is <code>Nu*Nv</code>.</dd>
+<dt>filename</dt>
+<dd>(string, optional) Filename to which the pattern should be output. If this argument is not provided, standard output is used.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None.</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_OutputStructurePOVRay" />OutputStructurePOVRay</h2>
+
+<p>Outputs a <a href="http://www.povray.org">POV-Ray</a> script that will render one unit cell of the structure in 3D. Materials named <code>air</code> or <code>vacuum</code> (case insensitive) will be completely transparent.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:OutputStructurePOVRay(filename)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>filename</dt>
+<dd>(string, optional) Filename to which the structure should be output. If this argument is not provided, standard output is used.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None.</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_GetNumG" />GetNumG</h2>
+
+<p>Returns the specified number of Fourier series orders to use (number of G-vectors), or, if a solution has been computed, the actual number of G-vectors used.</p>
+
+<h3>Usage</h3>
+
+<pre><code>n = S:GetNumG()
+</code></pre>
+
+<h3>Arguments</h3>
+
+<p>None.</p>
+
+<h3>Return values</h3>
+
+<dl>
+<dt>n</dt>
+<dd>If no solutions have been computed, the upper bound of G-vectors specified. If a solution has been computed, then <code>n</code> is the actual number of G-vectors used.</dd>
+</dl>
+
+<hr />
+
+<h2><a name="S4_Simulation_GetGList" />GetGList</h2>
+
+<p>Returns a table of reciprocal lattice coordinates of the Fourier series orders used.
+The coordinates are in the reciprocal lattice basis, and so they are integers.</p>
+
+<h3>Usage</h3>
+
+<pre><code>G = S:GetGList()
+</code></pre>
+
+<h3>Arguments</h3>
+
+<p>None.</p>
+
+<h3>Return values</h3>
+
+<dl>
+<dt>G</dt>
+<dd>A table of tables of length 2 holding the pairs of integer recprical lattice coordinates.</dd>
+</dl>
+
+<hr />
+
+<h2><a name="S4_Simulation_GetDiffractionOrder" />GetDiffractionOrder</h2>
+
+<p>Returns the index (1-based) of a particular diffraction order.
+The index can be used directly in GetPoyntingFluxByOrder to obtain the diffracted power of a particular order.
+The coordinate arguments are in the reciprocal lattice basis, and so they are integers.
+A particular diffraction order is only a meaningful concept in a uniform (unpatterned) layer, otherwise the diffraction order corresponds to an arbitrary layer eigenfunction index.</p>
+
+<h3>Usage</h3>
+
+<pre><code>i = S:GetDiffractionOrder(m, n)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>m, n</dt>
+<dd>(integer) The diffracted order. These numbers are in the reciprocal lattice basis.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<dl>
+<dt>i</dt>
+<dd>The index of the diffraction order.</dd>
+</dl>
+
+<hr />
+
+<h2><a name="S4_Simulation_GetPoyntingFlux" />GetPoyntingFlux</h2>
+
+<p>Returns the integral of the Poynting flux density over a unit cell surface normal to the z-direction.
+In other words, the z-component of the Poynting flux is returned.</p>
+
+<h3>Usage</h3>
+
+<pre><code>forw_r, back_r, forw_i, back_i = S:GetPoyntingFlux(layer, offset)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>layer</dt>
+<dd>(string) The name of the layer in which the integration surface lies.</dd>
+<dt>offset</dt>
+<dd>(number) The z-offset of the integration surface from the beginning of the layer. This only matters for lossy layers.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<dl>
+<dt>forw_r, forw_i</dt>
+<dd>The real and imaginary parts of the forward component of the complex Poynting vector. Note that the result is not time averaged (no factor of 0.5 multiplied in). The forward component is defined as (E_total<sup>*</sup> x H_forw + H_total<sup>*</sup> x E_forw) / 2, where E_forw and H_forw are the fields reconstructed from only the forward propagating waveguide modes of the layer.</dd>
+<dt>back_r, back_i</dt>
+<dd>The real and imaginary parts of the backward component of the complex Poynting vector. Note that the result is not time averaged (no factor of 0.5 multiplied in). An analogous definition of the backward component of the Poynting vector follows from above.</dd>
+</dl>
+
+<hr />
+
+<h2><a name="S4_Simulation_GetPoyntingFluxByOrder" />GetPoyntingFluxByOrder</h2>
+
+<p>Returns the integral of the Poynting flux density over a unit cell surface normal to the z-direction for each Fourier series order.
+In other words, the z-component of the Poynting flux for each order is returned.</p>
+
+<h3>Usage</h3>
+
+<pre><code>P = S:GetPoyntingFluxByOrder(layer, offset)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>layer</dt>
+<dd>(string) The name of the layer in which the integration surface lies.</dd>
+<dt>offset</dt>
+<dd>(number) The z-offset of the integration surface from the beginning of the layer. This only matters for lossy layers.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<dl>
+<dt>P</dt>
+<dd>A table with length equal to the number of Fourier series orders used.
+Each entry of the table is a table of length 4, whose values are: forw_r, back_r, forw_i, back_i.
+These four quantities are described in the section for <code>GetPoyntingFlux</code>.</dd>
+</dl>
+
+<hr />
+
+<h2><a name="S4_Simulation_GetStressTensorIntegral" />GetStressTensorIntegral</h2>
+
+<p>Returns the integral of the electromagnetic stress tensor over a unit cell surface normal to the z-direction.</p>
+
+<h3>Usage</h3>
+
+<pre><code>Txr, Tyr, Tzr, Txi, Tyi, Tzi = S:GetStressTensorIntegral(layer, offset)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>layer</dt>
+<dd>(string) The name of the layer in which the integration surface lies.</dd>
+<dt>offset</dt>
+<dd>(number) The z-offset of the integration surface from the beginning of the layer.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<dl>
+<dt>Txr, Txi</dt>
+<dd>The real and imaginary parts of the x-component of the stress tensor integrated over the specified surface, assuming a unit normal vector in the +z direction. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+<dt>Tyr, Tyi, Tzr, Tzi</dt>
+<dd>Analogous to above.</dd>
+</dl>
+
+<hr />
+
+<h2><a name="S4_Simulation_GetLayerEnergyDensityIntegral" />GetLayerEnergyDensityIntegral</h2>
+
+<p>Returns the volume integral of the electromagnetic energy density (epsilon*|E|<sup>2</sup> + |H|<sup>2)</sup> over a unit cell throughout the entire thickness of a layer.</p>
+
+<h3>Usage</h3>
+
+<pre><code>U = S:GetLayerEnergyDensityIntegral(layer)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>layer</dt>
+<dd>(string) The name of the layer in which to integrate over.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<dl>
+<dt>U</dt>
+<dd>The integral of the energy density throughout the volume of the layer&rsquo;s unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+</dl>
+
+<hr />
+
+<h2><a name="S4_Simulation_GetLayerElectricEnergyDensityIntegral" />GetLayerElectricEnergyDensityIntegral</h2>
+
+<p>Returns the volume integral of the electric energy density (epsilon*|E|<sup>2)</sup> over a unit cell throughout the entire thickness of a layer.</p>
+
+<h3>Usage</h3>
+
+<pre><code>U = S:GetLayerElectricEnergyDensityIntegral(layer)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>layer</dt>
+<dd>(string) The name of the layer in which to integrate over.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<dl>
+<dt>U</dt>
+<dd>The integral of the electric energy density throughout the volume of the layer&rsquo;s unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+</dl>
+
+<hr />
+
+<h2><a name="S4_Simulation_GetLayerMagneticEnergyDensityIntegral" />GetLayerMagneticEnergyDensityIntegral</h2>
+
+<p>Returns the volume integral of the magnetic energy density (|H|<sup>2)</sup> over a unit cell throughout the entire thickness of a layer.</p>
+
+<h3>Usage</h3>
+
+<pre><code>U = S:GetLayerMagneticEnergyDensityIntegral(layer)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>layer</dt>
+<dd>(string) The name of the layer in which to integrate over.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<dl>
+<dt>U</dt>
+<dd>The integral of the magnetic energy density throughout the volume of the layer&rsquo;s unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+</dl>
+
+<hr />
+
+<h2><a name="S4_Simulation_GetLayerElectricFieldIntensityIntegral" />GetLayerElectricFieldIntensityIntegral</h2>
+
+<p>Returns the volume integral of the squared electric field intensity (|E|<sup>2)</sup> over a unit cell throughout the entire thickness of a layer.</p>
+
+<h3>Usage</h3>
+
+<pre><code>U = S:GetLayerElectricFieldIntensityIntegral(layer)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>layer</dt>
+<dd>(string) The name of the layer in which to integrate over.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<dl>
+<dt>U</dt>
+<dd>The integral of the square electric field intensity throughout the volume of the layer&rsquo;s unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+</dl>
+
+<hr />
+
+<h2><a name="S4_Simulation_GetEField" />GetEField</h2>
+
+<p>Returns the electric field at a particular point within the structure.</p>
+
+<h3>Usage</h3>
+
+<pre><code>Exr, Eyr, Ezr, Exi, Eyi, Ezi = S:GetEField({x, y, z})
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>x, y, z</dt>
+<dd>(number) The coordinates of the point at which to obtain the field.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<dl>
+<dt>Exr, Exi</dt>
+<dd>The real and imaginary parts of the complex electric field at the specified point. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+<dt>Eyr, Eyi, Ezr, Ezi</dt>
+<dd>Analogous to above.</dd>
+</dl>
+
+<hr />
+
+<h2><a name="S4_Simulation_GetHField" />GetHField</h2>
+
+<p>Returns the magnetic field at a particular point within the structure.</p>
+
+<h3>Usage</h3>
+
+<pre><code>Hxr, Hyr, Hzr, Hxi, Hyi, Hzi = S:GetHField({x, y, z})
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>x, y, z</dt>
+<dd>(number) The coordinates of the point at which to obtain the field.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<dl>
+<dt>Hxr, Hxi</dt>
+<dd>The real and imaginary parts of the complex magnetic field at the specified point. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+<dt>Hyr, Hyi, Hzr, Hzi</dt>
+<dd>Analogous to above.</dd>
+</dl>
+
+<hr />
+
+<h2><a name="S4_Simulation_GetFields" />GetFields</h2>
+
+<p>Returns the electric and magnetic field at a particular point within the structure.
+Note that it is more efficient to call this function when both fields are needed.</p>
+
+<h3>Usage</h3>
+
+<pre><code>Exr, Eyr, Ezr, Hxr, Hyr, Hzr, Exi, Eyi, Ezi, Hxi, Hyi, Hzi = S:GetFields({x, y, z})
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>x, y, z</dt>
+<dd>(number) The coordinates of the point at which to obtain the field.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<dl>
+<dt>Exr, Exi</dt>
+<dd>The real and imaginary parts of the complex electric field at the specified point. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+<dt>Eyr, Eyi, Ezr, Ezi, Hxr, Hxi, Hyr, Hyi, Hzr, Hzi</dt>
+<dd>Analogous to above.</dd>
+</dl>
+
+<hr />
+
+<h2><a name="S4_Simulation_GetSMatrixDeterminant" />GetSMatrixDeterminant</h2>
+
+<p>Returns the determinant of the S-matrix (scattering matrix) of the entire structure.
+The determinant is an analytic function in the complex frequency plane and has poles at the complex modal frequencies of the system.</p>
+
+<h3>Usage</h3>
+
+<pre><code>mantr, manti, base, expo = S:GetSMatrixDeterminant()
+</code></pre>
+
+<h3>Arguments</h3>
+
+<p>None.</p>
+
+<h3>Return values</h3>
+
+<dl>
+<dt>mantr, manti</dt>
+<dd>The determinant is typically causes overflow or underflow, so it is returned as a mantissa multiplying a base raised to an exponent. These values are the real and imaginary parts of the mantissa. The value of the determinant is (mantr+i<em>manti)</em>base<sup>expo.</sup></dd>
+<dt>base</dt>
+<dd>The base of the determinant representation (see above).</dd>
+<dt>expo</dt>
+<dd>The exponent of the determinant representation (see above).</dd>
+</dl>
+
+<hr />
+
+<h2><a name="S4_Simulation_UseLanczosSmoothing" />UseLanczosSmoothing</h2>
+
+<p>Enables or disables smoothing of the Fourier series representations of the layer dielectric constants using the Lanczos sigma factor (box filtering). This reduces the Gibbs phenomenon ringing in the real space reconstruction.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:UseLanczosSmoothing(use)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>use</dt>
+<dd>(boolean, optional) Indicates whether to enable smoothing. If this argument is not provided, smoothing is enabled.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None.</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_UseDiscretizedEpsilon" />UseDiscretizedEpsilon</h2>
+
+<p>Enables or disables the use of discretization in generating the Fourier coefficients of the in-plane epsilon profiles, instead of using values from closed-form equations. When enabled, the coefficients are obtained by FFT.</p>
+
+<p>See the <a href="formulations.html">list of formulations</a> for details.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:UseDiscretizedEpsilon(use)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>use</dt>
+<dd>(boolean, optional) Indicates whether to use a discretized epsilon. If this argument is not provided, use of a discretized epsilon is enabled.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None.</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_UsePolarizationDecomposition" />UsePolarizationDecomposition</h2>
+
+<p>Enables or disables the use of proper in-plane Fourier factorization rules by decomposing fields into a polarization basis which conforms to the material boundaries.
+The polarization basis field is generated automatically by computing a quasi-harmonic vector field everywhere tangent to the layer pattern boundaries.
+This option is not guaranteed to work in the presence of tensor dielectric constants.</p>
+
+<p>Enabling this feature typically improves convergence with respect to the number of G-vectors. See the <a href="formulations.html">list of formulations</a> for details.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:UsePolarizationDecomposition(use)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>use</dt>
+<dd>(boolean, optional) Indicates whether to enable polarization decomposition. If this argument is not provided, polarization decomposition is enabled.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None.</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_UseSubpixelSmoothing" />UseSubpixelSmoothing</h2>
+
+<p>Enables or disables the use of second-order accurate epsilon averaging rules within a pixel.
+The average epsilon within a pixel is computed using the fill factor of each material and the interface direction.</p>
+
+<p>Enabling this feature may improve convergence with respect to the number of G-vectors. See the <a href="formulations.html">list of formulations</a> for details.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:UseSubpixelSmoothing(use)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>use</dt>
+<dd>(boolean, optional) Indicates whether to enable subpixel smoothing. If this argument is not provided, subpixel smoothing is enabled.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None.</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_UseJonesVectorBasis" />UseJonesVectorBasis</h2>
+
+<p>This option only has an effect with <code>EnablePolarizationDecomposition</code>.
+When enabled, a Jones vector basis field is used instead of a conformal harmonic field.</p>
+
+<p>Enabling this feature may improve convergence with respect to the number of G-vectors. See the <a href="formulations.html">list of formulations</a> for details.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:UseJonesVectorBasis(use)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>use</dt>
+<dd>(boolean, optional) Indicates whether to use a Jones vector basis. If this argument is not provided, use of a Jones vector basis is enabled.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None.</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_UseNormalVectorBasis" />UseNormalVectorBasis</h2>
+
+<p>This option only has an effect with <code>EnablePolarizationDecomposition</code>.
+When enabled, the resulting vector field is normalized. Where the vector field is zero, the unit vector in the x-direction is used.</p>
+
+<p>Enabling this feature may improve convergence with respect to the number of G-vectors. See the <a href="formulations.html">list of formulations</a> for details.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:UseNormalVectorBasis(use)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>use</dt>
+<dd>(boolean, optional) Indicates whether to use a normalized vector basis. If this argument is not provided, use of a normalized vector basis is enabled.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None.</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_SetResolution" />SetResolution</h2>
+
+<p>This option only has an effect with <code>UseDiscretizedEpsilon</code> or <code>UseSubpixelSmoothing</code>.
+This function sets the resolution of the FFT grid and vector field generated by <code>EnablePolarizationDecomposition</code>.
+The resolution is multiplied by the largest G-vector extent (integer lattice coordinate), and should be at least 2 to satisfy the Nyquist limit. It is best to use a number with small integer factors in order for the FFT to be computed efficiently. The size of each dimension of the FFT is obviously proportional to this value. The default is 8.</p>
+
+<p>See the <a href="formulations.html">list of formulations</a> for details.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:SetResolution(n)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>n</dt>
+<dd>The oversampling factor. Must be at least 2.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None.</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_SetBasisFieldDumpPrefix" />SetBasisFieldDumpPrefix</h2>
+
+<p>Setting this option to a filename prefix causes the vector field used by the polarization decomposition to be dumped to files (one for each layer) in Gnuplot format.
+The files are named by concatenating the provided prefix string with each layer&rsquo;s name.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:SetBasisFieldDumpPrefix(prefix)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>prefix</dt>
+<dd>(string, optional) When provided, the filename prefix is set to the given string. This can be an empty string. If this argument is not provided, the basis field dump is disabled.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None.</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_SetLatticeTruncation" />SetLatticeTruncation</h2>
+
+<p>Sets the type of lattice truncation to use when selecting G-vectors.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:SetLatticeTruncation(trunc)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>trunc</dt>
+<dd>(string) Can be one of the following values:
+
+<dl>
+<dt>Circular</dt>
+<dd>This is the default. The G-vectors are selected to have shortest length (by l2 norm).</dd>
+<dt>Parallelogramic</dt>
+<dd>Chooses the G-vectors within a parallelogram aligned with the reciprocal lattice basis. The number chosen will always be a perfect square of an odd number. This is equivalent to selecting the shortested G-vectors in the l-infinity norm.</dd>
+</dl></dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None.</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_SetVerbosity" />SetVerbosity</h2>
+
+<p>Sets the type of lattice truncation to use when selecting G-vectors.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:SetVerbosity(level)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>level</dt>
+<dd>(integer, optional) The larger this value, the more status output is generated. Valid values are in the range of 0-9, inclusive. A value of 0 disables all status output.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None.</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_UseLessMemory" />UseLessMemory</h2>
+
+<p>Setting this option will prevent storage of certain intermediate results. This will save approximately 30% memory for non-trivial layers.
+The drawback is slower computation of any output quantities that require solutions.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:UseLessMemory(use)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>use</dt>
+<dd>(boolean, optional) Indicates whether to use less memory. If this argument is not provided, lower memory usage is enabled.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None.</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_Clone" />Clone</h2>
+
+<p>Duplicates an existing Simulation object, copying all materials, layers, and excitation information.
+No partial solution information is copied.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S2 = S:Clone()
+</code></pre>
+
+<h3>Arguments</h3>
+
+<p>None.</p>
+
+<h3>Return values</h3>
+
+<p>A copy of the Simulation object.</p>
+
+<hr />
+
+<h1><a name="SpectrumSampler" />SpectrumSampler object</h1>
+
+<p>The SpectrumSampler object provides a convenient way to sample spectral information of a system.
+For example, it is used to resolve sharp peaks in transmission spectra.
+Interaction with a SpectrumSampler object is by contract; a new frequency is retrieved from it by which simulation results at that frequency are computed, and then the results are submitted.</p>
+
+<p>The frequencies given out by a SpectrumSampler object aim to produce a visually pleasing plot of the resulting spectrum by limiting the maximum normalized bend angles between adjacent line segments of the plot.</p>
+
+<p>A typical usage is shown below:</p>
+
+<pre><code>function f(x) -- example function
+    return math.sin(x)
+end
+sampler = S4.NewSpectrumSampler(0.1, 0.9, -- start and end frequencies
+    { -- table of options
+    InitialNumPoints = 33,
+    RangeThreshold = 0.001,
+    MaxBend = math.cos(math.rad(10)),
+    MinimumSpacing = 1e-6
+    })
+while not sampler:IsDone() do
+    x = sampler:GetFrequency()
+    y = f(x) -- compute the desired result
+    sampler:SubmitResult(y)
+end
+
+spectrum = sampler:GetSpectrum()
+for i,xy in ipairs(spectrum) do
+    print(xy[1],xy[2])
+end
+</code></pre>
+
+<hr />
+
+<h2><a name="S4_SpectrumSampler_IsDone" />IsDone</h2>
+
+<p>Queries whether the SpectrumSampler has completed sampling.
+When sampling has been completed, no further frequencies should be requested from the SpectrumSampler object, and no further results should be submitted.</p>
+
+<h3>Usage</h3>
+
+<pre><code>done = sampler:IsDone()
+</code></pre>
+
+<h3>Arguments</h3>
+
+<p>None.</p>
+
+<h3>Return values</h3>
+
+<p>A boolean value indicating whether sampling has completed.</p>
+
+<hr />
+
+<h2><a name="S4_SpectrumSampler_GetFrequency" />GetFrequency</h2>
+
+<p>Retrieves the next frequency at which to sample the spectrum. This function should only be used if the SpectrumSampler object was created with <code>Parallize</code> set to false (the default).</p>
+
+<h3>Usage</h3>
+
+<pre><code>freq = sampler:GetFrequency()
+</code></pre>
+
+<h3>Arguments</h3>
+
+<p>None.</p>
+
+<h3>Return values</h3>
+
+<p>The (numeric) frequency at which the next result should be computed and submitted.</p>
+
+<hr />
+
+<h2><a name="S4_SpectrumSampler_GetFrequencies" />GetFrequencies</h2>
+
+<p>Retrieves the next set of frequencies at which to sample the spectrum. This function should only be used if the SpectrumSampler object was created with <code>Parallize</code> set to true.</p>
+
+<h3>Usage</h3>
+
+<pre><code>freqlist = sampler:GetFrequency()
+</code></pre>
+
+<h3>Arguments</h3>
+
+<p>None.</p>
+
+<h3>Return values</h3>
+
+<p>A list of (numeric) frequencies at which the next results should be computed and submitted.</p>
+
+<hr />
+
+<h2><a name="S4_SpectrumSampler_SubmitResult" />SubmitResult</h2>
+
+<p>Submits a result to the SpectrumSampler object. The result is assumed to be at the frequency of the last requested frequency.  This function should only be used if the SpectrumSampler object was created with <code>Parallize</code> set to false (the default).</p>
+
+<h3>Usage</h3>
+
+<pre><code>done = sampler:SubmitResult(result)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>result</dt>
+<dd>(number) The result to submit. The result may be any value (for example, the transmission through a structure).</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>A boolean value indicating whether sampling has completed.</p>
+
+<hr />
+
+<h2><a name="S4_SpectrumSampler_SubmitResults" />SubmitResults</h2>
+
+<p>Submits a set of results to the SpectrumSampler object. The results are assumed to be at the frequencies of the last requested frequencies. This function should only be used if the SpectrumSampler object was created with <code>Parallize</code> set to true.</p>
+
+<h3>Usage</h3>
+
+<pre><code>done = sampler:SubmitResults(result_list)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>result_list</dt>
+<dd>(table) The list of results to submit. The length of this table must match the number of frequencies obtained from the previous call to <code>GetFrequencies</code>.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>A boolean value indicating whether sampling has completed.</p>
+
+<hr />
+
+<h2><a name="S4_SpectrumSampler_GetSpectrum" />GetSpectrum</h2>
+
+<p>Retrieves a list of all sampled frequencies and submitted results.
+This function should only be used when the SpectrumSampler object indicates that sampling is complete.</p>
+
+<h3>Usage</h3>
+
+<pre><code>valarray = sampler:GetSpectrum()
+</code></pre>
+
+<h3>Arguments</h3>
+
+<p>None.</p>
+
+<h3>Return values</h3>
+
+<p>An array (with length equal to the number of samples) of pairs (arrays of length 2) containing the sampled frequency and corresponding submitted result.</p>
+
+<hr />
+
+<h1><a name="Interpolator" />Interpolator object</h1>
+
+<p>The Interpolator object provides a tool to perform various types of interpolation on data.
+The most common use is to interpolate between experimentally determined values for dieletric constants.
+A typical usage is shown below.</p>
+
+<pre><code>interpolator = S4.NewInterpolator('linear', {
+    {3.0, {14.2, 32}}, -- x, and list of y values
+    {5.4, {4.6, 10}},
+    {5.7, {42.7, 20}},
+    {8.0, {35.2, 40}}
+    })
+
+for x = 0, 10, 0.1 do
+    y1, y2 = interpolator:Get(x)
+    print(x, y1, y2)
+end
+</code></pre>
+
+<p>At each x (abscissa) value, any number of y (ordinate) values can be specified for interpolation.</p>
+
+<hr />
+
+<h2><a name="S4_Interpolator_Get" />Get</h2>
+
+<p>Retrieves the interpolated ordinates for a given abscissa value.</p>
+
+<h3>Usage</h3>
+
+<pre><code>y1, y2, ... = interpolator:Get(x)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>x</dt>
+<dd>(number) The abscissa value at which to interpolate.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>A list of interpolated ordinate values.</p>
+</body>
+</html>

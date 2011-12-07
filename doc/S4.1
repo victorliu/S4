@@ -1,0 +1,82 @@
+.\" Copyright (C) 2011, Stanford University
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+.\"
+.TH S4 1 "November 9, 2011" "S4" "Stanford Stratified Structure Solver"
+.SH NAME
+S4 \- Maxwell solver for layered periodic structures
+.SH SYNOPSIS
+.B S4
+[\fIOPTIONS\fR]... [\fILUAFILE\fR]...
+.SH DESCRIPTION
+.PP
+The Stanford Stratified Structure Solver (S4) is a free program to solve
+Maxwell's equations in layered periodic structures. It can be used
+to analyze diffraction gratings, photonic crystals, and many other
+types of problems where the geometry is composed of layers which are
+periodic in two directions and constant in the third. Among
+its capabilities are computation of reflection and transmission amplitudes,
+the electromagnetic field at arbitrary locations, optical forces, and
+energy densities. Its interface is an extension of the Lua scripting
+language with flexible output options.
+.PP
+More information on S4, including a detailed manual, can be found
+online at the S4 home page:
+.I http://fan.group.stanford.edu/S4/
+.PP
+A typical invocation of S4 looks like:
+.PP
+.Vb 1
+\&    S4 foo.lua >& foo.out
+.Ve
+.PP
+This causes S4 to process the input file foo.lua and redirect its output
+to foo.out.
+.PP
+You can also use S4 in an interactive mode, in which you can type in
+S4 commands (in Lua) and immediately see their results.
+Interactive mode is entered when you invoke
+.I S4
+with no input files.
+.PP
+Another useful feature is that you can alter parameters in your input files
+from the command line, by passing arguments to the script. See the \fB\-a\fR
+option below.
+.PP
+Multiple input files are executed in sequence, in
+the order they are specified on the command line.
+.SH OPTIONS
+.TP
+\fB\-a arg\fR
+Pass an argument to the input file. The string
+.I arg
+is available to the script via the variable S4.arg. This string may be an
+executable Lua expression which sets multiple variables. See the online manual
+for details about how to use S4.arg.
+.TP
+\fB\-h\fR
+Display help on the command-line options and usage.
+.TP
+\fB\-t num-threads\fR
+Sets the maximum number of threads to use, if POSIX threads are enabled.
+By default, the number of threads is set to the number of processors on the host machine.
+.TP
+\fB\-v\fR
+Print the version number and copyright info for S4.
+.SH BUGS
+Send bug reports to Victor Liu, vkl@stanford.edu.
+.SH AUTHORS
+Written by Victor Liu.  Copyright (c) 2011 by
+Stanford University.

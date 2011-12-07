@@ -1,0 +1,50 @@
+#!/usr/bin/perl
+
+my $tol = 1e-16;
+
+sub numeric_equals{
+	$v1 = shift;
+	$v2 = shift;
+	return abs($v1-$v2) < $tol;
+}
+
+if($#ARGV < 1){ exit 1; }
+
+my $file1 = $ARGV[0];
+my $file2 = $ARGV[1];
+if($#ARGV > 1){ $tol = $ARGV[2]; }
+
+open(FP1, "<$file1");
+open(FP2, "<$file2");
+
+my $lineno1 = 0;
+my $lineno2 = 0;
+my $has_diff = 0;
+while(my $line1 = <FP1>){ ++$lineno1;
+	if($line1 =~ /^\s*#/){ next; }
+	do{
+		$line2 = <FP2>;
+		 ++$lineno2;
+	}while($line2 =~ /^\s*#/);
+	chomp($line1);
+	chomp($line2);
+	my @a1 = split /\s/, $line1;
+	my @a2 = split /\s/, $line2;
+	if($#a1 != $#a2){
+		print("Different number of values at $file1:$lineno1 ($file2:$lineno2).\n");
+		$has_diff = 1;
+	}else{
+		for(my $i=0; $i <= $#a1; ++$i){
+			if(!numeric_equals($a1[$i], $a2[$i])){
+				my $ip1 = $i+1;
+				print("$file1:$lineno1 ($file2:$lineno2): $a1[$i] $a2[$i].\n");
+				$has_diff = 1;
+			}
+		}
+	}
+}
+
+close(FP1);
+close(FP2);
+
+exit($has_diff);
