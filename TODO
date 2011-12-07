@@ -1,5 +1,5 @@
-* Add SetLayerPatternMap:
-	S:SetLayerPatternMap{
+* Add SetLayerPatternBitmap:
+	S:SetLayerPatternBitmap{
 		Layer = 'whichlayer',
 		Bitmap = 'bitmap.bmp',
 		Format = 'BMP',
@@ -14,14 +14,23 @@
 			}
 		} -- up to n linear combinations depending on file format
 	}
+  * Separate function SetLayerPatternMap for table of values (must also support tensors)
+  * Determine basic text format
 
 * Add SetExcitationDipole
+  * Test, update documentation
 
 * Special case Hermitian matrices; keep track of Hermiticity of material epsilons.
+  * Add zheev to RNP
+  * Keep track of Hermiticity
+    * Modification of materials could trigger a re-check
+    * Certain formulations spoil this.
+  * Maybe easier to add flag for manual specification of Hermiticity
 
 * Add Scalapack support
 
 * Alias GetPoyntingFlux to GetPowerFlux, etc.
+  * Update documentation
 
 * Debug GetLayerEnergyDensityIntegral, etc. for z-components
 
@@ -30,3 +39,6 @@
 * Use FFT to speed up field reconstruction.
 
 * Optimize repeated solution in different layers to use known forward/backward sets and SolveInterior.
+  * Solution cache needs to keep track of forward and backward amplitudes separately.
+
+* Test subpixel convergence with increasing grid resolution.
