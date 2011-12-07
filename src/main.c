@@ -1287,11 +1287,84 @@ static int S4L_Simulation_SetLayerPatternPolygon(lua_State *L){
 //   1 Simulation
 //   2 layer name string
 //   3 k (numeric table of length 2)
-//   4 dipole moment (numeric table of length 3)
-//   5 amplitude and phase (numeric table of length 2; phase in degrees)
+//   4 position in plane (numeric table of length 2)
+//   5 dipole moment (numeric table of length 3)
+//   6 amplitude and phase (numeric table of length 2; phase in degrees)
 static int S4L_Simulation_SetExcitationDipole(lua_State *L){
 	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	const char *layer;
+	int j;
+	double k[2], pos[2], moment[6], ampphase[2];
 	luaL_argcheck(L, S != NULL, 1, "SetExcitationDipole: 'Simulation' object expected.");
+	layer = luaL_checkstring(L, 2);
+	luaL_argcheck(L, lua_istable(L, 3), 3, "SetExcitationDipole: k-vector expected.");
+	luaL_argcheck(L, lua_istable(L, 4), 4, "SetExcitationDipole: position expected.");
+	luaL_argcheck(L, lua_istable(L, 5), 5, "SetExcitationDipole: dipole moment expected.");
+	luaL_argcheck(L, lua_isnumber(L, 6) || lua_istable(L, 6), 6, "SetExcitationDipole: amplitude/phase expected.");
+	
+	for(j = 0; j < 2; ++j){
+		lua_pushinteger(L, 1+j);
+		lua_gettable(L, 3);
+		if(!lua_isnumber(L, -1)){
+			S4L_error(L, "SetExcitationDipole: k-vector must be numeric.");
+			return 0;
+		}else{
+			k[j] = (double)lua_tonumber(L, -1);
+		}
+		lua_pop(L, 1);
+	}
+	for(j = 0; j < 2; ++j){
+		lua_pushinteger(L, 1+j);
+		lua_gettable(L, 4);
+		if(!lua_isnumber(L, -1)){
+			S4L_error(L, "SetExcitationDipole: position must be numeric.");
+			return 0;
+		}else{
+			pos[j] = (double)lua_tonumber(L, -1);
+		}
+		lua_pop(L, 1);
+	}
+	for(j = 0; j < 3; ++j){
+		lua_pushinteger(L, 1+j);
+		lua_gettable(L, 5);
+		if(!lua_isnumber(L, -1)){
+			S4L_error(L, "SetExcitationDipole: dipole moment must be numeric.");
+			return 0;
+		}else{
+			moment[j] = (double)lua_tonumber(L, -1);
+		}
+		lua_pop(L, 1);
+	}
+	if(lua_isnumber(L, 6)){
+		ampphase[0] = (double)lua_tonumber(L, 6);
+		ampphase[1] = 0;
+	}else{
+		for(j = 0; j < 2; ++j){
+			lua_pushinteger(L, 1+j);
+			lua_gettable(L, 6);
+			if(!lua_isnumber(L, -1)){
+				S4L_error(L, "SetExcitationDipole: amplitude/phase must be numeric.");
+				return 0;
+			}else{
+				ampphase[j] = (double)lua_tonumber(L, -1);
+			}
+			lua_pop(L, 1);
+		}
+	}
+
+	double momentlen = hypot(hypot(moment[0], moment[1]), moment[2]);
+	moment[4] = (moment[2] / momentlen) * ampphase[0];
+	moment[5] = (moment[2] / momentlen) * ampphase[1];
+	moment[2] = (moment[1] / momentlen) * ampphase[0];
+	moment[3] = (moment[1] / momentlen) * ampphase[1];
+	moment[0] = (moment[0] / momentlen) * ampphase[0];
+	moment[1] = (moment[0] / momentlen) * ampphase[1];
+	int ret = Simulation_MakeExcitationDipole(S, k, layer, pos, moment);
+	if(0 != ret){
+		HandleSolutionErrorCode(L, "SetExcitationDipole", ret);
+		return 0;
+	}
+	
 	return 0;
 }
 
@@ -1996,13 +2069,15 @@ static void S4_lua_init(lua_State *L){
 		{"SetLayerPatternRectangle", S4L_Simulation_SetLayerPatternRectangle},
 		{"SetLayerPatternPolygon", S4L_Simulation_SetLayerPatternPolygon},
 		{"SetExcitationPlanewave", S4L_Simulation_SetExcitationPlanewave},
-		{"SetExcitationDipole", S4L_Simulation_SetExcitationDipole},
+		{"SetExcitationDipoleK", S4L_Simulation_SetExcitationDipole},
 		{"SetFrequency", S4L_Simulation_SetFrequency},
 		// Outputs requiring solutions
 		{"GetGList", S4L_Simulation_GetGList},
 		{"GetDiffractionOrder", S4L_Simulation_GetDiffractionOrder},
 		{"GetPoyntingFlux", S4L_Simulation_GetPoyntingFlux},
 		{"GetPoyntingFluxByOrder", S4L_Simulation_GetPoyntingFluxByOrder},
+		{"GetPowerFlux", S4L_Simulation_GetPoyntingFlux}, // alias
+		{"GetPowerFluxByOrder", S4L_Simulation_GetPoyntingFluxByOrder}, // alias
 		{"GetStressTensorIntegral", S4L_Simulation_GetStressTensorIntegral},
 		{"GetLayerEnergyDensityIntegral", S4L_Simulation_GetLayerEnergyDensityIntegral},
 		{"GetLayerElectricEnergyDensityIntegral", S4L_Simulation_GetLayerElectricEnergyDensityIntegral},
