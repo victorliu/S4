@@ -1185,16 +1185,16 @@ void GetLayerIntegral(
 	}
 	if('H' == which || 'U' == which){
 		for(size_t i = 0; i < n; ++i){
-			Q[i+i*n4] -= omega_2*kx[i]*kx[i];
+			Q[i+i*n4] += omega_2*kx[i]*kx[i];
 		}
 		for(size_t i = 0; i < n; ++i){
-			Q[i+n+i*n4] -= omega_2*ky[i]*kx[i];
+			Q[i+n+i*n4] += omega_2*ky[i]*kx[i];
 		}
 		for(size_t i = 0; i < n; ++i){
-			Q[i+(i+n)*n4] -= omega_2*kx[i]*ky[i];
+			Q[i+(i+n)*n4] += omega_2*kx[i]*ky[i];
 		}
 		for(size_t i = 0; i < n; ++i){
-			Q[i+n+(i+n)*n4] -= omega_2*ky[i]*ky[i];
+			Q[i+n+(i+n)*n4] += omega_2*ky[i]*ky[i];
 		}
 	}
 	// At this point, top block of CsC is done
