@@ -1031,42 +1031,70 @@ int pattern_discretize_cell(
 	int k;
 	const REAL det = L[0]*L[3] - L[1]*L[2];
 	
+	const int dim = (0 == L[1] && 0 == L[2] && 0 == L[3]) ? 1 : 2;
+	
 	if(nshapes < 0){ return -1; }
 	if(nshapes != 0 && NULL == shapes){ return -2; }
 	if(NULL == parent){ return -3; }
-	if(0 == det){ return -4; }
+	if(2 == dim && 0 == det){ return -4; }
 	if(nu < 1){ return -5; }
 	if(nv < 1){ return -6; }
 	if(iu < 0 || iu >= nu){ return -7; }
 	if(iv < 0 || iv >= nv){ return -8; }
 	if(NULL == value){ return -9; }
 	
-	const REAL duv[4] = {
-		L[0]/(REAL)nu, L[1]/(REAL)nu,
-		L[2]/(REAL)nv, L[3]/(REAL)nv
-		};
-	const REAL inv_pixel_area = 1./(duv[0]*duv[3]-duv[1]*duv[2]);
-	const REAL nuv[2] = {
-		(REAL)iu/(REAL)nu - 0.5,
-		(REAL)iv/(REAL)nv - 0.5
-	};
-	const REAL p0[2] = { // bottom left of pixel
-		L[0]*nuv[0] + L[2]*nuv[1],
-		L[1]*nuv[0] + L[3]*nuv[1]
-	};
-
 	for(k = 0; k <= nshapes; ++k){
 		value[k] = 0;
 	}
 	value[0] = 1;
-	for(k = 0; k < nshapes; ++k){
-		REAL a = shape_get_intersection_area_quad(&shapes[k], p0, duv) * inv_pixel_area;
-		if(a > 0){
-			value[k+1] += a;
-			value[parent[k]+1] -= a;
+	
+	if(1 == dim){
+		const REAL du = L[0] / (REAL)nu;
+		const REAL p0 = L[0]*((REAL)iu/(REAL)nu - 0.5); // left edge
+		for(k = 0; k < nshapes; ++k){
+			REAL a = 0;
+			const shape *s = &shapes[k];
+			if(RECTANGLE != s->type){ return -2; }
+			const REAL l = p0 - s->center[0];
+			const REAL h = s->vtab.rectangle.halfwidth[0];
+			// Rectangle centered at origin with halfwidth h
+			// Pixel left edge at l
+			if(l+du <= -h || l >= h){ continue; } // pixel outside
+			if(l >= -h && l+du <= h){ // pixel entirely contained
+				a = 1.;
+			}else if(l+du >= h){ // pixel intersects right edge of rect
+				a = (h-l) / du;
+			}else{ // pixel intersects right edge of rect
+				a = 1. + (h+l) / du;
+			}
+			if(a > 0){
+				value[k+1] += a;
+				value[parent[k]+1] -= a;
+			}
+		}
+	}else{
+		const REAL duv[4] = {
+			L[0]/(REAL)nu, L[1]/(REAL)nu,
+			L[2]/(REAL)nv, L[3]/(REAL)nv
+			};
+		const REAL inv_pixel_area = 1./(duv[0]*duv[3]-duv[1]*duv[2]);
+		const REAL nuv[2] = {
+			(REAL)iu/(REAL)nu - 0.5,
+			(REAL)iv/(REAL)nv - 0.5
+		};
+		const REAL p0[2] = { // bottom left of pixel
+			L[0]*nuv[0] + L[2]*nuv[1],
+			L[1]*nuv[0] + L[3]*nuv[1]
+		};
+
+		for(k = 0; k < nshapes; ++k){
+			REAL a = shape_get_intersection_area_quad(&shapes[k], p0, duv) * inv_pixel_area;
+			if(a > 0){
+				value[k+1] += a;
+				value[parent[k]+1] -= a;
+			}
 		}
 	}
-	
 	/*
 	// Dumb sampling
 	for(int i = 0; i < nx; ++i){
