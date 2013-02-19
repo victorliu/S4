@@ -45,7 +45,6 @@ int FMMGetEpsilon_PolBasisVL(const Simulation *S, const Layer *L, const int n, s
 		mp1 = GetLanczosSmoothingOrder(S);
 		S4_TRACE("I   Lanczos smoothing order = %f\n", mp1);
 	}
-	
 	if(Epsilon_inv){} // prevent unused parameter warning
 	
 	const int n2 = 2*n;
@@ -96,12 +95,18 @@ int FMMGetEpsilon_PolBasisVL(const Simulation *S, const Layer *L, const int n, s
 		// Determine size of the vector field grid
 		int ngrid[2] = {1,1};
 		for(int i = 0; i < 2; ++i){ // choose grid size
+			int allzero = 1;
 			for(int j = 0; j < n; ++j){
 				if(abs(G[2*j+i]) > ngrid[i]){ ngrid[i] = abs(G[2*j+i]); }
+				if(0 != G[2*j+i]){ allzero = 0; }
 			}
-			if(ngrid[i] < 1){ ngrid[i] = 1; }
-			ngrid[i] *= S->options.resolution;
-			ngrid[i] = fft_next_fast_size(ngrid[i]);
+			if(allzero){
+				ngrid[i] = 1;
+			}else{
+				if(ngrid[i] < 1){ ngrid[i] = 1; }
+				ngrid[i] *= S->options.resolution;
+				ngrid[i] = fft_next_fast_size(ngrid[i]);
+			}
 		}
 		const int ng2 = ngrid[0]*ngrid[1];
 		
@@ -237,14 +242,13 @@ int FMMGetEpsilon_PolBasisVL(const Simulation *S, const Layer *L, const int n, s
 				dG[0] * S->Lk[0] + dG[1] * S->Lk[2],
 				dG[0] * S->Lk[1] + dG[1] * S->Lk[3]
 				};
+			double sigma = 1.;
+			if(S->options.use_Lanczos_smoothing){
+				sigma = GetLanczosSmoothingFactor(mp1, f);
+			}
 			double ft[2];
 			Pattern_GetFourierTransform(&L->pattern, ivalues, f, ndim, unit_cell_size, ft);
-			if(S->options.use_Lanczos_smoothing){
-				double sigma = GetLanczosSmoothingFactor(mp1, f);
-				ft[0] *= sigma;
-				ft[1] *= sigma;
-			}
-			Eta[i+j*n] = std::complex<double>(ft[0],ft[1]);
+			Eta[i+j*n] = sigma * std::complex<double>(ft[0],ft[1]);
 		}
 	}
 
