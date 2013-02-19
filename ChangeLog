@@ -1,3 +1,5 @@
+=2013-02-19=
+	pattern.c now detects 1D patterns and special cases them. Eigensolver performs workspace query for greater efficiency, and Fortran interfaces tidied up. Lanczos smoothing is now an option in FFT and PolBasisVL. Added SetLayerThickness to change only thickness and not affect the cached eigenmodes.
 =2011-11-21=
 	Fixed bug with rotation and translation in OutputPatternDescription (thanks Aaswath).
 =2011-09-16=
