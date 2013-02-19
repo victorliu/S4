@@ -3,7 +3,9 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <title>S4 Lua API</title>
-<style type="text/css">@import url(s4.css);</style>
+<style type="text/css">
+@import url(s4.css);
+</style>
 </head>
 <body>
 
@@ -45,6 +47,7 @@ Here we describe all of the S4 specific functions that can be called within the 
 <li><a href="#S4_Simulation_SetMaterial">SetMaterial</a></li>
 <li><a href="#S4_Simulation_AddLayer">AddLayer</a></li>
 <li><a href="#S4_Simulation_SetLayer">SetLayer</a></li>
+<li><a href="#S4_Simulation_SetLayerThickness">SetLayerThickness</a></li>
 <li><a href="#S4_Simulation_AddLayerCopy">AddLayerCopy</a></li>
 <li><a href="#S4_Simulation_SetLayerPatternCircle">SetLayerPatternCircle</a></li>
 <li><a href="#S4_Simulation_SetLayerPatternEllipse">SetLayerPatternEllipse</a></li>
@@ -282,11 +285,9 @@ When compiled without thread support, the computations are done serially.</p>
 <dt>from_units, to_units</dt>
 <dd>(string) The units in which <code>value</code> is currently expressed, and the desired units.
 Currently supported units:
-
-<pre><code>Lengths: "um", "nm", "m", "cm", "mm"
-Energies: "eV", "J"
-Frequencies: "THz", "GHz", "Hz", "rad/s"
-</code></pre></dd>
+    Lengths: &ldquo;um&rdquo;, &ldquo;nm&rdquo;, &ldquo;m&rdquo;, &ldquo;cm&rdquo;, &ldquo;mm&rdquo;
+    Energies: &ldquo;eV&rdquo;, &ldquo;J&rdquo;
+    Frequencies: &ldquo;THz&rdquo;, &ldquo;GHz&rdquo;, &ldquo;Hz&rdquo;, &ldquo;rad/s&rdquo;</dd>
 </dl>
 
 <h3>Return values</h3>
@@ -508,9 +509,10 @@ S:SetMaterial(name, {
 
 <h2><a name="S4_Simulation_SetLayer" />SetLayer</h2>
 
-<p>Updates an existing layer with a new thickness.
+<p>Updates an existing layer with a new thickness and removes all layer patterning.
 If no matching layer is found, adds a new unpatterned layer with a specified thickness and material.
-The behavior is undefined if the new material does not match the old material during an update (currently, the new material is ignored, but this may change in the future).</p>
+The behavior is undefined if the new material does not match the old material during an update (currently, the new material is ignored, but this may change in the future).
+If only the thickness needs to be modified, use <a href="#S4_Simulation_SetLayerThickness">SetLayerThickness</a>.</p>
 
 <h3>Usage</h3>
 
@@ -526,6 +528,31 @@ The behavior is undefined if the new material does not match the old material du
 <dd>(number) The new thickness of the layer.</dd>
 <dt>material</dt>
 <dd>(string) The name of the material which comprises the layer.</dd>
+</dl>
+
+<h3>Return values</h3>
+
+<p>None</p>
+
+<hr />
+
+<h2><a name="S4_Simulation_SetLayerThickness" />SetLayerThickness</h2>
+
+<p>Updates an existing layer with a new thickness.
+Previously cached layer eigenmodes are preserved, making this function the preferred way to update a layer&rsquo;s thickness.</p>
+
+<h3>Usage</h3>
+
+<pre><code>S:SetLayerThickness(name, thickness)
+</code></pre>
+
+<h3>Arguments</h3>
+
+<dl>
+<dt>name</dt>
+<dd>(string) The name of the layer to update.</dd>
+<dt>thickness</dt>
+<dd>(number) The new thickness of the layer.</dd>
 </dl>
 
 <h3>Return values</h3>
@@ -956,7 +983,7 @@ In other words, the z-component of the Poynting flux is returned.</p>
 
 <dl>
 <dt>forw_r, forw_i</dt>
-<dd>The real and imaginary parts of the forward component of the complex Poynting vector. Note that the result is not time averaged (no factor of 0.5 multiplied in). The forward component is defined as (E_total<sup>*</sup> x H_forw + H_total<sup>*</sup> x E_forw) / 2, where E_forw and H_forw are the fields reconstructed from only the forward propagating waveguide modes of the layer.</dd>
+<dd>The real and imaginary parts of the forward component of the complex Poynting vector. Note that the result is not time averaged (no factor of 0.5 multiplied in). The forward component is defined as (E_total^<em> x H_forw + H_total^</em> x E_forw) / 2, where E_forw and H_forw are the fields reconstructed from only the forward propagating waveguide modes of the layer.</dd>
 <dt>back_r, back_i</dt>
 <dd>The real and imaginary parts of the backward component of the complex Poynting vector. Note that the result is not time averaged (no factor of 0.5 multiplied in). An analogous definition of the backward component of the Poynting vector follows from above.</dd>
 </dl>
@@ -1024,7 +1051,7 @@ These four quantities are described in the section for <code>GetPoyntingFlux</co
 
 <h2><a name="S4_Simulation_GetLayerEnergyDensityIntegral" />GetLayerEnergyDensityIntegral</h2>
 
-<p>Returns the volume integral of the electromagnetic energy density (epsilon*|E|<sup>2</sup> + |H|<sup>2)</sup> over a unit cell throughout the entire thickness of a layer.</p>
+<p>Returns the volume integral of the electromagnetic energy density (epsilon*|E|^2 + |H|^2) over a unit cell throughout the entire thickness of a layer.</p>
 
 <h3>Usage</h3>
 
@@ -1049,7 +1076,7 @@ These four quantities are described in the section for <code>GetPoyntingFlux</co
 
 <h2><a name="S4_Simulation_GetLayerElectricEnergyDensityIntegral" />GetLayerElectricEnergyDensityIntegral</h2>
 
-<p>Returns the volume integral of the electric energy density (epsilon*|E|<sup>2)</sup> over a unit cell throughout the entire thickness of a layer.</p>
+<p>Returns the volume integral of the electric energy density (epsilon*|E|^2) over a unit cell throughout the entire thickness of a layer.</p>
 
 <h3>Usage</h3>
 
@@ -1074,7 +1101,7 @@ These four quantities are described in the section for <code>GetPoyntingFlux</co
 
 <h2><a name="S4_Simulation_GetLayerMagneticEnergyDensityIntegral" />GetLayerMagneticEnergyDensityIntegral</h2>
 
-<p>Returns the volume integral of the magnetic energy density (|H|<sup>2)</sup> over a unit cell throughout the entire thickness of a layer.</p>
+<p>Returns the volume integral of the magnetic energy density (|H|^2) over a unit cell throughout the entire thickness of a layer.</p>
 
 <h3>Usage</h3>
 
@@ -1099,7 +1126,7 @@ These four quantities are described in the section for <code>GetPoyntingFlux</co
 
 <h2><a name="S4_Simulation_GetLayerElectricFieldIntensityIntegral" />GetLayerElectricFieldIntensityIntegral</h2>
 
-<p>Returns the volume integral of the squared electric field intensity (|E|<sup>2)</sup> over a unit cell throughout the entire thickness of a layer.</p>
+<p>Returns the volume integral of the squared electric field intensity (|E|^2) over a unit cell throughout the entire thickness of a layer.</p>
 
 <h3>Usage</h3>
 
@@ -1222,7 +1249,7 @@ The determinant is an analytic function in the complex frequency plane and has p
 
 <dl>
 <dt>mantr, manti</dt>
-<dd>The determinant is typically causes overflow or underflow, so it is returned as a mantissa multiplying a base raised to an exponent. These values are the real and imaginary parts of the mantissa. The value of the determinant is (mantr+i<em>manti)</em>base<sup>expo.</sup></dd>
+<dd>The determinant is typically causes overflow or underflow, so it is returned as a mantissa multiplying a base raised to an exponent. These values are the real and imaginary parts of the mantissa. The value of the determinant is (mantr+i<em>manti)</em>base<sup>expo</sup>.</dd>
 <dt>base</dt>
 <dd>The base of the determinant representation (see above).</dd>
 <dt>expo</dt>

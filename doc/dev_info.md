@@ -9,12 +9,13 @@
 
 # Developer information
 
-## Compiling
+## Compiling and installation
 
 The usual `./configure; make; make install` sequence should just work. Without installing, the executable is in the `src/` directory.
+There is also a provided `Makefile.custom` and `src/config.h.custom` (which needs to be renamed into config.h) which can be tailored to the particular installation environment, allowing one to bypass the configure process.
 
 ### Dependencies
-* Lua (5.0 or later), both headers and libraries.
+* Lua 5.1, both headers and libraries.
 * BLAS, or equivalent, library only.
 * LAPACK (optional, 3.2 or later), library only.
 * Pthreads (optional), both headers and libraries.
@@ -56,11 +57,6 @@ This library is optional; the Kiss FFT library is used instead when FFTW
 is not present. When available the version must be 3.x. This does not have
 a great effect on simulation speed since the FFT is required only a handful
 of times, and tends to be rather small in problem size.
-
-### Installing
-
-1. Copy `Makefile.inc.Template` to `Makefile.inc`, and change the variables appropriately.
-2. Run `make` in the `src/` directory.
 
 ### Porting
 

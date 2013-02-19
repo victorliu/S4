@@ -3,7 +3,9 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <title>S4 Developer information</title>
-<style type="text/css">@import url(s4.css);</style>
+<style type="text/css">
+@import url(s4.css);
+</style>
 </head>
 <body>
 
@@ -12,14 +14,15 @@
 
 <h1>Developer information</h1>
 
-<h2>Compiling</h2>
+<h2>Compiling and installation</h2>
 
-<p>The usual <code>./configure; make; make install</code> sequence should just work. Without installing, the executable is in the <code>src/</code> directory.</p>
+<p>The usual <code>./configure; make; make install</code> sequence should just work. Without installing, the executable is in the <code>src/</code> directory.
+There is also a provided <code>Makefile.custom</code> and <code>src/config.h.custom</code> (which needs to be renamed into config.h) which can be tailored to the particular installation environment, allowing one to bypass the configure process.</p>
 
 <h3>Dependencies</h3>
 
 <ul>
-<li>Lua (5.0 or later), both headers and libraries.</li>
+<li>Lua 5.1, both headers and libraries.</li>
 <li>BLAS, or equivalent, library only.</li>
 <li>LAPACK (optional, 3.2 or later), library only.</li>
 <li>Pthreads (optional), both headers and libraries.</li>
@@ -67,14 +70,6 @@ discretizations.</p>
 is not present. When available the version must be 3.x. This does not have
 a great effect on simulation speed since the FFT is required only a handful
 of times, and tends to be rather small in problem size.</p>
-
-<h3>Installing</h3>
-
-<ol>
-<li>Copy <code>Makefile.inc.Template</code> to <code>Makefile.inc</code>, and change the variables appropriately.</li>
-<li>Run <code>make</code> in the <code>src/</code> directory.</li>
-</ol>
-
 
 <h3>Porting</h3>
 

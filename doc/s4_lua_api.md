@@ -33,6 +33,7 @@ Here we describe all of the S4 specific functions that can be called within the 
     * [SetMaterial](#S4_Simulation_SetMaterial)
     * [AddLayer](#S4_Simulation_AddLayer)
     * [SetLayer](#S4_Simulation_SetLayer)
+    * [SetLayerThickness](#S4_Simulation_SetLayerThickness)
     * [AddLayerCopy](#S4_Simulation_AddLayerCopy)
     * [SetLayerPatternCircle](#S4_Simulation_SetLayerPatternCircle)
     * [SetLayerPatternEllipse](#S4_Simulation_SetLayerPatternEllipse)
@@ -405,9 +406,10 @@ None
 ---
 ## <a name="S4_Simulation_SetLayer" />SetLayer
 
-Updates an existing layer with a new thickness.
+Updates an existing layer with a new thickness and removes all layer patterning.
 If no matching layer is found, adds a new unpatterned layer with a specified thickness and material.
 The behavior is undefined if the new material does not match the old material during an update (currently, the new material is ignored, but this may change in the future).
+If only the thickness needs to be modified, use [SetLayerThickness](#S4_Simulation_SetLayerThickness).
 
 ### Usage
 
@@ -421,6 +423,27 @@ The behavior is undefined if the new material does not match the old material du
 	(number) The new thickness of the layer.
 =material=
 	(string) The name of the material which comprises the layer.
+
+### Return values
+
+None
+
+---
+## <a name="S4_Simulation_SetLayerThickness" />SetLayerThickness
+
+Updates an existing layer with a new thickness.
+Previously cached layer eigenmodes are preserved, making this function the preferred way to update a layer's thickness.
+
+### Usage
+
+	S:SetLayerThickness(name, thickness)
+
+### Arguments
+
+=name=
+	(string) The name of the layer to update.
+=thickness=
+	(number) The new thickness of the layer.
 
 ### Return values
 
