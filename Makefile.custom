@@ -1,0 +1,138 @@
+# Simple Makefile to avoid the Autotools hassle
+# To build:
+#   make -f Makefile.custom
+
+# Notes:
+# + These flags below assume you have downloaded Lua 5.1.5 to this
+#   top level directory (so there is a directory named lua-5.1.5 here).
+#   and that you have gone into it and built Lua (e.g.: cd lua-5.1.5; make linux)
+# + We assume you have copied config.h.custom into config.h
+# + On Mac OS, replace '-llapack -lblas' with '-framework vecLib'
+
+CXX = g++
+CC  = gcc
+
+CFLAGS = -O3
+
+# Plain
+#CPPFLAGS = -Isrc -Isrc/RNP -Ilua-5.1.5/src -Isrc/kiss_fft -DHAVE_LAPACK -DHAVE_BLAS
+#LIBS = -llapack -lblas -llua -Llua-5.1.5/src -ldl
+
+# All bells and whistles
+# Note that HAVE_UNISTD_H goes with HAVE_PTHREAD on Unix based systems
+CPPFLAGS = -Isrc -Isrc/RNP -Ilua-5.1.5/src -Isrc/kiss_fft -I/usr/include/suitesparse -DHAVE_LAPACK -DHAVE_BLAS -DHAVE_LIBCHOLMOD -DHAVE_UNISTD_H -DHAVE_LIBPTHREAD -DHAVE_LIBFFTW3
+LIBS = -llapack -lblas -llua -Llua-5.1.5/src -ldl -lcholmod -lamd -lcolamd -lcamd -lccolamd -lfftw3 -lpthread
+
+##################### DO NOT EDIT BELOW THIS LINE #####################
+
+SOURCES = \
+  src/S4.cpp \
+  src/rcwa.cpp \
+  src/fmm/fmm_common.cpp \
+  src/fmm/fmm_FFT.cpp \
+  src/fmm/fmm_kottke.cpp \
+  src/fmm/fmm_closed.cpp \
+  src/fmm/fmm_PolBasisNV.cpp \
+  src/fmm/fmm_PolBasisVL.cpp \
+  src/fmm/fmm_PolBasisJones.cpp \
+  src/fmm/fmm_experimental.cpp \
+  src/fmm/fft_iface.cpp \
+  src/pattern/pattern.c \
+  src/pattern/intersection.c \
+  src/pattern/predicates.c \
+  src/numalloc.c \
+  src/gsel.c \
+  src/sort.c \
+  src/kiss_fft/kiss_fft.c \
+  src/kiss_fft/tools/kiss_fftnd.c \
+  src/SpectrumSampler.c \
+  src/cubature.c \
+  src/Interpolator.c \
+  src/convert.c \
+  src/main.c
+
+all: objdir objs link
+
+link:
+	$(CXX) obj/*.o -o S4 $(LIBS)
+
+objs: \
+	obj/main.o \
+	obj/S4.o \
+	obj/rcwa.o \
+	obj/fmm_common.o \
+	obj/fmm_FFT.o \
+	obj/fmm_kottke.o \
+	obj/fmm_closed.o \
+	obj/fmm_PolBasisNV.o \
+	obj/fmm_PolBasisVL.o \
+	obj/fmm_PolBasisJones.o \
+	obj/fmm_experimental.o \
+	obj/fft_iface.o \
+	obj/pattern.o \
+	obj/intersection.o \
+	obj/predicates.o \
+	obj/numalloc.o \
+	obj/gsel.o \
+	obj/sort.o \
+	obj/kiss_fft.o \
+	obj/kiss_fftnd.o \
+	obj/SpectrumSampler.o \
+	obj/cubature.o \
+	obj/Interpolator.o \
+	obj/convert.o
+
+obj/S4.o:
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/S4.cpp -o $@
+obj/rcwa.o:
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/rcwa.cpp -o $@
+obj/fmm_common.o:
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/fmm/fmm_common.cpp -o $@
+obj/fmm_FFT.o:
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/fmm/fmm_FFT.cpp -o $@
+obj/fmm_kottke.o:
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/fmm/fmm_kottke.cpp -o $@
+obj/fmm_closed.o:
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/fmm/fmm_closed.cpp -o $@
+obj/fmm_PolBasisNV.o:
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/fmm/fmm_PolBasisNV.cpp -o $@
+obj/fmm_PolBasisVL.o:
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/fmm/fmm_PolBasisVL.cpp -o $@
+obj/fmm_PolBasisJones.o:
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/fmm/fmm_PolBasisJones.cpp -o $@
+obj/fmm_experimental.o:
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/fmm/fmm_experimental.cpp -o $@
+obj/fft_iface.o:
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/fmm/fft_iface.cpp -o $@
+obj/pattern.o:
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/pattern/pattern.c -o $@
+obj/intersection.o:
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/pattern/intersection.c -o $@
+obj/predicates.o:
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/pattern/predicates.c -o $@
+obj/numalloc.o:
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/numalloc.c -o $@
+obj/gsel.o:
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/gsel.c -o $@
+obj/sort.o:
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/sort.c -o $@
+obj/kiss_fft.o:
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/kiss_fft/kiss_fft.c -o $@
+obj/kiss_fftnd.o:
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/kiss_fft/tools/kiss_fftnd.c -o $@
+obj/SpectrumSampler.o:
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/SpectrumSampler.c -o $@
+obj/cubature.o:
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/cubature.c -o $@
+obj/Interpolator.o:
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/Interpolator.c -o $@
+obj/convert.o:
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/convert.c -o $@
+obj/main.o:
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/main.c -o $@
+
+objdir:
+	mkdir -p obj
+
+clean:
+	rm -f obj/*.o S4
