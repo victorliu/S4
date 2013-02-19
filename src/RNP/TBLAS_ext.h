@@ -5,6 +5,7 @@
 #include <complex>
 
 namespace RNP{
+typedef long int integer;
 namespace TBLAS{
 
 //#define RNP_FORTRAN_NAME(LCASE,UCASE) LCASE ## _
@@ -13,10 +14,10 @@ namespace TBLAS{
 #endif
 
 //// Level 1
-extern "C" void RNP_FORTRAN_NAME(sswap,SSWAP)(const long int &n, float *sx, const long int &incx, float *sy, const long int &incy);
-extern "C" void RNP_FORTRAN_NAME(dswap,DSWAP)(const long int &n, double *sx, const long int &incx, double *sy, const long int &incy);
-extern "C" void RNP_FORTRAN_NAME(cswap,CSWAP)(const long int &n, std::complex<float> *sx, const long int &incx, std::complex<float> *sy, const long int &incy);
-extern "C" void RNP_FORTRAN_NAME(zswap,ZSWAP)(const long int &n, std::complex<double> *sx, const long int &incx, std::complex<double> *sy, const long int &incy);
+extern "C" void RNP_FORTRAN_NAME(sswap,SSWAP)(const integer &n, float *sx, const integer &incx, float *sy, const integer &incy);
+extern "C" void RNP_FORTRAN_NAME(dswap,DSWAP)(const integer &n, double *sx, const integer &incx, double *sy, const integer &incy);
+extern "C" void RNP_FORTRAN_NAME(cswap,CSWAP)(const integer &n, std::complex<float> *sx, const integer &incx, std::complex<float> *sy, const integer &incy);
+extern "C" void RNP_FORTRAN_NAME(zswap,ZSWAP)(const integer &n, std::complex<double> *sx, const integer &incx, std::complex<double> *sy, const integer &incy);
 template <>
 inline void Swap<float>(size_t n, float *x, size_t incx, float *y, size_t incy){
 	RNP_FORTRAN_NAME(sswap,SSWAP)(n, x, incx, y, incy);
@@ -34,12 +35,12 @@ inline void Swap<std::complex<double> >(size_t n, std::complex<double> *x, size_
 	RNP_FORTRAN_NAME(zswap,ZSWAP)(n, x, incx, y, incy);
 }
 
-extern "C" void RNP_FORTRAN_NAME(sscal,SSCAL)(const long int &n, const float &sa, float *sx, const long int &incx);
-extern "C" void RNP_FORTRAN_NAME(dscal,DSCAL)(const long int &n, const double &sa, double *sx, const long int &incx);
-extern "C" void RNP_FORTRAN_NAME(cscal,CSCAL)(const long int &n, const std::complex<float> &sa, std::complex<float> *sx, const long int &incx);
-extern "C" void RNP_FORTRAN_NAME(zscal,ZSCAL)(const long int &n, const std::complex<double> &sa, std::complex<double> *sx, const long int &incx);
-extern "C" void RNP_FORTRAN_NAME(csscal,CSSCAL)(const long int &n, const float &sa, std::complex<float> *cx, const long int &incx);
-extern "C" void RNP_FORTRAN_NAME(zdscal,ZDSCAL)(const long int &n, const double &sa, std::complex<double> *cx, const long int &incx);
+extern "C" void RNP_FORTRAN_NAME(sscal,SSCAL)(const integer &n, const float &sa, float *sx, const integer &incx);
+extern "C" void RNP_FORTRAN_NAME(dscal,DSCAL)(const integer &n, const double &sa, double *sx, const integer &incx);
+extern "C" void RNP_FORTRAN_NAME(cscal,CSCAL)(const integer &n, const std::complex<float> &sa, std::complex<float> *sx, const integer &incx);
+extern "C" void RNP_FORTRAN_NAME(zscal,ZSCAL)(const integer &n, const std::complex<double> &sa, std::complex<double> *sx, const integer &incx);
+extern "C" void RNP_FORTRAN_NAME(csscal,CSSCAL)(const integer &n, const float &sa, std::complex<float> *cx, const integer &incx);
+extern "C" void RNP_FORTRAN_NAME(zdscal,ZDSCAL)(const integer &n, const double &sa, std::complex<double> *cx, const integer &incx);
 template <>
 inline void Scale<float,float>(size_t n, const float &scale, float *x, size_t incx){
 	RNP_FORTRAN_NAME(sscal,SSCAL)(n, scale, x, incx);
@@ -65,10 +66,10 @@ inline void Scale<double,std::complex<double> >(size_t n, const double &scale, s
 	RNP_FORTRAN_NAME(zdscal,ZDSCAL)(n, scale, x, incx);
 }
 
-extern "C" void RNP_FORTRAN_NAME(scopy,SCOPY)(const long int &n, const float *sx, const long int &incx, float *sy, const long int &incy);
-extern "C" void RNP_FORTRAN_NAME(dcopy,DCOPY)(const long int &n, const double *sx, const long int &incx, double *sy, const long int &incy);
-extern "C" void RNP_FORTRAN_NAME(ccopy,CCOPY)(const long int &n, const std::complex<float> *sx, const long int &incx, std::complex<float> *sy, const long int &incy);
-extern "C" void RNP_FORTRAN_NAME(zcopy,ZCOPY)(const long int &n, const std::complex<double> *sx, const long int &incx, std::complex<double> *sy, const long int &incy);
+extern "C" void RNP_FORTRAN_NAME(scopy,SCOPY)(const integer &n, const float *sx, const integer &incx, float *sy, const integer &incy);
+extern "C" void RNP_FORTRAN_NAME(dcopy,DCOPY)(const integer &n, const double *sx, const integer &incx, double *sy, const integer &incy);
+extern "C" void RNP_FORTRAN_NAME(ccopy,CCOPY)(const integer &n, const std::complex<float> *sx, const integer &incx, std::complex<float> *sy, const integer &incy);
+extern "C" void RNP_FORTRAN_NAME(zcopy,ZCOPY)(const integer &n, const std::complex<double> *sx, const integer &incx, std::complex<double> *sy, const integer &incy);
 template <>
 inline void Copy<float>(size_t n, const float *src, size_t incsrc, float *dst, size_t incdst){
 	RNP_FORTRAN_NAME(scopy,SCOPY)(n, src, incsrc, dst, incdst);
@@ -86,10 +87,10 @@ inline void Copy<std::complex<double> >(size_t n, const std::complex<double> *sr
 	RNP_FORTRAN_NAME(zcopy,ZCOPY)(n, src, incsrc, dst, incdst);
 }
 
-extern "C" void RNP_FORTRAN_NAME(saxpy,SAXPY)(const long int &n, const float &sa, const float *sx, const long int &incx, float *sy, const long int &incy);
-extern "C" void RNP_FORTRAN_NAME(daxpy,dAXPY)(const long int &n, const double &sa, const double *sx, const long int &incx, double *sy, const long int &incy);
-extern "C" void RNP_FORTRAN_NAME(caxpy,CAXPY)(const long int &n, const std::complex<float> &sa, const std::complex<float> *sx, const long int &incx, std::complex<float> *sy, const long int &incy);
-extern "C" void RNP_FORTRAN_NAME(zaxpy,ZAXPY)(const long int &n, const std::complex<double> &sa, const std::complex<double> *sx, const long int &incx, std::complex<double> *sy, const long int &incy);
+extern "C" void RNP_FORTRAN_NAME(saxpy,SAXPY)(const integer &n, const float &sa, const float *sx, const integer &incx, float *sy, const integer &incy);
+extern "C" void RNP_FORTRAN_NAME(daxpy,dAXPY)(const integer &n, const double &sa, const double *sx, const integer &incx, double *sy, const integer &incy);
+extern "C" void RNP_FORTRAN_NAME(caxpy,CAXPY)(const integer &n, const std::complex<float> &sa, const std::complex<float> *sx, const integer &incx, std::complex<float> *sy, const integer &incy);
+extern "C" void RNP_FORTRAN_NAME(zaxpy,ZAXPY)(const integer &n, const std::complex<double> &sa, const std::complex<double> *sx, const integer &incx, std::complex<double> *sy, const integer &incy);
 template <>
 inline void Axpy<float,float>(size_t n, const float &alpha, const float *x, size_t incx, float *y, size_t incy){
 	RNP_FORTRAN_NAME(saxpy,SAXPY)(n, alpha, x, incx, y, incy);
@@ -127,10 +128,10 @@ T ConjugateDot(size_t n, const T *x, size_t incx, T *y, size_t incy){
 	return sum;
 }
 */
-extern "C" float RNP_FORTRAN_NAME(snrm2,SNRM2)(const long int &n, const float *x, const long int &incx);
-extern "C" double RNP_FORTRAN_NAME(dnrm2,DNRM2)(const long int &n, const double *x, const long int &incx);
-extern "C" float RNP_FORTRAN_NAME(scnrm2,SCNRM2)(const long int &n, const std::complex<float> *x, const long int &incx);
-extern "C" double RNP_FORTRAN_NAME(dznrm2,DZNRM2)(const long int &n, const std::complex<double> *x, const long int &incx);
+extern "C" float RNP_FORTRAN_NAME(snrm2,SNRM2)(const integer &n, const float *x, const integer &incx);
+extern "C" double RNP_FORTRAN_NAME(dnrm2,DNRM2)(const integer &n, const double *x, const integer &incx);
+extern "C" float RNP_FORTRAN_NAME(scnrm2,SCNRM2)(const integer &n, const std::complex<float> *x, const integer &incx);
+extern "C" double RNP_FORTRAN_NAME(dznrm2,DZNRM2)(const integer &n, const std::complex<double> *x, const integer &incx);
 template <>
 inline float Norm2<float>(size_t n, const float *x, size_t incx){
 	return RNP_FORTRAN_NAME(snrm2,SNRM2)(n, x, incx);
@@ -148,10 +149,10 @@ inline double Norm2<std::complex<double> >(size_t n, const std::complex<double> 
 	return RNP_FORTRAN_NAME(dznrm2,DZNRM2)(n, x, incx);
 }
 
-extern "C" float RNP_FORTRAN_NAME(sasum,SASUM)(const long int &n, const float *x, const long int &incx);
-extern "C" double RNP_FORTRAN_NAME(dasum,DASUM)(const long int &n, const double *x, const long int &incx);
-extern "C" float RNP_FORTRAN_NAME(scasum,SCASUM)(const long int &n, const std::complex<float> *x, const long int &incx);
-extern "C" double RNP_FORTRAN_NAME(dzasum,DZASUM)(const long int &n, const std::complex<double> *x, const long int &incx);
+extern "C" float RNP_FORTRAN_NAME(sasum,SASUM)(const integer &n, const float *x, const integer &incx);
+extern "C" double RNP_FORTRAN_NAME(dasum,DASUM)(const integer &n, const double *x, const integer &incx);
+extern "C" float RNP_FORTRAN_NAME(scasum,SCASUM)(const integer &n, const std::complex<float> *x, const integer &incx);
+extern "C" double RNP_FORTRAN_NAME(dzasum,DZASUM)(const integer &n, const std::complex<double> *x, const integer &incx);
 template <>
 inline float Asum<float>(size_t n, const float *x, size_t incx){
 	return RNP_FORTRAN_NAME(sasum,SASUM)(n, x, incx);
@@ -169,10 +170,10 @@ inline double Asum<std::complex<double> >(size_t n, const std::complex<double> *
 	return RNP_FORTRAN_NAME(dzasum,DZASUM)(n, x, incx);
 }
 
-extern "C" long int RNP_FORTRAN_NAME(isamax,ISAMAX)(const long int &n, const float *sx, const long int &incx);
-extern "C" long int RNP_FORTRAN_NAME(idamax,IDAMAX)(const long int &n, const double *sx, const long int &incx);
-extern "C" long int RNP_FORTRAN_NAME(icamax,ICAMAX)(const long int &n, const std::complex<float> *sx, const long int &incx);
-extern "C" long int RNP_FORTRAN_NAME(izamax,IZAMAX)(const long int &n, const std::complex<double> *sx, const long int &incx);
+extern "C" integer RNP_FORTRAN_NAME(isamax,ISAMAX)(const integer &n, const float *sx, const integer &incx);
+extern "C" integer RNP_FORTRAN_NAME(idamax,IDAMAX)(const integer &n, const double *sx, const integer &incx);
+extern "C" integer RNP_FORTRAN_NAME(icamax,ICAMAX)(const integer &n, const std::complex<float> *sx, const integer &incx);
+extern "C" integer RNP_FORTRAN_NAME(izamax,IZAMAX)(const integer &n, const std::complex<double> *sx, const integer &incx);
 template <>
 inline size_t MaximumIndex<float>(size_t n, const float *x, size_t incx){
 	return RNP_FORTRAN_NAME(isamax,ISAMAX)(n, x, incx) - 1;
@@ -192,9 +193,9 @@ inline size_t MaximumIndex<std::complex<double> >(size_t n, const std::complex<d
 
 //// Level 2
 
-extern "C" void RNP_FORTRAN_NAME(zgemv,ZGEMV)(const char *trans, const long int &m, const long int &n, 
-	const std::complex<double> &alpha, const std::complex<double> *a, const long int &lda, const std::complex<double> *x,
-	const long int &incx, const std::complex<double> &beta, std::complex<double> *y, const long int &incy);
+extern "C" void RNP_FORTRAN_NAME(zgemv,ZGEMV)(const char *trans, const integer &m, const integer &n, 
+	const std::complex<double> &alpha, const std::complex<double> *a, const integer &lda, const std::complex<double> *x,
+	const integer &incx, const std::complex<double> &beta, std::complex<double> *y, const integer &incy);
 template <>
 template <>
 inline MultMV<'N'>::MultMV(size_t m, size_t n, const std::complex<double> &alpha, const std::complex<double> *a, size_t lda,
@@ -618,9 +619,9 @@ void ConjugateRank1Update(size_t m, size_t n, const A &alpha, const T *x, size_t
 */
 //// Level 3
 
-extern "C" void RNP_FORTRAN_NAME(zgemm,ZGEMM)(const char *transa, const char *transb, const long int &m, const long int &
-	n, const long int &k, const std::complex<double> &alpha, const std::complex<double> *a, const long int &lda, 
-	const std::complex<double> *b, const long int &ldb, const std::complex<double> &beta, std::complex<double> *c, const long int &ldc);
+extern "C" void RNP_FORTRAN_NAME(zgemm,ZGEMM)(const char *transa, const char *transb, const integer &m, const integer &
+	n, const integer &k, const std::complex<double> &alpha, const std::complex<double> *a, const integer &lda, 
+	const std::complex<double> *b, const integer &ldb, const std::complex<double> &beta, std::complex<double> *c, const integer &ldc);
 	
 template <>
 template <>

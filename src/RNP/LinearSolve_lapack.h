@@ -3,25 +3,28 @@
 
 #include "LinearSolve.h"
 #include <cstdlib>
+#include <stdint.h>
 
 //#define RNP_FORTRAN_NAME(LCASE,UCASE) LCASE ## _
 #ifndef RNP_FORTRAN_NAME
 # define RNP_FORTRAN_NAME(LCASE,UCASE) F77_FUNC(LCASE,UCASE)
 #endif
 
-extern "C" void RNP_FORTRAN_NAME(zgesv,ZGESV)(const long int &n, const long int &nrhs, std::complex<double> *a, 
-	const long int &lda, long int *ipiv, std::complex<double> *b, const long int &ldb, long int *info);
+typedef long int integer;
+
+extern "C" void RNP_FORTRAN_NAME(zgesv,ZGESV)(const integer &n, const integer &nrhs, std::complex<double> *a, 
+	const integer &lda, integer *ipiv, std::complex<double> *b, const integer &ldb, integer *info);
 
 extern "C" void RNP_FORTRAN_NAME(zgesvx,ZGESVX)(const char *fact, const char *trans,
-	const long int &n, const long int &nrhs,
-	std::complex<double> *a, const long int &lda,
-	std::complex<double> *af, const long int &ldaf,
-	long int *ipiv,
+	const integer &n, const integer &nrhs,
+	std::complex<double> *a, const integer &lda,
+	std::complex<double> *af, const integer &ldaf,
+	integer *ipiv,
 	char *equed, double *r, double *c,
-	std::complex<double> *b, const long int &ldb,
-	std::complex<double> *x, const long int &ldx,
+	std::complex<double> *b, const integer &ldb,
+	std::complex<double> *x, const integer &ldx,
 	double *rcond, double *ferr, double *berr,
-	std::complex<double> *work, double *rwork, long int *info);
+	std::complex<double> *work, double *rwork, integer *info);
 
 namespace RNP{
 
@@ -36,8 +39,8 @@ inline LinearSolve<'N'>::LinearSolve(size_t n, size_t nRHS, std::complex<double>
 		ipiv = (size_t*)malloc(sizeof(size_t)*n);
 	}
 	
-	long int ret;
-	zgesv_(n, nRHS, a, lda, (long int*)ipiv, b, ldb, &ret);
+	integer ret;
+	RNP_FORTRAN_NAME(zgesv,ZGESV)(n, nRHS, a, lda, (integer*)ipiv, b, ldb, &ret);
 	
 	if(NULL == pivots){
 		free(ipiv);
@@ -60,17 +63,17 @@ inline LinearSolvePrecise(size_t n, size_t nRHS, std::complex<double> *a, size_t
 	double *c = r + n;
 	
 	char equed = "B";
-	long int ret;
+	integer ret;
 	zgesvx_(
 		"E", "N", n, nrhs,
 		a, lda, af, n,
 		ipiv,
 		equed, r, c,
 		b, ldb,
-		std::complex<double> *x, const long int &ldx,
+		std::complex<double> *x, const integer &ldx,
 		double *rcond, double *ferr, double *berr,
-		std::complex<double> *work, double *rwork, long int *info);
-	zgesv_(n, nRHS, a, lda, (long int*)ipiv, b, ldb, &ret);
+		std::complex<double> *work, double *rwork, integer *info);
+	zgesv_(n, nRHS, a, lda, (integer*)ipiv, b, ldb, &ret);
 	
 	free(af);
 	
