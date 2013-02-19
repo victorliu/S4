@@ -9,15 +9,17 @@
 # define RNP_FORTRAN_NAME(LCASE,UCASE) F77_FUNC(LCASE,UCASE)
 #endif
 
-extern "C" void RNP_FORTRAN_NAME(zgeev,ZGEEV)(const char *jobvl, const char *jobvr, const long int &n, 
-	std::complex<double> *a, const long int &lda, std::complex<double> *w, std::complex<double> *vl, 
-	const long int &ldvl, std::complex<double> *vr, const long int &ldvr, std::complex<double> *work, 
-	const long int &lwork, double *rwork, long int *info);
+typedef long int integer;
 
-extern "C" void RNP_FORTRAN_NAME(zgees,ZGEES)(const char *jobvs, const char *sort, long int (*select)(), const long int &n,
-	std::complex<double> *a, const long int &lda, const long int &sdim, std::complex<double> *w,
-	std::complex<double> *vs, const long int &ldvs, std::complex<double> *work, const long int &lwork,
-	double *rwork, long int *bwork, long int *info);
+extern "C" void RNP_FORTRAN_NAME(zgeev,ZGEEV)(const char *jobvl, const char *jobvr, const integer &n, 
+	std::complex<double> *a, const integer &lda, std::complex<double> *w, std::complex<double> *vl, 
+	const integer &ldvl, std::complex<double> *vr, const integer &ldvr, std::complex<double> *work, 
+	const integer &lwork, double *rwork, integer *info);
+
+extern "C" void RNP_FORTRAN_NAME(zgees,ZGEES)(const char *jobvs, const char *sort, integer (*select)(), const integer &n,
+	std::complex<double> *a, const integer &lda, const integer &sdim, std::complex<double> *w,
+	std::complex<double> *vs, const integer &ldvs, std::complex<double> *work, const integer &lwork,
+	double *rwork, integer *bwork, integer *info);
 
 namespace RNP{
 
@@ -86,7 +88,7 @@ inline int Eigensystem(size_t n,
 	char jobvr[2] = "N";
 	if(vl != NULL){ jobvl[0] = 'V'; }
 	if(vr != NULL){ jobvr[0] = 'V'; }
-	long int info;
+	integer info;
 
 	if((size_t)-1 == lwork_){
 		RNP_FORTRAN_NAME(zgeev,ZGEEV)(jobvl, jobvr, n, a, lda, eval, vl, ldvl, vr, ldvr, work_, lwork_, rwork_, &info);
@@ -99,17 +101,17 @@ inline int Eigensystem(size_t n,
 		rwork = new double[2*n];
 	}
 	if(0 == lwork_){ lwork_ = 2*n; }
-	long int lwork = lwork_;
-	if(NULL == work_ || lwork < (long int)(2*n)){
+	integer lwork = lwork_;
+	if(NULL == work_ || lwork < (integer)(2*n)){
 		lwork = -1;
 		std::complex<double> zlen;
 		RNP_FORTRAN_NAME(zgeev,ZGEEV)(jobvl, jobvr, n, a, lda, eval, vl, ldvl, vr, ldvr, &zlen, lwork, rwork, &info);
-		lwork = (long int)(zlen.real());
+		lwork = (integer)(zlen.real());
 		work = new std::complex<double>[lwork];
 	}
 	RNP_FORTRAN_NAME(zgeev,ZGEEV)(jobvl, jobvr, n, a, lda, eval, vl, ldvl, vr, ldvr, work, lwork, rwork, &info);
 	
-	if(NULL == work_ || lwork < (long int)(2*n)){
+	if(NULL == work_ || lwork < (integer)(2*n)){
 		delete [] work;
 	}
 	if(NULL == rwork_){
