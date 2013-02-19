@@ -416,6 +416,24 @@ int Simulation_RemoveLayerPatterns(Simulation *S, Layer *layer){
 	S4_TRACE("< Simulation_RemoveLayerPatterns [omega=%f]\n", S->omega[0]);
 	return 0;
 }
+int Simulation_ChangeLayerThickness(Simulation *S, Layer *layer, const double *thick){
+	S4_TRACE("> Simulation_ChangeLayerThickness(S=%p, layer=%p, thick=%g) [omega=%f]\n",
+		S, layer, thick, S->omega[0]);
+	int ret = 0;
+	if(NULL == S){ ret = -1; }
+	if(NULL == layer){ ret = -2; }
+	if(thick < 0){ ret = -3; }
+	if(0 != ret){
+		S4_TRACE("< Simulation_RemoveLayerPatterns (failed; ret = %d) [omega=%f]\n", ret, S->omega[0]);
+		return ret;
+	}
+	
+	layer->thickness = *thick;
+	Simulation_DestroyLayerSolutions(S);
+
+	S4_TRACE("< Simulation_ChangeLayerThickness [omega=%f]\n", S->omega[0]);
+	return 0;
+}
 int Simulation_SetNumG(Simulation *S, int n){
 	int ret = 0;
 	S4_TRACE("> Simulation_SetNumG(S=%p, n=%d) [omega=%f]\n", S, n, S->omega[0]);
@@ -1316,7 +1334,30 @@ int Simulation_ComputeLayerBands(Simulation *S, Layer *L, LayerBands **bands){
 //std::cerr << pB->Epsilon2[0] << "\t" << pB->Epsilon2[1] << "\t" << pB->Epsilon_inv[0] << "\t" << pB->Epsilon_inv[1] << std::endl;
 		
 		S4_VERB(1, "Solving eigensystem of layer: %s\n", NULL != L->name ? L->name : "");
-		SolveLayerEigensystem(std::complex<double>(S->omega[0],S->omega[1]), n, S->solution->kx, S->solution->ky, pB->Epsilon_inv, pB->Epsilon2, pB->epstype, pB->q, pB->kp, pB->phi);
+		{
+			size_t lwork = (size_t)-1;
+			double *rwork = (double*)S4_malloc(sizeof(double) * 4*n);
+			std::complex<double> *work = NULL;
+			std::complex<double> dum;
+			SolveLayerEigensystem(
+				std::complex<double>(S->omega[0],S->omega[1]), n,
+				S->solution->kx, S->solution->ky,
+				pB->Epsilon_inv, pB->Epsilon2, pB->epstype,
+				pB->q, pB->kp, pB->phi,
+				&dum, rwork, lwork
+			);
+			lwork = (int)(dum.real() + 0.5);
+			work = (std::complex<double>*)S4_malloc(sizeof(std::complex<double>) * lwork);
+			SolveLayerEigensystem(
+				std::complex<double>(S->omega[0],S->omega[1]), n,
+				S->solution->kx, S->solution->ky,
+				pB->Epsilon_inv, pB->Epsilon2, pB->epstype,
+				pB->q, pB->kp, pB->phi,
+				work, rwork, lwork
+			);
+			S4_free(work);
+			S4_free(rwork);
+		}
 	}
 	S4_TRACE("I  q[0] = %f,%f [omega=%f]\n", pB->q[0].real(), pB->q[0].imag(), S->omega[0]);
 	
@@ -1472,6 +1513,42 @@ void Simulation_DestroySolution(Simulation *S){
 	S4_free(S->solution); S->solution = NULL;
 	
 	S4_TRACE("< Simulation_DestroySolution [omega=%f]\n", S->omega[0]);
+}
+
+void Simulation_DestroyLayerSolutions(Simulation *S){
+	S4_TRACE("> Simulation_DestroyLayerSolutions(S=%p) [omega=%f]\n", S, S->omega[0]);
+	Solution *sol;
+	if(NULL == S){
+		S4_TRACE("< Simulation_DestroyLayerSolutions (early exit; S == NULL) [omega=%f]\n", S->omega[0]);
+		return;
+	}
+	sol = S->solution;
+	if(NULL == sol){
+		S4_TRACE("< Simulation_DestroyLayerSolutions (early exit; sol == NULL) [omega=%f]\n", S->omega[0]);
+		return;
+	}
+
+	if(NULL != sol->layer_bands){
+		void **Lsoln = sol->layer_solution;
+		Layer *L = S->layer;
+		while(NULL != L){
+			// release Lsoln
+			if(NULL != Lsoln){
+				LayerSolution *pS = (LayerSolution*)(*Lsoln);
+				if(NULL != pS){
+					if(NULL != pS->ab){
+						S4_free(pS->ab);
+					}
+					S4_free(pS);
+				}
+			}
+			*Lsoln = NULL;
+			++Lsoln;
+			L = L->next;
+		}
+	}
+	
+	S4_TRACE("< Simulation_DestroyLayerSolutions [omega=%f]\n", S->omega[0]);
 }
 
 Material* Simulation_GetMaterialByName(const Simulation *S, const char *name, int *index){

@@ -1017,6 +1017,23 @@ static int S4L_Simulation_SetLayer(lua_State *L){
 	}
 	return 0;
 }
+static int S4L_Simulation_SetLayerThickness(lua_State *L){
+	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	luaL_argcheck(L, S != NULL, 1, "SetLayerThickness: 'Simulation' object expected.");
+	
+	const char *name = luaL_checklstring(L, 2, NULL);
+	Layer *layer = Simulation_GetLayerByName(S, name, NULL);
+	if(NULL == layer){
+		S4L_error(L, "SetLayerThickness: Layer named '%s' not found.", layer);
+	}else{
+		double thick = luaL_checknumber(L, 3);
+		if(thick < 0){
+			S4L_error(L, "SetLayerThickness: Thickness must be non-negative.");
+		}
+		Simulation_ChangeLayerThickness(S, layer, &thick);
+	}
+	return 0;
+}
 
 static int S4L_Simulation_AddLayerCopy(lua_State *L){
 	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
@@ -2063,6 +2080,7 @@ static void S4_lua_init(lua_State *L){
 		{"SetMaterial", S4L_Simulation_SetMaterial},
 		{"AddLayer", S4L_Simulation_AddLayer},
 		{"SetLayer", S4L_Simulation_SetLayer},
+		{"SetLayerThickness", S4L_Simulation_SetLayerThickness},
 		{"AddLayerCopy", S4L_Simulation_AddLayerCopy},
 		{"SetLayerPatternCircle", S4L_Simulation_SetLayerPatternCircle},
 		{"SetLayerPatternEllipse", S4L_Simulation_SetLayerPatternEllipse},

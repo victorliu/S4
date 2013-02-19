@@ -230,6 +230,7 @@ void Simulation_Destroy(Simulation *S);
 void Simulation_Clone(const Simulation *S, Simulation *T);
 
 void Simulation_DestroySolution(Simulation *S);
+void Simulation_DestroyLayerSolutions(Simulation *S);
 
 // Destroys the solution belonging to a given simulation and sets
 // S->solution to NULL.
@@ -277,6 +278,7 @@ int Simulation_AddLayerPatternEllipse  (Simulation *S, Layer *layer, int materia
 int Simulation_AddLayerPatternRectangle(Simulation *S, Layer *layer, int material, const double center[2], double angle, const double halfwidths[2]);
 int Simulation_AddLayerPatternPolygon  (Simulation *S, Layer *layer, int material, const double center[2], double angle, int nvert, const double *vert);
 int Simulation_RemoveLayerPatterns(Simulation *S, Layer *layer);
+int Simulation_ChangeLayerThickness(Simulation *S, Layer *layer, const double *thickness);
 
 // Returns 14 if no layers present
 int Simulation_MakeExcitationPlanewave(Simulation *S, const double angle[2], const double pol_s[2], const double pol_p[2]);
