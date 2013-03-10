@@ -42,8 +42,14 @@ fi
 
 ##############################################################################
 # Check for Lua library
-AC_CHECK_LIB(lua5.1, luaL_newstate, [], [
-	AC_MSG_ERROR([Couldn't find the required liblua5.1 library.])])
+sinclude(m4/ax_lua.m4)
+AX_PROG_LUA([5.1], [5.2], [], [])
+AX_LUA_HEADERS([], [
+	AC_MSG_ERROR([Couldn't find the required Lua headers.])])
+AX_LUA_LIBS([], [
+	AC_MSG_ERROR([Couldn't find the required Lua libraries.])])
+#AC_CHECK_LIB(lua, luaL_newstate, [], [
+#	AC_MSG_ERROR([Couldn't find the required liblua library.])], [-lm])
 
 ##############################################################################
 # Check for CHOLMOD library
@@ -55,8 +61,8 @@ AC_CHECK_LIB(fftw3, fftw_malloc)
 
 ##############################################################################
 # Checks for BLAS and LAPACK libraries:
-sinclude(ax_blas.m4)
-sinclude(ax_lapack.m4)
+sinclude(m4/ax_blas.m4)
+sinclude(m4/ax_lapack.m4)
 AX_BLAS([], [AC_MSG_ERROR([BLAS was not found!])])
 AX_LAPACK([], [AC_MSG_ERROR([LAPACK was not found!])])
 LIBS="$LAPACK_LIBS $BLAS_LIBS $LIBS $FLIBS"
@@ -69,8 +75,8 @@ LIBS="$LAPACK_LIBS $BLAS_LIBS $LIBS $FLIBS"
 ##############################################################################
 # Checks for math library:
 AC_CHECK_LIB([m], [sqrt])
-# If we have a Fortran compiler, link to its libraries, since these
-# are probably needed to link with the BLAS/LAPACK libraries.
+ If we have a Fortran compiler, link to its libraries, since these
+ are probably needed to link with the BLAS/LAPACK libraries.
 if test x != x"$F77"; then
 	AC_F77_LIBRARY_LDFLAGS
 	AC_F77_WRAPPERS
@@ -82,7 +88,7 @@ fi
 AC_ARG_WITH(mpi, [AC_HELP_STRING([--with-mpi],[enable MPI parallelization])], with_mpi=$withval, with_mpi=no)
 
 if test "x$with_mpi" = "xyes"; then
-	sinclude(ax_mpi.m4)
+	sinclude(m4/ax_mpi.m4)
 	AX_MPI([], [AC_MSG_ERROR(could not find mpi library for --with-mpi)])
         CC="$MPICC"
 	LIBS="$MPILIBS $LIBS"
@@ -107,8 +113,9 @@ AC_C_INLINE
 AC_TYPE_SIZE_T
 
 # Checks for library functions.
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
+# 2012-01-23 vkl Fix ::malloc not found error
+#AC_FUNC_MALLOC
+#AC_FUNC_REALLOC
 AC_CHECK_FUNCS([floor memset pow sqrt strcasecmp strchr strdup])
 
 AC_SUBST(S4_SUFFIX)
