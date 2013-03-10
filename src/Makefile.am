@@ -62,7 +62,8 @@ noinst_HEADERS = \
 	kiss_fft/tools/kiss_fftnd.h
 
 
-S4@S4_SUFFIX@_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/RNP -I$(top_srcdir)/src/kiss_fft
+S4@S4_SUFFIX@_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/RNP -I$(top_srcdir)/src/kiss_fft $(LUA_INCLUDE)
+S4@S4_SUFFIX@_LDADD = $(LUA_LIB)
 
 # what is printed out when invoking your program with --version:
 VERSION_STRING = "S4@S4_SUFFIX@ @VERSION@, Copyright (C) 2011 by Stanford University"

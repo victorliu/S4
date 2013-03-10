@@ -13,5 +13,10 @@ dist_html_DATA = \
 	doc/index.html \
 	doc/license.html \
 	doc/s4.css \
-	doc/s4.png \
 	doc/s4_lua_api.html
+
+STATIC_HTML = \
+	doc/s4.png \
+	$(NULL)
+
+dist_html_DATA += $(STATIC_HTML)

@@ -1,9 +1,12 @@
 examplesdir = $(docdir)/examples
 
 # find . -name *.lua
-nobase_dist_examples_DATA = \
+nobase_dist_examples_DATA = README \
 	./1d/binary_grating.lua \
+	./1d/binary_grating.txt \
 	./1d/diffraction.lua \
+	./1d/diffraction.txt \
+	./1d/README \
 	./Antonoyiannakis_PRB_60_1999/fig3_4.lua \
 	./Antonoyiannakis_PRB_60_1999/fig6.lua \
 	./Christ_PRB_70_125113_2004/fig2b.lua \
@@ -35,6 +38,8 @@ nobase_dist_examples_DATA = \
 	./Li_JOSA_14_2758_1997/ex3.lua \
 	./magneto/halfspace.lua \
 	./magneto/slab.lua \
+	./MPI_example/binary_grating_mpi.lua \
+	./MPI_example/README \
 	./patterns/circle.lua \
 	./patterns/composite.lua \
 	./patterns/ellipse.lua \
