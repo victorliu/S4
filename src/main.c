@@ -1610,6 +1610,60 @@ static int S4L_Simulation_GetPoyntingFluxByOrder(lua_State *L){
 	free(power);
 	return 1;
 }
+
+static int S4L_Simulation_GetAmplitudes(lua_State *L){
+	double *amp;
+	int *G;
+	int n, i, j, k, ret;
+	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	luaL_argcheck(L, S != NULL, 1, "GetAmplitudes: 'Simulation' object expected.");
+
+	const char *layer_name = luaL_checklstring(L, 2, NULL);
+	Layer *layer = Simulation_GetLayerByName(S, layer_name, NULL);
+	if(NULL == layer){
+		S4L_error(L, "GetAmplitudes: Layer named '%s' not found.", layer_name);
+		return 0;
+	}
+	
+	ret = Simulation_SolveLayer(S, layer);
+	if(0 != ret){
+		HandleSolutionErrorCode(L, "GetAmplitudes", ret);
+		return 0;
+	}
+	
+	n = Simulation_GetNumG(S, &G);
+	if(NULL == G){
+		return 0;
+	}
+	
+	amp = (double*)malloc(sizeof(double)*8*n);
+	Simulation_GetAmplitudes(S, 
+		layer,
+		luaL_checknumber(L, 3),
+		amp, &amp[4*n]);
+	
+	lua_createtable(L, 2, 0);
+	for(j = 0; j < 2; ++j){ // for forw/back
+		lua_pushinteger(L, j+1);
+		lua_createtable(L, 2*n, 0);
+		for(i = 0; i < 2*n; ++i){
+			lua_pushinteger(L, i+1);
+			// push a complex number
+			lua_createtable(L, 2, 0);
+			for(k = 0; k < 2; ++k){
+				lua_pushinteger(L, k+1);
+				lua_pushnumber(L, amp[4*n*j+2*i+k]);
+				lua_settable(L, -3);
+			}
+			lua_settable(L, -3);
+		}
+		lua_settable(L, -3);
+	}
+	free(amp);
+	return 1;
+}
+
+
 /*
 static int S4L_Simulation_EnableBasisFieldDump(lua_State *L){
 	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
@@ -2096,6 +2150,7 @@ static void S4_lua_init(lua_State *L){
 		{"GetPoyntingFluxByOrder", S4L_Simulation_GetPoyntingFluxByOrder},
 		{"GetPowerFlux", S4L_Simulation_GetPoyntingFlux}, // alias
 		{"GetPowerFluxByOrder", S4L_Simulation_GetPoyntingFluxByOrder}, // alias
+		{"GetAmplitudes", S4L_Simulation_GetAmplitudes},
 		{"GetStressTensorIntegral", S4L_Simulation_GetStressTensorIntegral},
 		{"GetLayerEnergyDensityIntegral", S4L_Simulation_GetLayerEnergyDensityIntegral},
 		{"GetLayerElectricEnergyDensityIntegral", S4L_Simulation_GetLayerElectricEnergyDensityIntegral},

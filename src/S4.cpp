@@ -1018,7 +1018,6 @@ int Simulation_ComputeLayerSolution(Simulation *S, Layer *L, LayerBands **layer_
 			a0, // length 2*n
 			NULL, // bN
 			(*layer_solution)->ab);
-
 		S4_free(a0);
 	}else if(1 == S->exc.type){
 		Layer *l[2];
@@ -1460,6 +1459,57 @@ int Simulation_GetPoyntingFluxByG(Simulation *S, Layer *layer, double offset, do
 
 	S4_free(ab);
 	S4_TRACE("< Simulation_GetPoyntingFluxByG [omega=%f]\n", S->omega[0]);
+	return 0;
+}
+
+int Simulation_GetAmplitudes(Simulation *S, Layer *layer, double offset, double *forw, double *back){
+	S4_TRACE("> Simulation_GetAmplitudes(S=%p, layer=%p, offset=%f, forw=%p, back=%p) [omega=%f]\n",
+		S, layer, offset, forw, back, S->omega[0]);
+	int ret = 0;
+	if(NULL == S){ ret = -1; }
+	if(NULL == layer){ ret = -2; }
+	if(0 != ret){
+		S4_TRACE("< Simulation_GetAmplitudes (failed; ret = %d) [omega=%f]\n", ret, S->omega[0]);
+		return ret;
+	}
+	
+	LayerBands *Lbands;
+	LayerSolution *Lsoln;
+	
+	ret = Simulation_GetLayerSolution(S, layer, &Lbands, &Lsoln);
+	if(0 != ret){
+		S4_TRACE("< Simulation_GetAmplitudes (failed; Simulation_GetLayerSolution returned %d) [omega=%f]\n", ret, S->omega[0]);
+		return ret;
+	}
+	
+	const int n = S->n_G;
+	const int n2 = 2*n;
+	const int n4 = 2*n2;
+	
+	std::complex<double> *ab = (std::complex<double> *)S4_malloc(sizeof(std::complex<double>) * n4);
+	if(NULL == ab){
+		S4_TRACE("< Simulation_GetAmplitudes (failed; allocation failed) [omega=%f]\n", S->omega[0]);
+		return 1;
+	}
+	
+	memcpy(ab, Lsoln->ab, sizeof(std::complex<double>) * n4);
+	TranslateAmplitudes(n, Lbands->q, layer->thickness, offset, ab);
+
+	if(NULL != forw){
+		for(int i = 0; i < n2; ++i){
+			forw[2*i+0] = ab[i].real();
+			forw[2*i+1] = ab[i].imag();
+		}
+	}
+	if(NULL != back){
+		for(int i = 0; i < n2; ++i){
+			back[2*i+0] = ab[n2+i].real();
+			back[2*i+1] = ab[n2+i].imag();
+		}
+	}
+
+	S4_free(ab);
+	S4_TRACE("< Simulation_GetAmplitudes [omega=%f]\n", S->omega[0]);
 	return 0;
 }
 

@@ -328,6 +328,10 @@ int Simulation_SolveLayer(Simulation *S, Layer *layer);
 int Simulation_GetPoyntingFlux(Simulation *S, Layer *layer, double offset, double powers[4]);
 int Simulation_GetPoyntingFluxByG(Simulation *S, Layer *layer, double offset, double *powers);
 
+// Returns lists of 2*S->n_G complex numbers of forward and backward amplitudes
+// forw and back should each be length 4*S->n_G
+int Simulation_GetAmplitudes(Simulation *S, Layer *layer, double offset, double *forw, double *back);
+
 // Returns a solution error code
 // Tint is a vector of time averaged stress tensor integral
 int Simulation_GetStressTensorIntegral(Simulation *S, Layer *layer, double offset, double Tint[6]);
