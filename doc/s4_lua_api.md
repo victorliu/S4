@@ -51,6 +51,7 @@ Here we describe all of the S4 specific functions that can be called within the 
     * [GetNumG](#S4_Simulation_GetNumG)
     * [GetGList](#S4_Simulation_GetGList)
     * [GetDiffractionOrder](#S4_Simulation_GetDiffractionOrder)
+    * [GetAmplitudes](#S4_Simulation_GetAmplitudes)
     * [GetPoyntingFlux](#S4_Simulation_GetPoyntingFlux)
     * [GetPoyntingFluxByOrder](#S4_Simulation_GetPoyntingFluxByOrder)
     * [GetStressTensorIntegral](#S4_Simulation_GetStressTensorIntegral)
@@ -58,6 +59,7 @@ Here we describe all of the S4 specific functions that can be called within the 
     * [GetLayerElectricEnergyDensityIntegral](#S4_Simulation_GetLayerElectricEnergyDensityIntegral)
     * [GetLayerMagneticEnergyDensityIntegral](#S4_Simulation_GetLayerMagneticEnergyDensityIntegral)
     * [GetLayerElectricFieldIntensityIntegral](#S4_Simulation_GetLayerElectricFieldIntensityIntegral)
+    * [GetLayerZIntegral](#S4_Simulation_GetLayerZIntegral)
     * [GetEField](#S4_Simulation_GetEField)
     * [GetHField](#S4_Simulation_GetHField)
     * [GetFields](#S4_Simulation_GetFields)
@@ -795,6 +797,31 @@ A particular diffraction order is only a meaningful concept in a uniform (unpatt
 
 =i=
 	The index of the diffraction order.
+	
+---
+
+## <a name="S4_Simulation_GetAmplitudes" />GetAmplitudes
+
+Returns the raw mode amplitudes within a particular layer.
+For uniform (unpatterned) layers, the modes are simply the diffracted orders, and the indexing of the returned amplitudes corresponds to the value obtained from GetDiffractedOrder.
+The first value is guaranteed to be the straight transmitted or specularly reflected diffraction order.
+For patterned layers, there is typically no meaningful information in these amplitudes.
+
+### Usage
+
+	forw,back = S:GetAmplitudes(layer, offset)
+
+### Arguments
+
+=layer=
+	(string) The name of the layer in which to obtain mode amplitudes.
+=offset=
+	(number) The z-offset at which to obtain the mode amplitudes.
+
+### Return values
+
+=forw,back=
+	Tables of length NumG containing the complex amplitudes of each forward and backward mode. Each complex amplitude is a table of length 2 containing real and imaginary parts.
 
 
 ---
@@ -956,6 +983,30 @@ Returns the volume integral of the squared electric field intensity (|E|^2) over
 =U=
 	The integral of the square electric field intensity throughout the volume of the layer's unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).
 
+---
+
+## <a name="S4_Simulation_GetLayerZIntegral" />GetLayerZIntegral
+
+Returns the line integral along z (depth direction) of the squared magnitudes of electric and magnetic field components (|Ex|^2, |Ey|^2, etc.) throughout the entire thickness of a layer.
+
+### Usage
+
+	IEx, IEy, IEz, IHx, IHy, IHz = S:GetLayerZIntegral(layer, {x, y})
+
+### Arguments
+
+=layer=
+	(string) The name of the layer in which to integrate through.
+=x,y=
+	(number) The in-plane coordinates at which to integrate.
+
+### Return values
+
+=IEx,IEy,IEz,IHx,IHy,IHz=
+	The integral of the squared magnitudes of electric and magnetic field components throughout the thickness of the layer. Note that the result is not time averaged (no factor of 0.5 multiplied in).
+
+
+	
 ---
 
 ## <a name="S4_Simulation_GetEField" />GetEField
