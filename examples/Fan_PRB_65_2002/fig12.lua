@@ -22,9 +22,9 @@ S:SetExcitationPlanewave(
 --S:UsePolarizationDecomposition()
 
 for freq=0.25,0.27,0.003 do
-		S:SetFrequency(freq)
-		forward,backward = S:GetPoyntingFlux('AirAbove', 0)
-		forward = S:GetPoyntingFlux('AirBelow', 0)
-		print (freq .. '\t' .. forward .. '\t' .. backward)
-		io.stdout:flush()
+	S:SetFrequency(freq)
+	forward,backward = S:GetPoyntingFlux('AirAbove', 0)
+	forward = S:GetPoyntingFlux('AirBelow', 0)
+	print (freq .. '\t' .. forward .. '\t' .. backward)
+	io.stdout:flush()
 end
