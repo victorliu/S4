@@ -339,7 +339,8 @@ int Simulation_GetStressTensorIntegral(Simulation *S, Layer *layer, double offse
 // Returns a solution error code
 // which can be 'U', 'E', 'H', 'e'
 // 'E' is epsilon*|E|^2, 'H' is |H|^2, 'e' is |E|^2, 'U' is 'E'+'H'
-int Simulation_GetLayerIntegral(Simulation *S, Layer *layer, char which, double *integral);
+int Simulation_GetLayerVolumeIntegral(Simulation *S, Layer *layer, char which, double *integral);
+int Simulation_GetLayerZIntegral(Simulation *S, Layer *layer, const double r[2], double integral[6]);
 
 // Outputs a POV-Ray render script of a unit cell of the structure.
 // Return value can be ignored for valid inputs.

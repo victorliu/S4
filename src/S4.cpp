@@ -1081,7 +1081,7 @@ int Simulation_ComputeLayerSolution(Simulation *S, Layer *L, LayerBands **layer_
 		}else{
 			RNP::TBLAS::CopyMatrix<'A'>(n2,n2, &work4[0+n2*n4],n4, &work4[n2+n2*n4],n4);
 		}
-		MultKPMatrix(
+		MultKPMatrix("N",
 			std::complex<double>(S->omega[0], S->omega[1]),
 			S->n_G,
 			S->solution->kx, S->solution->ky,
@@ -1117,7 +1117,7 @@ int Simulation_ComputeLayerSolution(Simulation *S, Layer *L, LayerBands **layer_
 		}else{
 			RNP::TBLAS::CopyMatrix<'A'>(n2,n2, &work4[0+0*n4],n4, work2,n2);
 		}
-		MultKPMatrix(
+		MultKPMatrix("N",
 			std::complex<double>(S->omega[0], S->omega[1]),
 			S->n_G,
 			S->solution->kx, S->solution->ky,
@@ -2379,8 +2379,8 @@ int Simulation_GetStressTensorIntegral(Simulation *S, Layer *layer, double offse
 // Returns a solution error code
 // which can be 'U', 'E', 'H', 'e'
 // 'E' is epsilon*|E|^2, 'H' is |H|^2, 'e' is |E|^2, 'U' is 'E'+'H'
-int Simulation_GetLayerIntegral(Simulation *S, Layer *layer, char which, double *integral){
-	S4_TRACE("> Simulation_GetLayerIntegral(S=%p, layer=%p, which=%c, integral=%p)\n", S, layer, which, integral);
+int Simulation_GetLayerVolumeIntegral(Simulation *S, Layer *layer, char which, double *integral){
+	S4_TRACE("> Simulation_GetLayerVolumeIntegral(S=%p, layer=%p, which=%c, integral=%p)\n", S, layer, which, integral);
 	
 	int ret = 0;
 	if(NULL == S){ ret = -1; }
@@ -2388,7 +2388,7 @@ int Simulation_GetLayerIntegral(Simulation *S, Layer *layer, char which, double 
 	if(which != 'U' && which != 'E' && which != 'H' && which != 'e'){ ret = -3; }
 	if(NULL == integral){ ret = -4; }
 	if(0 != ret){
-		S4_TRACE("< Simulation_GetLayerIntegral (failed; ret = %d)\n", ret);
+		S4_TRACE("< Simulation_GetLayerVolumeIntegral (failed; ret = %d)\n", ret);
 		return ret;
 	}
 	
@@ -2397,7 +2397,7 @@ int Simulation_GetLayerIntegral(Simulation *S, Layer *layer, char which, double 
 	
 	ret = Simulation_GetLayerSolution(S, layer, &Lbands, &Lsoln);
 	if(0 != ret){
-		S4_TRACE("< Simulation_GetLayerIntegral (failed; Simulation_GetLayerSolution returned %d)\n", ret);
+		S4_TRACE("< Simulation_GetLayerVolumeIntegral (failed; Simulation_GetLayerSolution returned %d)\n", ret);
 		return ret;
 	}
 	
@@ -2407,11 +2407,11 @@ int Simulation_GetLayerIntegral(Simulation *S, Layer *layer, char which, double 
 	
 	std::complex<double> *work = (std::complex<double> *)S4_malloc(sizeof(std::complex<double>) * (n4*n4));
 	if(NULL == work){
-		S4_TRACE("< Simulation_GetLayerIntegral (failed; allocation failed)\n");
+		S4_TRACE("< Simulation_GetLayerVolumeIntegral (failed; allocation failed)\n");
 		return 1;
 	}
 
-	GetLayerIntegral(which,
+	GetLayerVolumeIntegral(which,
 		n, S->solution->kx, S->solution->ky,
 		std::complex<double>(S->omega[0],S->omega[1]),
 		layer->thickness, Lbands->q, Lbands->kp, Lbands->phi, Lbands->Epsilon_inv, Lbands->Epsilon2, Lbands->epstype, Lsoln->ab, integral, work);
@@ -2419,7 +2419,52 @@ int Simulation_GetLayerIntegral(Simulation *S, Layer *layer, char which, double 
 	S4_free(work);
 	
 	
-	S4_TRACE("< Simulation_GetLayerIntegral\n");
+	S4_TRACE("< Simulation_GetLayerVolumeIntegral\n");
+	return 0;
+}
+
+// Returns a solution error code
+int Simulation_GetLayerZIntegral(Simulation *S, Layer *layer, const double r[2], double integral[6]){
+	S4_TRACE("> Simulation_GetLayerZIntegral(S=%p, layer=%p, which=%c, integral=%p)\n", S, layer, which, integral);
+	
+	int ret = 0;
+	if(NULL == S){ ret = -1; }
+	if(NULL == layer){ ret = -2; }
+	if(NULL == r){ ret = -3; }
+	if(NULL == integral){ ret = -4; }
+	if(0 != ret){
+		S4_TRACE("< Simulation_GetLayerZIntegral (failed; ret = %d)\n", ret);
+		return ret;
+	}
+	
+	LayerBands *Lbands;
+	LayerSolution *Lsoln;
+	
+	ret = Simulation_GetLayerSolution(S, layer, &Lbands, &Lsoln);
+	if(0 != ret){
+		S4_TRACE("< Simulation_GetLayerZIntegral (failed; Simulation_GetLayerSolution returned %d)\n", ret);
+		return ret;
+	}
+	
+	const int n = S->n_G;
+	const int n2 = 2*n;
+	const int n4 = 2*n2;
+	
+	std::complex<double> *work = (std::complex<double> *)S4_malloc(sizeof(std::complex<double>) * (12*n4));
+	if(NULL == work){
+		S4_TRACE("< Simulation_GetLayerZIntegral (failed; allocation failed)\n");
+		return 1;
+	}
+
+	GetLayerZIntegral(
+		n, S->solution->kx, S->solution->ky,
+		std::complex<double>(S->omega[0],S->omega[1]),
+		layer->thickness, r, Lbands->q, Lbands->kp, Lbands->phi, Lbands->Epsilon_inv, Lbands->Epsilon2, Lbands->epstype, Lsoln->ab, integral, work);
+
+	S4_free(work);
+	
+	
+	S4_TRACE("< Simulation_GetLayerZIntegral\n");
 	return 0;
 }
 

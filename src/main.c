@@ -1642,25 +1642,34 @@ static int S4L_Simulation_GetAmplitudes(lua_State *L){
 		luaL_checknumber(L, 3),
 		amp, &amp[4*n]);
 	
-	lua_createtable(L, 2, 0);
-	for(j = 0; j < 2; ++j){ // for forw/back
-		lua_pushinteger(L, j+1);
-		lua_createtable(L, 2*n, 0);
-		for(i = 0; i < 2*n; ++i){
-			lua_pushinteger(L, i+1);
-			// push a complex number
-			lua_createtable(L, 2, 0);
-			for(k = 0; k < 2; ++k){
-				lua_pushinteger(L, k+1);
-				lua_pushnumber(L, amp[4*n*j+2*i+k]);
-				lua_settable(L, -3);
-			}
+	lua_createtable(L, 2*n, 0);
+	for(i = 0; i < 2*n; ++i){
+		lua_pushinteger(L, i+1);
+		// push a complex number
+		lua_createtable(L, 2, 0);
+		for(k = 0; k < 2; ++k){
+			lua_pushinteger(L, k+1);
+			lua_pushnumber(L, amp[4*n*0+2*i+k]);
 			lua_settable(L, -3);
 		}
 		lua_settable(L, -3);
 	}
+	
+	lua_createtable(L, 2*n, 0);
+	for(i = 0; i < 2*n; ++i){
+		lua_pushinteger(L, i+1);
+		// push a complex number
+		lua_createtable(L, 2, 0);
+		for(k = 0; k < 2; ++k){
+			lua_pushinteger(L, k+1);
+			lua_pushnumber(L, amp[4*n*1+2*i+k]);
+			lua_settable(L, -3);
+		}
+		lua_settable(L, -3);
+	}
+	
 	free(amp);
-	return 1;
+	return 2;
 }
 
 
@@ -2067,7 +2076,7 @@ static int S4L_Simulation_GetStressTensorIntegral(lua_State *L){
 // Expected stack:
 //   1 Simulation
 //   2 layer name string
-static int S4L_Simulation_GetLayerIntegral(lua_State *L, char which, const char *name){
+static int S4L_Simulation_GetLayerVolumeIntegral(lua_State *L, char which, const char *name){
 	int ret;
 	double integral;
 	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
@@ -2080,7 +2089,7 @@ static int S4L_Simulation_GetLayerIntegral(lua_State *L, char which, const char 
 		return 0;
 	}
 	
-	ret = Simulation_GetLayerIntegral(S, layer, which, &integral);
+	ret = Simulation_GetLayerVolumeIntegral(S, layer, which, &integral);
 	if(0 != ret){
 		HandleSolutionErrorCode(L, name, ret);
 	}
@@ -2089,16 +2098,55 @@ static int S4L_Simulation_GetLayerIntegral(lua_State *L, char which, const char 
 	return 1;
 }
 static int S4L_Simulation_GetLayerEnergyDensityIntegral(lua_State *L){
-	return S4L_Simulation_GetLayerIntegral(L, 'U', "GetLayerEnergyDensityIntegral");
+	return S4L_Simulation_GetLayerVolumeIntegral(L, 'U', "GetLayerEnergyDensityIntegral");
 }
 static int S4L_Simulation_GetLayerElectricEnergyDensityIntegral(lua_State *L){
-	return S4L_Simulation_GetLayerIntegral(L, 'E', "GetLayerElectricEnergyDensityIntegral");
+	return S4L_Simulation_GetLayerVolumeIntegral(L, 'E', "GetLayerElectricEnergyDensityIntegral");
 }
 static int S4L_Simulation_GetLayerMagneticEnergyDensityIntegral(lua_State *L){
-	return S4L_Simulation_GetLayerIntegral(L, 'H', "GetLayerMagneticEnergyDensityIntegral");
+	return S4L_Simulation_GetLayerVolumeIntegral(L, 'H', "GetLayerMagneticEnergyDensityIntegral");
 }
 static int S4L_Simulation_GetLayerElectricFieldIntensityIntegral(lua_State *L){
-	return S4L_Simulation_GetLayerIntegral(L, 'e', "GetLayerElectricFieldIntensityIntegral");
+	return S4L_Simulation_GetLayerVolumeIntegral(L, 'e', "GetLayerElectricFieldIntensityIntegral");
+}
+
+static int S4L_Simulation_GetLayerZIntegral(lua_State *L){
+	int ret, i;
+	double integral[6], r[2];
+	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	luaL_argcheck(L, S != NULL, 1, "GetLayerZIntegral: 'Simulation' object expected.");
+	
+	const char *layer_name = luaL_checklstring(L, 2, NULL);
+	Layer *layer = Simulation_GetLayerByName(S, layer_name, NULL);
+	if(NULL == layer){
+		S4L_error(L, "GetLayerZIntegral: Layer named '%s' not found.", layer_name);
+		return 0;
+	}
+	
+	luaL_checktype(L, 3, LUA_TTABLE);
+	luaL_argcheck(L, lua_objlen(L, 3) == 2, 3, "Position must be a pair of coordinates.");
+	for(i = 0; i < 2; ++i){
+		lua_pushinteger(L, i+1);
+		lua_gettable(L, 3);
+		if(!lua_isnumber(L, -1)){
+			S4L_error(L, "Position must be a pair of coordinates.");
+		}
+		r[i] = lua_tonumber(L, -1);
+		lua_pop(L, 1);
+	}
+	
+	ret = Simulation_GetLayerZIntegral(S, layer, r, integral);
+	if(0 != ret){
+		HandleSolutionErrorCode(L, "GetLayerZIntegral", ret);
+	}
+	
+	lua_pushnumber(L, integral[0]);
+	lua_pushnumber(L, integral[1]);
+	lua_pushnumber(L, integral[2]);
+	lua_pushnumber(L, integral[3]);
+	lua_pushnumber(L, integral[4]);
+	lua_pushnumber(L, integral[5]);
+	return 6;
 }
 
 static void S4_lua_init(lua_State *L){
@@ -2156,6 +2204,7 @@ static void S4_lua_init(lua_State *L){
 		{"GetLayerElectricEnergyDensityIntegral", S4L_Simulation_GetLayerElectricEnergyDensityIntegral},
 		{"GetLayerMagneticEnergyDensityIntegral", S4L_Simulation_GetLayerMagneticEnergyDensityIntegral},
 		{"GetLayerElectricFieldIntensityIntegral", S4L_Simulation_GetLayerElectricFieldIntensityIntegral},
+		{"GetLayerZIntegral", S4L_Simulation_GetLayerZIntegral},
 		{"GetEField", S4L_Simulation_GetEField},
 		{"GetHField", S4L_Simulation_GetHField},
 		{"GetFields", S4L_Simulation_GetFields},
