@@ -575,7 +575,7 @@ void GetLayerVolumeIntegral(
 //               TranslateAmplitudes.
 // integral    - (OUTPUT) The integrals, in order, of
 //               |Ex|^2, |Ey|^2, |Ez|^2, |Hx|^2, |Hy|^2, |Hz|^2
-// work        - (WORK) Length 4n x 4n. If NULL, then the space is
+// work        - (WORK) Length 12 x 4n. If NULL, then the space is
 //               internally allocated.
 void GetLayerZIntegral(
 	size_t n, // glist.n
