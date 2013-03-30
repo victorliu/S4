@@ -125,6 +125,7 @@ static void MakeKPMatrix(
 //                [  kx ]
 
 void MultKPMatrix(
+	const char *trans,
 	const std::complex<double> omega,
 	const size_t n,
 	const double *kx,
@@ -141,18 +142,33 @@ void MultKPMatrix(
 	const size_t n2 = 2*n;
 	
 	if(NULL != kp){
-		RNP::TBLAS::MultMM<'N','N'>(n2,ncols,n2, std::complex<double>(1.),kp,n2, a,lda, std::complex<double>(0.),y,ldy);
+		if('N' == trans[0]){
+			if(ncols > 1){
+				RNP::TBLAS::MultMM<'N','N'>(n2,ncols,n2, std::complex<double>(1.),kp,n2, a,lda, std::complex<double>(0.),y,ldy);
+			}else{
+				RNP::TBLAS::MultMV<'N'>(n2,n2, std::complex<double>(1.),kp,n2, a,1, std::complex<double>(0.),y,1);
+			}
+		}else{
+			if(ncols > 1){
+				RNP::TBLAS::MultMM<'C','N'>(n2,ncols,n2, std::complex<double>(1.),kp,n2, a,lda, std::complex<double>(0.),y,ldy);
+			}else{
+				RNP::TBLAS::MultMV<'C'>(n2,n2, std::complex<double>(1.),kp,n2, a,1, std::complex<double>(0.),y,1);
+			}
+		}
 		return;
 	}
 	
 	const std::complex<double> omega2 = omega*omega;
 	if(EPSILON2_TYPE_BLKDIAG1_SCALAR == Epsilon2_type || EPSILON2_TYPE_BLKDIAG2_SCALAR == Epsilon2_type){
+		const std::complex<double> epsinv(
+			'N' == trans[0] ? Epsilon_inv[0] : std::conj(Epsilon_inv[0])
+		);
 		for(size_t j = 0; j < ncols; ++j){
 			for(size_t i = 0; i < n; ++i){
 				std::complex<double> c = a[(0+i)+j*lda];
 				std::complex<double> d = a[(n+i)+j*lda];
-				y[(0+i)+j*ldy] = (omega2 - ky[i]*Epsilon_inv[0]*ky[i]) * c + (ky[i]*Epsilon_inv[0]*kx[i]) * d;
-				y[(n+i)+j*ldy] = (kx[i]*Epsilon_inv[0]*ky[i]) * c + (omega2 - kx[i]*Epsilon_inv[0]*kx[i]) * d;
+				y[(0+i)+j*ldy] = (omega2 - ky[i]*epsinv*ky[i]) * c + (         ky[i]*epsinv*kx[i]) * d;
+				y[(n+i)+j*ldy] = (         kx[i]*epsinv*ky[i]) * c + (omega2 - kx[i]*epsinv*kx[i]) * d;
 			}
 		}
 	}else{
@@ -161,7 +177,19 @@ void MultKPMatrix(
 				y[i+j*ldy] = ky[i]*a[(0+i)+j*lda] - kx[i]*a[(n+i)+j*lda];
 			}
 		}
-		RNP::TBLAS::MultMM<'N','N'>(n,ncols,n, 1.,Epsilon_inv,n, &y[0+0*ldy],ldy, 0.,&y[n+0*ldy],ldy);
+		if('N' == trans[0]){
+			if(ncols > 1){
+				RNP::TBLAS::MultMM<'N','N'>(n,ncols,n, 1.,Epsilon_inv,n, &y[0+0*ldy],ldy, 0.,&y[n+0*ldy],ldy);
+			}else{
+				RNP::TBLAS::MultMV<'N'>(n,n, 1.,Epsilon_inv,n, &y[0+0*ldy],1, 0.,&y[n+0*ldy],1);
+			}
+		}else{
+			if(ncols > 1){
+				RNP::TBLAS::MultMM<'C','N'>(n,ncols,n, 1.,Epsilon_inv,n, &y[0+0*ldy],ldy, 0.,&y[n+0*ldy],ldy);
+			}else{
+				RNP::TBLAS::MultMV<'C'>(n,n, 1.,Epsilon_inv,n, &y[0+0*ldy],1, 0.,&y[n+0*ldy],1);
+			}
+		}
 		
 		for(size_t j = 0; j < ncols; ++j){
 			for(size_t i = 0; i < n; ++i){
@@ -553,7 +581,7 @@ void GetSMatrix(
 						RNP::TBLAS::CopyMatrix<'A'>(n2,n2, kp[l],n2, t1,n2);
 					}
 				}else{
-					MultKPMatrix(omega, n, kx, ky, Epsilon_inv[l], epstype[l], kp[l], n2, phi[l],n2, t1,n2);
+					MultKPMatrix("N", omega, n, kx, ky, Epsilon_inv[l], epstype[l], kp[l], n2, phi[l],n2, t1,n2);
 				}
 				for(size_t i = 0; i < n2; ++i){
 					RNP::TBLAS::Scale(n2, 1./q[l][i], &t1[0+i*n2], 1);
@@ -577,7 +605,7 @@ void GetSMatrix(
 						RNP::TBLAS::CopyMatrix<'A'>(n2,n2, kp[lp1],n2, in1,n2);
 					}
 				}else{
-					MultKPMatrix(omega, n, kx, ky, Epsilon_inv[lp1], epstype[lp1], kp[lp1], n2, phi[lp1],n2, in1,n2);
+					MultKPMatrix("N", omega, n, kx, ky, Epsilon_inv[lp1], epstype[lp1], kp[lp1], n2, phi[lp1],n2, in1,n2);
 				}
 				for(size_t i = 0; i < n2; ++i){
 					RNP::TBLAS::Scale(n2, 1./q[lp1][i], &in1[0+i*n2], 1);
@@ -877,7 +905,7 @@ void GetZPoyntingFlux(
 	}else{
 		RNP::TBLAS::MultMM<'N','N'>(n2,2,n2, std::complex<double>(1.),phi,n2, a2,n2, std::complex<double>(0.), a3,n2);
 	}
-	MultKPMatrix(omega, n, kx, ky, Epsilon_inv, epstype, kp, 2, a3,n2, a2,n2);
+	MultKPMatrix("N", omega, n, kx, ky, Epsilon_inv, epstype, kp, 2, a3,n2, a2,n2);
 	if(NULL == phi){
 		RNP::TBLAS::CopyMatrix<'A'>(n2,2, a2,n2, a3,n2);
 	}else{
@@ -930,7 +958,7 @@ void GetZPoyntingFluxComponents(
 	}else{
 		RNP::TBLAS::MultMM<'N','N'>(n2,2,n2, std::complex<double>(1.),phi,n2, a2,n2, std::complex<double>(0.), a3,n2);
 	}
-	MultKPMatrix(omega, n, kx, ky, Epsilon_inv, epstype, kp, 2, a3,n2, a2,n2);
+	MultKPMatrix("N", omega, n, kx, ky, Epsilon_inv, epstype, kp, 2, a3,n2, a2,n2);
 	// At this point, a2[n2] contains alpha_e, b2[n2] contains beta_e
 	
 	if(NULL == phi){
@@ -985,7 +1013,7 @@ static void GetInPlaneFieldVector(
 	}
 	// At this point, the 4 columns of &eh[0] (length n2) are
 	// [ phi.inv(q).a   -phi.inv(q).b   phi.a   phi.b ]
-	MultKPMatrix(omega, n, kx, ky, Epsilon_inv, epstype, kp, 2, &eh[0],n2, &eh[4*n2],n2);
+	MultKPMatrix("N", omega, n, kx, ky, Epsilon_inv, epstype, kp, 2, &eh[0],n2, &eh[4*n2],n2);
 	RNP::TBLAS::Axpy(n2, std::complex<double>(1.),&eh[2*n2],1, &eh[3*n2],1);
 	RNP::TBLAS::Axpy(n2, std::complex<double>(1.),&eh[5*n2],1, &eh[4*n2],1);
 	/*
@@ -1142,7 +1170,7 @@ std::complex<double> zsinc(const std::complex<double> &z){
 	}
 }
 
-void GetLayerIntegral(
+void GetLayerVolumeIntegral(
 	char which,
 	size_t n, // glist.n
 	const double *kx,
@@ -1301,5 +1329,110 @@ void GetLayerIntegral(
 	}
 	if(NULL == work){
 		rcwa_free(Q);
+	}
+}
+
+
+// returns Integral[ abs(XX)^2, z] for XX = ex, ey, ez, hx, hy, hz
+void GetLayerZIntegral(
+	size_t n, // glist.n
+	const double *kx,
+	const double *ky,
+	std::complex<double> omega,
+	const double &thickness, const double r[2],
+	const std::complex<double> *q, // length 2*glist.n
+	const std::complex<double> *kp, // size (2*glist.n)^2 (k-parallel matrix)
+	const std::complex<double> *phi, // size (2*glist.n)^2
+	const std::complex<double> *epsilon_inv, // size (glist.n)^2
+	const std::complex<double> *epsilon2, // size (2*glist.n)^2
+	int epstype,
+	const std::complex<double> *ab, // length 4*glist.n
+	double integral[6],
+	std::complex<double> *work
+){
+	static const std::complex<double> zero(0.);
+	static const std::complex<double> one(1.);
+	const size_t n2 = 2*n;
+	const size_t n4 = 2*n2;
+	const std::complex<double> iomega(1./omega);
+	
+	std::complex<double> *f = work;
+	if(NULL == work){
+		f = (std::complex<double>*)rcwa_malloc(sizeof(std::complex<double>)*12*n4);
+	}
+	std::complex<double> *g = f + 6*n4;
+	RNP::TBLAS::Fill(6*n4, 0., f, 1);
+	
+	// We will simultaneously generate f for all 6 components
+	
+	// Generate the Fourier phase factors
+	for(size_t i = 0; i < n; ++i){ // this is for ex
+		double theta = (kx[i]*r[0] + ky[i]*r[1]);
+		f[0*n4+1*n+i] = std::complex<double>(cos(theta),-sin(theta)); // note the minus
+	}
+	RNP::TBLAS::Copy(n, &f[n],1, &f[1*n4+0*n],1); // -ey
+	RNP::TBLAS::MultMV<'C'>(n,n, iomega,epsilon_inv,n, &f[n4],1, zero,&f[2*n4+n2],1); // ez
+	RNP::TBLAS::Copy(n, &f[2*n4+n2],1, &f[2*n4+n2+n],1); // ez
+	for(size_t i = 0; i < n; ++i){ // ez
+		f[2*n4+n2+i] *= ky[i];
+	}
+	for(size_t i = 0; i < n; ++i){ // ez
+		f[2*n4+n2+n+i] *= -kx[i];
+	}
+	RNP::TBLAS::Copy(n, &f[n4],1, &f[3*n4+n2],1); // hx
+	RNP::TBLAS::Copy(n, &f[n4],1, &f[4*n4+n2+n],1); // hy
+	for(size_t i = 0; i < n; ++i){ // -hz
+		f[5*n4+0*n+i] = f[n4+i] * iomega * kx[i];
+	}
+	for(size_t i = 0; i < n; ++i){ // -hz
+		f[5*n4+1*n+i] = f[n4+i] * iomega * ky[i];
+	}
+	
+	// Form M^H C^H * f
+	// M = [ kp.phi.inv(q)   -kp.phi.inv(q) ]
+	//     [     phi                phi     ]
+	if(NULL != phi){
+		MultKPMatrix("C", omega, n, kx, ky, epsilon_inv, epstype, kp, 6, f,n4, &g[n2],n4);
+		RNP::TBLAS::MultMM<'C','N'>(n2,6,n2, one,phi,n2, &g[n2],n4, zero,&g[0 ],n4);
+		RNP::TBLAS::MultMM<'C','N'>(n2,6,n2, one,phi,n2, &f[n2],n4, zero,&g[n2],n4);
+	}else{
+		MultKPMatrix("C", omega, n, kx, ky, epsilon_inv, epstype, kp, 6, f,n4, &g[0],n4);
+		RNP::TBLAS::CopyMatrix<'A'>(n2,6, &f[n2],n4, &g[n2],n4);
+	} // top half of g is phi^H kp^H ftop, bottom half is phi^H fbot
+	for(size_t i = 0; i < n2; ++i){
+		RNP::TBLAS::Scale(6, 1./std::conj(omega*q[i]), &g[i],n4);
+	}
+	for(size_t j = 0; j < 6; ++j){
+		for(size_t i = 0; i < n2; ++i){
+			std::complex<double> t(g[i+j*n4]);
+			g[i+j*n4] += g[i+n2+j*n4];
+			g[i+n2+j*n4] -= t;
+		}
+	}
+	
+	for(size_t i = 0; i < 6; ++i){
+		integral[i] = 0;
+	}
+	
+	// At this point, each column of g contains a vector v such that
+	// v v^H is a rank-1 matrix that must be integrated over.
+	const double d_2 = 0.5*thickness;
+	for(size_t j = 0; j < n4; ++j){
+		const double sj = (j < n2) ? 1 : -1;
+		const size_t qj = (j < n2) ? j : j-n2;
+		for(size_t i = 0; i < n4; ++i){
+			const double si = (i < n2) ? 1 : -1;
+			const size_t qi = (i < n2) ? i : i-n2;
+			std::complex<double> term = std::conj(ab[i]) * ab[j];
+			term *= thickness*std::exp(std::complex<double>(0,d_2) * (q[qj] - std::conj(q[qi])));
+			term *= zsinc(d_2 * (sj*q[qj] - si*std::conj(q[qi])));
+			for(size_t ii = 0; ii < 6; ++ii){
+				integral[ii] += std::real(std::conj(g[j+ii*n4])*g[i+ii*n4] * term);
+			}
+		}
+	}
+	
+	if(NULL == work){
+		rcwa_free(f);
 	}
 }

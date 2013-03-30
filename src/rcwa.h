@@ -151,6 +151,8 @@ void SolveLayerEigensystem_uniform(
 //
 // Arguments
 // =========
+// trans       - (INPUT) If "C", multiplies by the conjugate transpose.
+//                       If "N", multiplies by the original matrix.
 // omega       - (INPUT) The operating angular frequency.
 // n           - (INPUT) The number of Fourier orders used in the
 //               dielectric expansion. We will denote 2*n as 2n,
@@ -184,6 +186,7 @@ void SolveLayerEigensystem_uniform(
 // ldy         - (INPUT) Leading dimension of matrix y.
 
 void MultKPMatrix(
+	const char *trans,
 	const std::complex<double> omega,
 	const size_t n,
 	const double *kx,
@@ -500,7 +503,7 @@ void GetZStressTensorIntegral(
 
 // Purpose
 // =======
-// Returns the volume integral of the a density over the unit cell
+// Returns the volume integral of a density over the unit cell
 // throughout the entire thickness of the cell. The result is not time
 // averaged (lacks a factor of 0.5).
 //
@@ -531,7 +534,7 @@ void GetZStressTensorIntegral(
 // integral    - (OUTPUT) The volume integral of the specified quantity.
 // work        - (WORK) Length 4n x 4n. If NULL, then the space is
 //               internally allocated.
-void GetLayerIntegral(
+void GetLayerVolumeIntegral(
 	char which,
 	size_t n, // glist.n
 	const double *kx, const double *ky,
@@ -545,6 +548,49 @@ void GetLayerIntegral(
 	int epstype,
 	const std::complex<double> *ab, // length 4*glist.n
 	double *integral,
+	std::complex<double> *work
+);
+
+
+// Purpose
+// =======
+// Returns the line integral of the square magnitudes of electric and
+// magnetic field components in the depth (z) direction. The result
+// is not time averaged (lacks a factor of 0.5).
+//
+// Arguments
+// =========
+// n           - (INPUT) The number of Fourier orders.
+// kx, ky      - (INPUT) Arrays of length n. The x- and y-components
+//                of the Fourier k-vectors of the dielectric expansion.
+// omega       - (INPUT) The operating angular frequency.
+// thickness   - (INPUT) Thickness of the layer.
+// r           - (INPUT) x and y coordinates of location to integrate.
+// q, kp, phi  - (INPUT) Layer band structure. (See above)
+// epsilon_inv - (INPUT) Inverse of Epsilon matrix. (See above)
+// epsilon2    - (INPUT) Epsilon2 matrix. (See above)
+// epstype     - (INPUT) Type code of the Epsilon2 matrix (see above).
+// ab          - (INPUT) Length 4n. The mode amplitudes within the layer
+//               at a particular z-offset, e.g. returned by
+//               TranslateAmplitudes.
+// integral    - (OUTPUT) The integrals, in order, of
+//               |Ex|^2, |Ey|^2, |Ez|^2, |Hx|^2, |Hy|^2, |Hz|^2
+// work        - (WORK) Length 4n x 4n. If NULL, then the space is
+//               internally allocated.
+void GetLayerZIntegral(
+	size_t n, // glist.n
+	const double *kx,
+	const double *ky,
+	std::complex<double> omega,
+	const double &thickness, const double r[2],
+	const std::complex<double> *q, // length 2*glist.n
+	const std::complex<double> *kp, // size (2*glist.n)^2 (k-parallel matrix)
+	const std::complex<double> *phi, // size (2*glist.n)^2
+	const std::complex<double> *epsilon_inv, // size (glist.n)^2
+	const std::complex<double> *epsilon2, // size (2*glist.n)^2
+	int epstype,
+	const std::complex<double> *ab, // length 4*glist.n
+	double integral[6],
 	std::complex<double> *work
 );
 
