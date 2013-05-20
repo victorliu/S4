@@ -1,0 +1,12 @@
+The file binary_grating.lua calculates the transmission spectrum of a
+binary grating (50% duty cycle) composed of square rods. The frequency
+range is chosen below the diffraction limit.
+
+Run this example by executing:
+$ S4 binary_grating.lua > out.txt
+The output of this script should be similar to binary_grating.txt
+
+Similarly, diffraction.lua calculates the diffraction efficiency for
+the same structure at higher frequencies. Run it by executing:
+$ S4 diffraction.lua > out.txt
+The output of this script should be similar to diffraction.txt
