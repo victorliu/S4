@@ -1,0 +1,7 @@
+This example is identical to the example contained in ../1d/, except it
+demonstrates how to use MPI to compute spectra in parallel. Run this
+example by executing:
+$ S4 binary_grating_mpi.lua
+The script will produce as many output files as there are MPI nodes,
+named out0.txt, out1.txt, out2.txt, etc. The concatenation of these
+files should be similar to ../1d/binary_grating.txt
