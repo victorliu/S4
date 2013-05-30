@@ -215,6 +215,9 @@ void Simulation_Init(Simulation *S){
 	S->options.use_experimental_fmm = 0;
 	S->options.use_less_memory = 0;
 	
+	S->options.lanczos_smoothing_width = 1.0;
+	S->options.lanczos_smoothing_power = 1;
+	
 	S->field_cache = NULL;
 	
 	S4_TRACE("< Simulation_Init\n");
@@ -2253,8 +2256,10 @@ int Simulation_GetEpsilon(Simulation *S, const double r[3], double eps[2]){
 	}
 
 	double mp1 = 0;
+	int pwr = S->options.lanczos_smoothing_power;
 	if(S->options.use_Lanczos_smoothing){
 		mp1 = GetLanczosSmoothingOrder(S);
+		mp1 *= S->options.lanczos_smoothing_width;
 	}
 	const double unit_cell_size = Simulation_GetUnitCellSize(S);
 	const int ndim = (0 == S->Lr[2] && 0 == S->Lr[3]) ? 1 : 2;
@@ -2269,7 +2274,7 @@ int Simulation_GetEpsilon(Simulation *S, const double r[3], double eps[2]){
 		double ft[2];
 		Pattern_GetFourierTransform(&L->pattern, values, f, ndim, unit_cell_size, ft);
 		if(S->options.use_Lanczos_smoothing){
-			double sigma = GetLanczosSmoothingFactor(mp1, f);
+			double sigma = GetLanczosSmoothingFactor(mp1, pwr, f);
 			ft[0] *= sigma;
 			ft[1] *= sigma;
 		}

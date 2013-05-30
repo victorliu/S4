@@ -156,6 +156,9 @@ typedef struct Options_{
 	// Set use_less_memory to nonzero if intermediate matrices should not
 	// be stored in memory when possible.
 	int use_less_memory;
+	
+	double lanczos_smoothing_width;
+	int lanczos_smoothing_power;
 } Options;
 
 typedef struct Solution_{
