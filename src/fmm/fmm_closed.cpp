@@ -65,9 +65,11 @@ int FMMGetEpsilon_ClosedForm(const Simulation *S, const Layer *L, const int n, s
 	}
 	
 	double mp1 = 0;
+	int pwr = S->options.lanczos_smoothing_power;
 	if(S->options.use_Lanczos_smoothing){
 		mp1 = GetLanczosSmoothingOrder(S);
 		S4_TRACE("I   Lanczos smoothing order = %f\n", mp1);
+		mp1 *= S->options.lanczos_smoothing_width;
 	}
 
 	const double unit_cell_size = Simulation_GetUnitCellSize(S);
@@ -84,7 +86,7 @@ int FMMGetEpsilon_ClosedForm(const Simulation *S, const Layer *L, const int n, s
 				double ft[2];
 				Pattern_GetFourierTransform(&L->pattern, values, f, ndim, unit_cell_size, ft);
 				if(S->options.use_Lanczos_smoothing){
-					double sigma = GetLanczosSmoothingFactor(mp1, f);
+					double sigma = GetLanczosSmoothingFactor(mp1, pwr, f);
 					ft[0] *= sigma;
 					ft[1] *= sigma;
 				}
@@ -173,7 +175,7 @@ int FMMGetEpsilon_ClosedForm(const Simulation *S, const Layer *L, const int n, s
 						double ft[2];
 						Pattern_GetFourierTransform(&L->pattern, &values[4*ldv], f, ndim, unit_cell_size, ft);
 						if(S->options.use_Lanczos_smoothing){
-							double sigma = GetLanczosSmoothingFactor(mp1, f);
+							double sigma = GetLanczosSmoothingFactor(mp1, pwr, f);
 							ft[0] *= sigma;
 							ft[1] *= sigma;
 						}
@@ -195,7 +197,7 @@ int FMMGetEpsilon_ClosedForm(const Simulation *S, const Layer *L, const int n, s
 						double ft[2];
 						Pattern_GetFourierTransform(&L->pattern, &values[k*ldv], f, ndim, unit_cell_size, ft);
 						if(S->options.use_Lanczos_smoothing){
-							double sigma = GetLanczosSmoothingFactor(mp1, f);
+							double sigma = GetLanczosSmoothingFactor(mp1, pwr, f);
 							ft[0] *= sigma;
 							ft[1] *= sigma;
 						}

@@ -36,6 +36,6 @@ int FMMGetEpsilon_PolBasisVL(const Simulation *S, const Layer *L, const int n, s
 int FMMGetEpsilon_PolBasisJones(const Simulation *S, const Layer *L, const int n, std::complex<double> *Epsilon2, std::complex<double> *Epsilon_inv);
 
 double GetLanczosSmoothingOrder(const Simulation *S);
-double GetLanczosSmoothingFactor(double order, double f[2]);
+double GetLanczosSmoothingFactor(double order, int power, double f[2]);
 
 #endif // _S4_FMM_H_

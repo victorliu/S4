@@ -90,9 +90,11 @@ static void vfield_to_Jones_vector(double v[2], std::complex<double> j[2]){
 // Fourier transformed matrices.
 int FMMGetEpsilon_PolBasisJones(const Simulation *S, const Layer *L, const int n, std::complex<double> *Epsilon2, std::complex<double> *Epsilon_inv){
 	double mp1 = 0;
+	int pwr = S->options.lanczos_smoothing_power;
 	if(S->options.use_Lanczos_smoothing){
 		mp1 = GetLanczosSmoothingOrder(S);
 		S4_TRACE("I   Lanczos smoothing order = %f\n", mp1);
+		mp1 *= S->options.lanczos_smoothing_width;
 	}
 	
 	if(Epsilon_inv){} // prevent unused parameter warning
@@ -348,7 +350,7 @@ int FMMGetEpsilon_PolBasisJones(const Simulation *S, const Layer *L, const int n
 			double ft[2];
 			Pattern_GetFourierTransform(&L->pattern, ivalues, f, ndim, unit_cell_size, ft);
 			if(S->options.use_Lanczos_smoothing){
-				double sigma = GetLanczosSmoothingFactor(mp1, f);
+				double sigma = GetLanczosSmoothingFactor(mp1, pwr, f);
 				ft[0] *= sigma;
 				ft[1] *= sigma;
 			}

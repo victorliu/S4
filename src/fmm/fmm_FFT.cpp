@@ -41,9 +41,11 @@ int FMMGetEpsilon_FFT(const Simulation *S, const Layer *L, const int n, std::com
 	const int *G = S->solution->G;
 	
 	double mp1 = 0;
+	int pwr = S->options.lanczos_smoothing_power;
 	if(S->options.use_Lanczos_smoothing){
 		mp1 = GetLanczosSmoothingOrder(S);
 		S4_TRACE("I   Lanczos smoothing order = %f\n", mp1);
+		mp1 *= S->options.lanczos_smoothing_width;
 	}
 	
 	// Make grid
@@ -190,7 +192,7 @@ fzz[si1+si0*ngrid[1]].real(), fzz[si1+si0*ngrid[1]].imag()
 						f[0] * S->Lk[0] + f[1] * S->Lk[2],
 						f[0] * S->Lk[1] + f[1] * S->Lk[3]
 					};
-					sigma = GetLanczosSmoothingFactor(mp1, fG);
+					sigma = GetLanczosSmoothingFactor(mp1, pwr, fG);
 				}
 				Epsilon2[i+j*n] = ing2 * sigma * Fto[f[1]+f[0]*ngrid[1]];
 			}
@@ -220,7 +222,7 @@ fzz[si1+si0*ngrid[1]].real(), fzz[si1+si0*ngrid[1]].imag()
 						f[0] * S->Lk[0] + f[1] * S->Lk[2],
 						f[0] * S->Lk[1] + f[1] * S->Lk[3]
 					};
-					sigma = GetLanczosSmoothingFactor(mp1, fG);
+					sigma = GetLanczosSmoothingFactor(mp1, pwr, fG);
 				}
 				Epsilon2[Erow+i+(Ecol+j)*n2] = ing2 * sigma * Fto[f[1]+f[0]*ngrid[1]];
 			}
