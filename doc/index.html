@@ -3,12 +3,14 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <title>S4</title>
-<style type="text/css">@import url(s4.css);</style>
+<style type="text/css">
+@import url(s4.css);
+</style>
 </head>
 <body>
 
 
-<p><a href="index.html">S4 Home</a> | <a href="download.html">Download</a> | <a href="s4_lua_api.html">Lua API</a> | <a href="dev_info.html">Developer information</a> | <a href="changelog.html">Changelog</a></p>
+<p><a href="index.html">S4 Home</a> | <a href="download.html">Download</a> | <a href="faq.html">FAQ</a> | <a href="s4_lua_api.html">Lua API</a> | <a href="dev_info.html">Developer information</a> | <a href="changelog.html">Changelog</a></p>
 
 <p><img src="s4.png" title="S4 logo" alt="S4 logo" /></p>
 
@@ -21,7 +23,8 @@ Internally, it uses Rigorous Coupled Wave Analysis (RCWA; also called the Fourie
 
 <ul>
 <li><a href="download.html">Download</a></li>
-<li><a href="s4_lua_api.html">Lua API</a></li>
+<li><a href="s4_lua_api.html">Lua API (main documentation)</a></li>
+<li><a href="faq.html">FAQ</a></li>
 <li><a href="dev_info.html">Developer information</a></li>
 <li><a href="bugs.html">Known issues</a></li>
 <li><a href="changelog.html">Changelog</a></li>
@@ -39,43 +42,28 @@ Internally, it uses Rigorous Coupled Wave Analysis (RCWA; also called the Fourie
 
 <ol>
 <li>Obtain a new simulation object:
-
-<pre><code>S = S4.NewSimulation()
-</code></pre>
-
-<p>S now contains a simulation object with a blank specification, and
-no solutions.</p></li>
+    S = S4.NewSimulation()
+S now contains a simulation object with a blank specification, and
+no solutions.</li>
 <li>Define all materials:
-
-<pre><code>S:AddMaterial('name', {eps_real, eps_imag})
-</code></pre></li>
+    S:AddMaterial(&lsquo;name&rsquo;, {eps_real, eps_imag})</li>
 <li>Add all layers:
-
-<pre><code>S:AddLayer('name', thickness, 'material_name')
-</code></pre></li>
+    S:AddLayer(&lsquo;name&rsquo;, thickness, &lsquo;material_name&rsquo;)</li>
 <li>Add patterning to layers:
-
-<pre><code>S:SetLayerPatternCircle('layer_name',
-                        'inside_material',
-                        {center_x, center_y},
-                        radius)
-</code></pre></li>
+    S:SetLayerPatternCircle(&lsquo;layer_name&rsquo;,
+                            &lsquo;inside_material&rsquo;,
+                            {center_x, center_y},
+                            radius)</li>
 <li>Specify the excitation mechanism:
-
-<pre><code>S:SetExcitationPlanewave(
-   {angle_phi, angle_theta}, -- phi in [0,180), theta in [0,360)
-   {s_pol_amp, s_pol_phase}, -- phase in degrees
-   {p_pol_amp, p_pol_phase})
-</code></pre></li>
+    S:SetExcitationPlanewave(
+       {angle_phi, angle_theta}, &ndash; phi in [0,180), theta in [0,360)
+       {s_pol_amp, s_pol_phase}, &ndash; phase in degrees
+       {p_pol_amp, p_pol_phase})</li>
 <li>Specify the operating frequency:
-
-<pre><code>S:SetFrequency(0.4)
-</code></pre></li>
+    S:SetFrequency(0.4)</li>
 <li>Obtain desired output:
-
-<pre><code>forward_power, backward_power = S:GetPoyntingFlux('layer_name', z_offset)
-print(forward_power, backward_power)
-</code></pre></li>
+    forward_power, backward_power = S:GetPoyntingFlux(&lsquo;layer_name&rsquo;, z_offset)
+    print(forward_power, backward_power)</li>
 </ol>
 
 

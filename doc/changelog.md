@@ -1,13 +1,21 @@
 % S4 Changelog
 % Victor Liu (vkl@stanford.edu)
-% Sep 17, 2011
+% Mar 30, 2013
 <style type="text/css">
 @import url(s4.css);
 </style>
 
-[S4 Home](index.html) | [Download](download.html) | [Lua API](s4_lua_api.html) | [Developer information](dev_info.html) | [Changelog](changelog.html)
+[S4 Home](index.html) | [Download](download.html) | [FAQ](faq.html) | [Lua API](s4_lua_api.html) | [Developer information](dev_info.html) | [Changelog](changelog.html)
 
 # Changelog
+=2013-05-29=
+        Added additional options to Lanczos smoothing. Upgraded support to Lua 5.2 (dropped support for 5.1).
+=2013-03-30=
+	Added GetLayerZIntegral to return line integrals (thanks to Ken Wang for the feature request). Changed the return convention for GetAmplitudes, and added documentation for both functions.
+=2013-03-21=
+	Added GetAmplitudes to return the raw amplitudes for phase retrieval (thanks to Olivier Gauthier-Lafaye for the feature request).
+=2013-02-19=
+	pattern.c now detects 1D patterns and special cases them. Eigensolver performs workspace query for greater efficiency, and Fortran interfaces tidied up. Lanczos smoothing is now an option in FFT and PolBasisVL. Added SetLayerThickness to change only thickness and not affect the cached eigenmodes.
 =2011-11-21=
 	Fixed bug with rotation and translation in OutputPatternDescription (thanks Aaswath).
 =2011-09-16=

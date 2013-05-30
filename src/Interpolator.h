@@ -31,4 +31,4 @@ Interpolator Interpolator_New(int n, int ny, double *xy, Interpolator_type type)
 void Interpolator_Destroy(Interpolator I);
 double* Interpolator_Get(const Interpolator I, double x, int *ny);
 
-#endif // _INTERPOLATOR_H_
+#endif /* _INTERPOLATOR_H_ */

@@ -1,11 +1,11 @@
 % S4
 % Victor Liu (vkl@stanford.edu)
-% Sep 17, 2011
+% Mar 30, 2013
 <style type="text/css">
 @import url(s4.css);
 </style>
 
-[S4 Home](index.html) | [Download](download.html) | [Lua API](s4_lua_api.html) | [Developer information](dev_info.html) | [Changelog](changelog.html)
+[S4 Home](index.html) | [Download](download.html) | [FAQ](faq.html) | [Lua API](s4_lua_api.html) | [Developer information](dev_info.html) | [Changelog](changelog.html)
 
 ![S4 logo](s4.png "S4 logo")
 
@@ -17,7 +17,8 @@ Internally, it uses Rigorous Coupled Wave Analysis (RCWA; also called the Fourie
 # Contents
 
 * [Download](download.html)
-* [Lua API](s4_lua_api.html)
+* [Lua API (main documentation)](s4_lua_api.html)
+* [FAQ](faq.html)
 * [Developer information](dev_info.html)
 * [Known issues](bugs.html)
 * [Changelog](changelog.html)

@@ -5,7 +5,7 @@
 @import url(s4.css);
 </style>
 
-[S4 Home](index.html) | [Lua API](s4_lua_api.html) | [Developer information](dev_info.html) | [Changelog](changelog.html)
+[S4 Home](index.html) | [Download](download.html) | [FAQ](faq.html) | [Lua API](s4_lua_api.html) | [Developer information](dev_info.html) | [Changelog](changelog.html)
 
 # The S4 Lua programming interface
 
@@ -821,7 +821,7 @@ For patterned layers, there is typically no meaningful information in these ampl
 ### Return values
 
 =forw,back=
-	Tables of length NumG containing the complex amplitudes of each forward and backward mode. Each complex amplitude is a table of length 2 containing real and imaginary parts.
+	Tables of length 2*NumG containing the complex amplitudes of each forward and backward mode. Each complex amplitude is a table of length 2 containing real and imaginary parts.
 
 
 ---

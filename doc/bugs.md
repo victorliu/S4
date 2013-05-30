@@ -5,7 +5,7 @@
 @import url(s4.css);
 </style>
 
-[S4 Home](index.html) | [Download](download.html) | [Lua API](s4_lua_api.html) | [Developer information](dev_info.html) | [Changelog](changelog.html)
+[S4 Home](index.html) | [Download](download.html) | [FAQ](faq.html) | [Lua API](s4_lua_api.html) | [Developer information](dev_info.html) | [Changelog](changelog.html)
 
 # Known issues
 

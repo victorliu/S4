@@ -5,7 +5,7 @@
 @import url(s4.css);
 </style>
 
-[S4 Home](index.html) | [Download](download.html) | [Lua API](s4_lua_api.html) | [Developer information](dev_info.html) | [Changelog](changelog.html)
+[S4 Home](index.html) | [Download](download.html) | [FAQ](faq.html) | [Lua API](s4_lua_api.html) | [Developer information](dev_info.html) | [Changelog](changelog.html)
 
 # Developer information
 
@@ -15,7 +15,7 @@ The usual `./configure; make; make install` sequence should just work. Without i
 There is also a provided `Makefile.custom` and `src/config.h.custom` (which needs to be renamed into config.h) which can be tailored to the particular installation environment, allowing one to bypass the configure process.
 
 ### Dependencies
-* Lua 5.1, both headers and libraries.
+* Lua 5.2, both headers and libraries.
 * BLAS, or equivalent, library only.
 * LAPACK (optional, 3.2 or later), library only.
 * Pthreads (optional), both headers and libraries.

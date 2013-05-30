@@ -43,7 +43,8 @@ fi
 ##############################################################################
 # Check for Lua library
 sinclude(m4/ax_lua.m4)
-AX_PROG_LUA([5.1], [5.2], [], [])
+#AX_PROG_LUA([5.1], [5.2], [], [])
+LUA_VERSION="5.2"
 AX_LUA_HEADERS([], [
 	AC_MSG_ERROR([Couldn't find the required Lua headers.])])
 AX_LUA_LIBS([], [
