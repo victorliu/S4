@@ -37,7 +37,7 @@ double SpectrumSampler_GetFrequency(const SpectrumSampler sampler);
 int SpectrumSampler_SubmitResult(SpectrumSampler sampler, double y);
 int SpectrumSampler_GetNumPoints(const SpectrumSampler sampler);
 
-// returns number of freqs
+/* returns number of freqs */
 int SpectrumSampler_GetFrequencies(const SpectrumSampler sampler, const double **freqs);
 int SpectrumSampler_GetSubmissionBuffer(const SpectrumSampler sampler, double **y);
 int SpectrumSampler_SubmitResults(SpectrumSampler sampler);
@@ -46,4 +46,4 @@ typedef void* SpectrumSampler_Enumerator;
 SpectrumSampler_Enumerator SpectrumSampler_GetPointEnumerator(const SpectrumSampler sampler);
 int SpectrumSampler_Enumerator_Get(SpectrumSampler_Enumerator, double pt[2]);
 
-#endif // _SPECTRUM_SAMPLER_H_
+#endif /* _SPECTRUM_SAMPLER_H_ */

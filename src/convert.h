@@ -20,15 +20,20 @@
 #ifndef _CONVERT_H_
 #define _CONVERT_H_
 
-// Converts photonics quantities.
-// Supported units:
-//   Lengths: um, nm, m, cm, mm
-//   Energies: eV, J
-//   Frequencies: THz, GHz, Hz, rad/s
-// Relations used:
-//   c = f*l, E=h*f
-
-// Returns 0 on success, -n if n-th argument is invalid, 1 if from_units not supported, 2 if to_units not supported
+/* Converts photonics quantities.
+ * Supported units:
+ *   Lengths: um, nm, m, cm, mm
+ *   Energies: eV, J
+ *   Frequencies: THz, GHz, Hz, rad/s
+ * Relations used:
+ *   c = f*l, E=h*f
+ */
+ 
+/* Returns 0 on success,
+          -n if n-th argument is invalid,
+		   1 if from_units not supported,
+		   2 if to_units not supported
+ */
 int convert_units(double *value, const char *from_units, const char *to_units);
 
-#endif // _CONVERT_H_
+#endif /* _CONVERT_H_ */

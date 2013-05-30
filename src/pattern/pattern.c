@@ -34,8 +34,8 @@
 
 double Jinc(double x){
 	x *= 2*M_PI;
-	// return 2*J_1(x)/x;
-	if(x < 1e-9){ // J_1(x) ~ x(1-x^2/8)/2
+	/* return 2*J_1(x)/x; */
+	if(x < 1e-9){ /* J_1(x) ~ x(1-x^2/8)/2 */
 		return 1.-x*x/8.;
 	}
 	static const double a1[] = {
@@ -85,9 +85,9 @@ double Jinc(double x){
 		return j1;
 	}else{
 		int kz;
-		if (x >= 50.0) kz = 8;          // Can be changed to 10
-		else if (x >= 35.0) kz = 10;    //  "       "        12
-		else kz = 12;                   //  "       "        14
+		if (x >= 50.0) kz = 8;          /* Can be changed to 10 */
+		else if (x >= 35.0) kz = 10;    /*  "       "        12 */
+		else kz = 12;                   /*  "       "        14 */
 		double cu = sqrt(M_2_PI/x);
 		double t2 = x-0.75*M_PI;
 		double p1 = 1.0;
@@ -100,7 +100,7 @@ double Jinc(double x){
 		return 2.0*cu*(p1*cos(t2)-q1*sin(t2))/x;
 	}
 }
-double j0(double x){ // spherical bessel of first kind, order 0
+double j0(double x){ /* spherical bessel of first kind, order 0 */
 	if(fabs(x) < 1e-9){
 		x = 1.-x*x/6.;
 	}else{
@@ -163,7 +163,7 @@ static int shape_contains_point(const shape *s, const REAL x_[2]){
 	case ELLIPSE:
 		{
 			REAL r = s->vtab.ellipse.halfwidth[0]*s->vtab.ellipse.halfwidth[0] - s->vtab.ellipse.halfwidth[1]*s->vtab.ellipse.halfwidth[1];
-			REAL f, L, d; // f = focus length, L is twice the semi-major axis length
+			REAL f, L, d; /* f = focus length, L is twice the semi-major axis length */
 			if(r >= 0){
 				f = sqrt(r);
 				L = 2 * s->vtab.ellipse.halfwidth[0];
@@ -178,7 +178,7 @@ static int shape_contains_point(const shape *s, const REAL x_[2]){
 	case RECTANGLE:
 		return (fabs(x[0]) < s->vtab.rectangle.halfwidth[0]) && (fabs(x[1]) < s->vtab.rectangle.halfwidth[1]);
 	case POLYGON:
-		{ // From http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+		{ /* From http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html */
 			int i, j;
 			int c = 0;
 			for(i = 0, j = s->vtab.polygon.n_vertices-1; i < s->vtab.polygon.n_vertices; j = i++){
@@ -200,22 +200,26 @@ int shape_get_normal(const shape *s, const REAL x[2], REAL n[2]){
 	if(NULL == s){ return -1; }
 	if(NULL == x){ return -2; }
 	if(NULL == n){ return -3; }
-	REAL r[2] = {x[0] - s->center[0], x[1] - s->center[1]};
+	REAL r[2];
+	r[0] = x[0] - s->center[0];
+	r[1] = x[1] - s->center[1];
+	
 	switch(s->type){
 	case CIRCLE:
 		n[0] = r[0];
 		n[1] = r[1];
 		break;
 	case ELLIPSE:
-		// The ellipse is defined by the equation
-		//   Norm_2(B.{x,y})^2 == 1
-		// where
-		//   B = diag{1/halfwidth[0],1/halfwidth[1]}.[ cos(angle) sin(angle) ]
-		//                                           [-sin(angle) cos(angle) ]
-		// let ca = cos(angle), sa = sin(angle), ilx2 = 1/lx^2, ily2 = 1/ly^2
-		// Let A = B^T B = [ ca*ca*ilx2 + sa*sa*ily2  ca*sa*(ilx2-ily2) ]
-		//                 [ same as other      ca*ca*ily2 + sa*sa*ilx2 ]
-		// The gradient is then A.{x,y}
+		/* The ellipse is defined by the equation
+		 *   Norm_2(B.{x,y})^2 == 1
+		 * where
+		 *   B = diag{1/halfwidth[0],1/halfwidth[1]}.[ cos(angle) sin(angle) ]
+		 *                                           [-sin(angle) cos(angle) ]
+		 * let ca = cos(angle), sa = sin(angle), ilx2 = 1/lx^2, ily2 = 1/ly^2
+		 * Let A = B^T B = [ ca*ca*ilx2 + sa*sa*ily2  ca*sa*(ilx2-ily2) ]
+		 *                 [ same as other      ca*ca*ily2 + sa*sa*ilx2 ]
+		 * The gradient is then A.{x,y}
+		 */
 		{
 			const REAL ca = cos(s->angle);
 			const REAL sa = sin(s->angle);
@@ -229,11 +233,12 @@ int shape_get_normal(const shape *s, const REAL x[2], REAL n[2]){
 		}
 		break;
 	case RECTANGLE:
-		// The rectangle is defined by the equation
-		//   max(abs(rx)-halfwidth[0], abs(ry)-halfwidth[1]) == 0
-		// where
-		//   rx = proj onto { ca,sa} of r
-		//   ry = proj onto {-sa,ca} of r
+		/* The rectangle is defined by the equation
+		 *   max(abs(rx)-halfwidth[0], abs(ry)-halfwidth[1]) == 0
+		 * where
+		 *   rx = proj onto { ca,sa} of r
+		 *   ry = proj onto {-sa,ca} of r
+		 */
 		{
 			const REAL ca = cos(s->angle);
 			const REAL sa = sin(s->angle);
@@ -253,23 +258,23 @@ int shape_get_normal(const shape *s, const REAL x[2], REAL n[2]){
 			int i, j;
 			REAL maxdist = -1;
 			for(j = 0, i = s->vtab.polygon.n_vertices-1; j < s->vtab.polygon.n_vertices; i = j++){
-				// compute distance from r to segment
-				const REAL v[2] = {
-					s->vtab.polygon.vertex[2*j+0] - s->vtab.polygon.vertex[2*i+0],
-					s->vtab.polygon.vertex[2*j+1] - s->vtab.polygon.vertex[2*i+1]
-				};
-				const REAL pr[2] = {
-					r[0] - s->vtab.polygon.vertex[2*i+0],
-					r[1] - s->vtab.polygon.vertex[2*i+1]
-				};
-				const REAL v2 = v[0]*v[0] + v[1]*v[1];
-				const REAL prj = (pr[0]*v[0] + pr[1]*v[1])/v2;
-				const REAL voff[2] = {pr[0] - prj*v[0], pr[1] - prj*v[1]};
-				const REAL dist = hypot(voff[0], voff[1]);
-				if(dist > maxdist){
-					maxdist = dist;
-					n[0] = v[1];
-					n[1] = -v[0];
+				/* compute distance from r to segment */
+				REAL v[2], pr[2];
+				v[0] = s->vtab.polygon.vertex[2*j+0] - s->vtab.polygon.vertex[2*i+0];
+				v[1] = s->vtab.polygon.vertex[2*j+1] - s->vtab.polygon.vertex[2*i+1];
+				
+				pr[0] = r[0] - s->vtab.polygon.vertex[2*i+0];
+				pr[1] = r[1] - s->vtab.polygon.vertex[2*i+1];
+				{
+					const REAL v2 = v[0]*v[0] + v[1]*v[1];
+					const REAL prj = (pr[0]*v[0] + pr[1]*v[1])/v2;
+					const REAL voff[2] = {pr[0] - prj*v[0], pr[1] - prj*v[1]};
+					const REAL dist = hypot(voff[0], voff[1]);
+					if(dist > maxdist){
+						maxdist = dist;
+						n[0] = v[1];
+						n[1] = -v[0];
+					}
 				}
 			}
 		}
@@ -278,7 +283,7 @@ int shape_get_normal(const shape *s, const REAL x[2], REAL n[2]){
 		n[1] = n[0] = 0;
 		break;
 	}
-	{ // normalize
+	{ /* normalize */
 		REAL ln = hypot(n[0], n[1]);
 		if(ln > 0){
 			n[0] /= ln;
@@ -290,10 +295,13 @@ int shape_get_normal(const shape *s, const REAL x[2], REAL n[2]){
 
 #include "intersection.h"
 
-// returns intersection area between shape s and the rectangle with bottom left corner p0 and dimensions dp.
+/* Returns intersection area between shape s and the rectangle with
+ * bottom left corner p0 and dimensions dp.
+ */
 REAL shape_get_intersection_area_quad(const shape *s, const REAL p0[2], const REAL duv[4]){
-	// We will use the strategy of decomposing polygonal shapes into triangles.
-	// For the ellipse, we will apply a coordinate transformation to make it a circle.
+	/* We will use the strategy of decomposing polygonal shapes into triangles.
+	 * For the ellipse, we will apply a coordinate transformation to make it a circle.
+	 */
 	
 	REAL p0p[2] = {p0[0] - s->center[0], p0[1] - s->center[1]};
 	REAL upv[2] = {duv[0]+duv[2], duv[1]+duv[3]};
@@ -305,7 +313,7 @@ REAL shape_get_intersection_area_quad(const shape *s, const REAL p0[2], const RE
 		{
 			REAL a;
 			REAL tri_org[2], tri_u[2], tri_v[2];
-			if(lupv < lumv){ // split by u+v
+			if(lupv < lumv){ /* split by u+v */
 				tri_org[0] = p0p[0];
 				tri_org[1] = p0p[1];
 				tri_u[0] = duv[0]; tri_u[1] = duv[1];
@@ -331,7 +339,7 @@ REAL shape_get_intersection_area_quad(const shape *s, const REAL p0[2], const RE
 			const REAL sa = sin(s->angle);
 			const REAL ratio = (s->vtab.ellipse.halfwidth[0] / s->vtab.ellipse.halfwidth[1]);
 			REAL tri_org[2], tri_u[2], tri_v[2];
-			if(lupv < lumv){ // split by u+v
+			if(lupv < lumv){ /* split by u+v */
 				tri_org[0] = (p0p[0]* ca + p0p[1]*sa);
 				tri_org[1] = (p0p[0]*-sa + p0p[1]*ca);
 				tri_u[0] = duv[0]* ca + duv[1]*sa;
@@ -388,13 +396,13 @@ REAL shape_get_intersection_area_quad(const shape *s, const REAL p0[2], const RE
 			Q[2*2+1] = u[1]+v[1];
 			Q[2*3+0] = v[0]-u[0];
 			Q[2*3+1] = v[1]-u[1];
-			//{int i;for(i = 0;i<4;++i){fprintf(stderr, " {%f,%f},\n", P[2*i+0], P[2*i+1]);}}
-			//{int i;for(i = 0;i<4;++i){fprintf(stderr, " {%f,%f},\n", Q[2*i+0], Q[2*i+1]);}}
+			/*{int i;for(i = 0;i<4;++i){fprintf(stderr, " {%f,%f},\n", P[2*i+0], P[2*i+1]);}}*/
+			/*{int i;for(i = 0;i<4;++i){fprintf(stderr, " {%f,%f},\n", Q[2*i+0], Q[2*i+1]);}}*/
 			ret = convex_polygon_intersection(4,P,4,Q,&nPi,Pi);
-			if(1 == ret){ // pixel completely in rectangle
+			if(1 == ret){ /* pixel completely in rectangle */
 				return duv[0]*duv[3]-duv[1]*duv[2];
 			}
-			//{int i;for(i = 0;i<nPi;++i){fprintf(stderr, " %f %f\n", Pi[2*i+0], Pi[2*i+1]);}}
+			/*{int i;for(i = 0;i<nPi;++i){fprintf(stderr, " %f %f\n", Pi[2*i+0], Pi[2*i+1]);}}*/
 			return polygon_area(nPi,Pi);
 		}
 	case POLYGON:
@@ -443,10 +451,13 @@ REAL shape_get_intersection_area_quad(const shape *s, const REAL p0[2], const RE
 	return 0;
 }
 
-// returns intersection area between shape s and the rectangle with bottom left corner p0 and dimensions dp.
+/* Returns intersection area between shape s and the rectangle with
+ * bottom left corner p0 and dimensions dp.
+ */
 REAL shape_get_intersection_area(const shape *s, const REAL p0[2], const REAL dp[2]){
-	// We will use the strategy of decomposing polygonal shapes into triangles.
-	// For the ellipse, we will apply a coordinate transformation to make it a circle.
+	/* We will use the strategy of decomposing polygonal shapes into triangles.
+	 * For the ellipse, we will apply a coordinate transformation to make it a circle.
+	 */
 	
 	REAL p0p[2] = {p0[0] - s->center[0], p0[1] - s->center[1]};
 	switch(s->type){
@@ -551,8 +562,9 @@ REAL shape_get_intersection_area(const shape *s, const REAL p0[2], const REAL dp
 	return 0;
 }
 
-// segment is from p0 to p0+d
-// returns number of intersections
+/* segment is from p0 to p0+d
+ * returns number of intersections
+ */
 int shape_get_tangent_cross_segment(const shape *s, const REAL p0[2], const REAL d0[2], REAL *cross){
 	int i, c = 0;
 	REAL p0p[2] = {p0[0] - s->center[0], p0[1] - s->center[1]};
@@ -563,7 +575,7 @@ int shape_get_tangent_cross_segment(const shape *s, const REAL p0[2], const REAL
 			REAL isect[4];
 			c = intersection_circle_segment(s->vtab.circle.radius, p0p, d0, isect, NULL);
 			for(i = 0; i < c; ++i){
-				// Each intersection (x,y) implies a tangential normal vector (-y,x)/r
+				/* Each intersection (x,y) implies a tangential normal vector (-y,x)/r */
 				*cross -= (d0[0]*isect[2*i+0] + d0[1]*isect[2*i+1]);
 			}
 			*cross /= s->vtab.circle.radius;
@@ -627,8 +639,9 @@ int shape_get_tangent_cross_segment(const shape *s, const REAL p0[2], const REAL
 	return c;
 }
 
-// cross0 is the cross product weighted by the t's
-// cross1 is the cross product weighted by (1-t)'s
+/* cross0 is the cross product weighted by the t's
+ * cross1 is the cross product weighted by (1-t)'s
+ */
 int shape_get_tangent_cross_segment_tri(const shape *s, const REAL p0[2], const REAL d0[2], REAL *cross0, REAL *cross1){
 	int i, c = 0;
 	REAL p0p[2] = {p0[0] - s->center[0], p0[1] - s->center[1]};
@@ -641,7 +654,7 @@ int shape_get_tangent_cross_segment_tri(const shape *s, const REAL p0[2], const 
 			REAL t[2];
 			c = intersection_circle_segment(s->vtab.circle.radius, p0p, d0, isect, t);
 			for(i = 0; i < c; ++i){
-				// Each intersection (x,y) implies a tangential normal vector (-y,x)/r
+				/* Each intersection (x,y) implies a tangential normal vector (-y,x)/r */
 				REAL cross = (d0[0]*isect[2*i+0] + d0[1]*isect[2*i+1]);
 				*cross0 -= cross*t[i];
 				*cross1 -= cross*(1-t[i]);
@@ -740,8 +753,8 @@ int shapes_intersect(const shape *s0, const shape *s1){
 	case CIRCLE:
 		switch(s1->type){
 		case CIRCLE:
-			{ // circle-circle
-				//return hypot(s1->center[0]-s0->center[0], s1->center[1]-s0->center[1]) <= s0->vtab.circle.radius + s1->vtab.circle.radius;
+			{ /* circle-circle */
+				/*return hypot(s1->center[0]-s0->center[0], s1->center[1]-s0->center[1]) <= s0->vtab.circle.radius + s1->vtab.circle.radius;*/
 			}
 			break;
 		case ELLIPSE:
@@ -777,7 +790,7 @@ int pattern_get_containment_tree(
 	if(NULL == shapes){ return -2; }
 	if(NULL == parent){ return -3; }
 	
-	// We will assume for now that the non-self-intersection criterion is met.
+	/* We will assume for now that the non-self-intersection criterion is met. */
 	if(nshapes > 1){
 		for(i = 0; i < nshapes; ++i){
 			if(!shape_valid(&shapes[i])){ return i+1; }
@@ -795,7 +808,7 @@ int pattern_get_containment_tree(
 		area[i] = shape_area(&shapes[i]);
 	}
 	
-	// Sort by area
+	/* Sort by area */
 	for(k = 1; k < nshapes; ++k){
 		for(j = 0; j < k; ++j){
 			if(area[j] < area[k]){
@@ -807,8 +820,9 @@ int pattern_get_containment_tree(
 		}
 	}
 	
-	// The following is O(n^2), we might be able to do better with sorting by area
-	// but n is usually small
+	/* The following is O(n^2), we might be able to do better with sorting
+	 * by area but n is usually small.
+	 */
 	for(i = 1; i < nshapes; ++i){
 		REAL p[2];
 		shape_get_interior_point(&shapes[i], p);
@@ -831,11 +845,11 @@ int Pattern_GetContainmentTree(
 }
 
 int pattern_get_shape(
-	int nshapes, // number of shapes in the array 'shapes'
-	const shape *shapes, // array of shapes, ordered by decreasing area
-	const int *parent, // from Pattern_GetContainmentTree
-	const REAL x[2], // location in the plane to get the tag
-	int *shape_index, // returned shape index
+	int nshapes, /* number of shapes in the array 'shapes' */
+	const shape *shapes, /* array of shapes, ordered by decreasing area */
+	const int *parent, /* from Pattern_GetContainmentTree */
+	const REAL x[2], /* location in the plane to get the tag */
+	int *shape_index, /* returned shape index */
 	REAL n[2]
 ){
 	int i, found = 0;
@@ -868,14 +882,15 @@ int Pattern_GetShape(
 	return pattern_get_shape(p->nshapes, p->shapes, p->parent, x, shape_index, n);
 }
 
-// returns 0 on success
-// returns -n if n-th argument is invalid
+/* returns 0 on success
+ * returns -n if n-th argument is invalid
+ */
 int pattern_get_fourier_transform(
 	int nshapes,
 	const shape *shapes,
 	const int *parent,
 	const REAL *value,
-	const REAL k_[2], // remember, this is k/2pi
+	const REAL k_[2], /* remember, this is k/2pi */
 	int ndim,
 	REAL unit_cell_size,
 	REAL f[2]
@@ -917,7 +932,7 @@ int pattern_get_fourier_transform(
 		
 		REAL dval[2] = {value[2*(i+1)+0]-value[2*(parent[i]+1)+0], value[2*(i+1)+1]-value[2*(parent[i]+1)+1]};
 		
-		REAL phase_angle = -2*M_PI*(k_[0]*s->center[0] + k_[1]*s->center[1]); // phase = exp(i*phase_angle);
+		REAL phase_angle = -2*M_PI*(k_[0]*s->center[0] + k_[1]*s->center[1]); /* phase = exp(i*phase_angle); */
 		REAL z[2] = {0,0};
 		REAL area;
 		
@@ -926,7 +941,7 @@ int pattern_get_fourier_transform(
 		k[0] = k_[0] * ca + k_[1] * sa;
 		k[1] = k_[0] *-sa + k_[1] * ca;
 		
-		// Each shape should set z to be the Fourier component, but without dval, and without area.
+		/* Each shape should set z to be the Fourier component, but without dval, and without area. */
 		switch(s->type){
 		case CIRCLE:
 			area = M_PI*s->vtab.circle.radius*s->vtab.circle.radius;
@@ -950,7 +965,6 @@ int pattern_get_fourier_transform(
 				area = 4*s->vtab.rectangle.halfwidth[0]*s->vtab.rectangle.halfwidth[1];
 				z[0] = Sinc(2*k[0]*s->vtab.rectangle.halfwidth[0])*Sinc(2*k[1]*s->vtab.rectangle.halfwidth[1]);
 			}
-//fprintf(stderr, "area = %f, z = %f\n", area, z[0]);
 			break;
 		case POLYGON:
 			{
@@ -959,8 +973,9 @@ int pattern_get_fourier_transform(
 					z[0] = 1;
 					z[1] = 0;
 				}else{
-					// For k != 0,
-					// S(k) = i/|k|^2 * Sum_{i=0,n-1} z.((v_{i+1}-v_{i}) x k) j0(k.(v_{i+1}-v_{i})/2) e^{ik.(v_{i+1}+v_{i})/2}
+					/* For k != 0,
+					 * S(k) = i/|k|^2 * Sum_{i=0,n-1} z.((v_{i+1}-v_{i}) x k) j0(k.(v_{i+1}-v_{i})/2) e^{ik.(v_{i+1}+v_{i})/2}
+					 */
 					int p,q;
 					REAL num, pa;
 					REAL rc[2], u[2];
