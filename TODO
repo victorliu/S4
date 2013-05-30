@@ -1,3 +1,5 @@
+* Add SetLayerPatternFunction:
+	S:SetLayerPatternFunction('which_layer', func)
 * Add SetLayerPatternBitmap:
 	S:SetLayerPatternBitmap{
 		Layer = 'whichlayer',

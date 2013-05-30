@@ -54,10 +54,9 @@ subdir = doc
 DIST_COMMON = $(dist_man_MANS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/ax_compare_version.m4 \
-	$(top_srcdir)/m4/ax_lua.m4 $(top_srcdir)/m4/ax_blas.m4 \
-	$(top_srcdir)/m4/ax_lapack.m4 $(top_srcdir)/m4/ax_mpi.m4 \
-	$(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_lua.m4 \
+	$(top_srcdir)/m4/ax_blas.m4 $(top_srcdir)/m4/ax_lapack.m4 \
+	$(top_srcdir)/m4/ax_mpi.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -141,14 +140,8 @@ LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LTLIBOBJS = @LTLIBOBJS@
-LUA = @LUA@
-LUA_EXEC_PREFIX = @LUA_EXEC_PREFIX@
 LUA_INCLUDE = @LUA_INCLUDE@
 LUA_LIB = @LUA_LIB@
-LUA_PLATFORM = @LUA_PLATFORM@
-LUA_PREFIX = @LUA_PREFIX@
-LUA_SHORT_VERSION = @LUA_SHORT_VERSION@
-LUA_VERSION = @LUA_VERSION@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
 MPICC = @MPICC@
@@ -205,14 +198,10 @@ libdir = @libdir@
 libexecdir = @libexecdir@
 localedir = @localedir@
 localstatedir = @localstatedir@
-luadir = @luadir@
-luaexecdir = @luaexecdir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
 pdfdir = @pdfdir@
-pkgluadir = @pkgluadir@
-pkgluaexecdir = @pkgluaexecdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
