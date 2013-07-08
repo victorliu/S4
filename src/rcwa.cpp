@@ -57,6 +57,32 @@ static inline void rcwa_free(void *ptr){
 	free_aligned(ptr);
 }
 
+//typedef int integer;
+extern "C" void zgelss_(
+	const integer &m, const integer &n, const integer &nRHS,
+	std::complex<double> *a, const integer &lda,
+	std::complex<double> *b, const integer &ldb,
+	double *s, const double &rcond, integer *rank,
+	std::complex<double> *work, const integer &lwork,
+	double *rwork, integer *info
+);
+static void SingularLinearSolve(
+	size_t m, size_t n, size_t nRHS, std::complex<double> *a, size_t lda,
+	std::complex<double> *b, size_t ldb, const double &rcond
+){
+	integer info, rank;
+	std::complex<double> dummy;
+	zgelss_(m, n, nRHS, a, lda, b, ldb, NULL, rcond, &rank, &dummy, -1, NULL, &info);
+	integer lwork = (integer)dummy.real();
+	std::complex<double> *work = (std::complex<double>*)rcwa_malloc(sizeof(std::complex<double>) * lwork);
+	double *rwork = (double*)rcwa_malloc(sizeof(double) * 6*m);
+	
+	zgelss_(m, n, nRHS, a, lda, b, ldb, rwork, rcond, &rank, work, lwork, rwork+m, &info);
+	
+	rcwa_free(rwork);
+	rcwa_free(work);
+}
+	
 
 // kp = k-parallel matrix
 // kp = omega^2 - Kappa = omega^2 - [  ky*epsinv*ky -ky*epsinv*kx ]
@@ -583,9 +609,9 @@ void GetSMatrix(
 				}else{
 					MultKPMatrix("N", omega, n, kx, ky, Epsilon_inv[l], epstype[l], kp[l], n2, phi[l],n2, t1,n2);
 				}
-				for(size_t i = 0; i < n2; ++i){
-					RNP::TBLAS::Scale(n2, 1./q[l][i], &t1[0+i*n2], 1);
-				}
+				//for(size_t i = 0; i < n2; ++i){
+				//	RNP::TBLAS::Scale(n2, 1./q[l][i], &t1[0+i*n2], 1);
+				//}
 			}
 #ifdef DUMP_MATRICES
 			DUMP_STREAM << "Bl(" << l << ") = " << std::endl;
@@ -607,9 +633,9 @@ void GetSMatrix(
 				}else{
 					MultKPMatrix("N", omega, n, kx, ky, Epsilon_inv[lp1], epstype[lp1], kp[lp1], n2, phi[lp1],n2, in1,n2);
 				}
-				for(size_t i = 0; i < n2; ++i){
-					RNP::TBLAS::Scale(n2, 1./q[lp1][i], &in1[0+i*n2], 1);
-				}
+				//for(size_t i = 0; i < n2; ++i){
+				//	RNP::TBLAS::Scale(n2, 1./q[lp1][i], &in1[0+i*n2], 1);
+				//}
 			}
 #ifdef DUMP_MATRICES
 		DUMP_STREAM << "Bl(" << l+1 << ") = " << std::endl;
@@ -621,7 +647,28 @@ void GetSMatrix(
 #endif
 			int solve_info;
 			// Make Q in in1
-			RNP::LinearSolve<'N'>(n2, n2, t1, n2, in1, n2, &solve_info, pivots);
+			//RNP::LinearSolve<'N'>(n2, n2, t1, n2, in1, n2, &solve_info, pivots);
+			SingularLinearSolve(n2,n2,n2, t1,n2, in1,n2, DBL_EPSILON);
+			// Now perform the diagonal scalings
+			for(size_t i = 0; i < n2; ++i){
+				RNP::TBLAS::Scale(n2, q[l][i], &in1[i+0*n2], n2);
+			}
+			{
+				double maxel = 0;
+				for(size_t i = 0; i < n2; ++i){
+					double el = std::abs(q[lp1][i]);
+					if(el > maxel){ maxel = el; }
+				}
+				for(size_t i = 0; i < n2; ++i){
+					double el = std::abs(q[lp1][i]);
+					if(el < DBL_EPSILON * maxel){
+						RNP::TBLAS::Scale(n2, 0., &in1[0+i*n2], 1);
+					}else{
+						RNP::TBLAS::Scale(n2, 1./q[lp1][i], &in1[0+i*n2], 1);
+					}
+				}
+			}
+			
 			// Make P in in2
 			if(NULL == phi[lp1]){
 				RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0.,1., in2,n2);
