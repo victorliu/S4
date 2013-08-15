@@ -772,7 +772,7 @@ int Simulation_InitSolution(Simulation *S){
 	// Get G vectors
 	if(0 != S->Lr[2] || 0 != S->Lr[3]){
 		unsigned int NG = S->n_G;
-		G_select(0, &NG, S->Lk, sol->G);
+		G_select(S->options.lattice_truncation, &NG, S->Lk, sol->G);
 		S->n_G = NG;
 	}else{
 		// 1D lattice
