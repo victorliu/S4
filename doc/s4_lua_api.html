@@ -720,7 +720,7 @@ The phase of each polarization is defined at the origin (z = 0).</p>
 
 <h3>Usage</h3>
 
-<pre><code>S:SetExcitationPlanewave({phi,theta}, {s_amp, s_phase}, {p_amp, p_phase})
+<pre><code>S:SetExcitationPlanewave({phi,theta}, {s_amp, s_phase}, {p_amp, p_phase}, order)
 </code></pre>
 
 <h3>Arguments</h3>
@@ -732,6 +732,8 @@ The phase of each polarization is defined at the origin (z = 0).</p>
 <dd>(number) The electric field amplitude of the s- and p-polarizations of the planewave.</dd>
 <dt>s_phase, p_phase</dt>
 <dd>(number) The phase of the s- and p-polarizations of the planewave, relative to z = 0 (the beginning of the first layer).</dd>
+<dt>order</dt>
+<dd>(number) An optional positive integer specifying which order (mode index) to excite. Defaults to 1. This is the same index that GetDiffractionOrder returns.</dd>
 </dl>
 
 <h3>Return values</h3>
@@ -1087,7 +1089,7 @@ These four quantities are described in the section for <code>GetPoyntingFlux</co
 
 <h3>Usage</h3>
 
-<pre><code>U = S:GetLayerEnergyDensityIntegral(layer)
+<pre><code>Ur,Ui = S:GetLayerEnergyDensityIntegral(layer)
 </code></pre>
 
 <h3>Arguments</h3>
@@ -1100,8 +1102,8 @@ These four quantities are described in the section for <code>GetPoyntingFlux</co
 <h3>Return values</h3>
 
 <dl>
-<dt>U</dt>
-<dd>The integral of the energy density throughout the volume of the layer&rsquo;s unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+<dt>Ur,Ui</dt>
+<dd>The real and imaginary parts of the integral of the energy density throughout the volume of the layer&rsquo;s unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
 </dl>
 
 <hr />
@@ -1112,7 +1114,7 @@ These four quantities are described in the section for <code>GetPoyntingFlux</co
 
 <h3>Usage</h3>
 
-<pre><code>U = S:GetLayerElectricEnergyDensityIntegral(layer)
+<pre><code>Ur,Ui = S:GetLayerElectricEnergyDensityIntegral(layer)
 </code></pre>
 
 <h3>Arguments</h3>
@@ -1126,7 +1128,7 @@ These four quantities are described in the section for <code>GetPoyntingFlux</co
 
 <dl>
 <dt>U</dt>
-<dd>The integral of the electric energy density throughout the volume of the layer&rsquo;s unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+<dd>The real and imaginary parts of the integral of the electric energy density throughout the volume of the layer&rsquo;s unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
 </dl>
 
 <hr />
@@ -1137,7 +1139,7 @@ These four quantities are described in the section for <code>GetPoyntingFlux</co
 
 <h3>Usage</h3>
 
-<pre><code>U = S:GetLayerMagneticEnergyDensityIntegral(layer)
+<pre><code>Ur,Ui = S:GetLayerMagneticEnergyDensityIntegral(layer)
 </code></pre>
 
 <h3>Arguments</h3>
@@ -1150,8 +1152,8 @@ These four quantities are described in the section for <code>GetPoyntingFlux</co
 <h3>Return values</h3>
 
 <dl>
-<dt>U</dt>
-<dd>The integral of the magnetic energy density throughout the volume of the layer&rsquo;s unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+<dt>Ur,Ui</dt>
+<dd>The real and imaginary parts of the integral of the magnetic energy density throughout the volume of the layer&rsquo;s unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
 </dl>
 
 <hr />
@@ -1162,7 +1164,7 @@ These four quantities are described in the section for <code>GetPoyntingFlux</co
 
 <h3>Usage</h3>
 
-<pre><code>U = S:GetLayerElectricFieldIntensityIntegral(layer)
+<pre><code>Ur,Ui = S:GetLayerElectricFieldIntensityIntegral(layer)
 </code></pre>
 
 <h3>Arguments</h3>
@@ -1175,8 +1177,8 @@ These four quantities are described in the section for <code>GetPoyntingFlux</co
 <h3>Return values</h3>
 
 <dl>
-<dt>U</dt>
-<dd>The integral of the square electric field intensity throughout the volume of the layer&rsquo;s unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+<dt>Ur,Ui</dt>
+<dd>The real and imaginary parts of the integral of the square electric field intensity throughout the volume of the layer&rsquo;s unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
 </dl>
 
 <hr />
@@ -1532,7 +1534,7 @@ The files are named by concatenating the provided prefix string with each layer&
 <dt>Circular</dt>
 <dd>This is the default. The G-vectors are selected to have shortest length (by l2 norm).</dd>
 <dt>Parallelogramic</dt>
-<dd>Chooses the G-vectors within a parallelogram aligned with the reciprocal lattice basis. The number chosen will always be a perfect square of an odd number. This is equivalent to selecting the shortested G-vectors in the l-infinity norm.</dd>
+<dd>Chooses the G-vectors within a parallelogram aligned with the reciprocal lattice basis. The number chosen will always be a perfect square of an odd number.</dd>
 </dl></dd>
 </dl>
 

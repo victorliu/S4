@@ -172,6 +172,7 @@ struct FieldCache;
 
 typedef struct Excitation_Planewave_{
 	double hx[2],hy[2]; // re,im components of H_x,H_y field
+	size_t order;
 } Excitation_Planewave;
 
 typedef struct Excitation_Dipole_{
@@ -284,7 +285,7 @@ int Simulation_RemoveLayerPatterns(Simulation *S, Layer *layer);
 int Simulation_ChangeLayerThickness(Simulation *S, Layer *layer, const double *thickness);
 
 // Returns 14 if no layers present
-int Simulation_MakeExcitationPlanewave(Simulation *S, const double angle[2], const double pol_s[2], const double pol_p[2]);
+int Simulation_MakeExcitationPlanewave(Simulation *S, const double angle[2], const double pol_s[2], const double pol_p[2], size_t order);
 int Simulation_MakeExcitationDipole(Simulation *S, const double k[2], const char *layer, const double pos[2], const double moment[6]);
 
 
@@ -342,7 +343,7 @@ int Simulation_GetStressTensorIntegral(Simulation *S, Layer *layer, double offse
 // Returns a solution error code
 // which can be 'U', 'E', 'H', 'e'
 // 'E' is epsilon*|E|^2, 'H' is |H|^2, 'e' is |E|^2, 'U' is 'E'+'H'
-int Simulation_GetLayerVolumeIntegral(Simulation *S, Layer *layer, char which, double *integral);
+int Simulation_GetLayerVolumeIntegral(Simulation *S, Layer *layer, char which, double integral[2]);
 int Simulation_GetLayerZIntegral(Simulation *S, Layer *layer, const double r[2], double integral[6]);
 
 // Outputs a POV-Ray render script of a unit cell of the structure.

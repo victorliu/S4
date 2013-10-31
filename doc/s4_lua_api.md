@@ -595,7 +595,7 @@ The phase of each polarization is defined at the origin (z = 0).
 
 ### Usage
 
-	S:SetExcitationPlanewave({phi,theta}, {s_amp, s_phase}, {p_amp, p_phase})
+	S:SetExcitationPlanewave({phi,theta}, {s_amp, s_phase}, {p_amp, p_phase}, order)
 
 ### Arguments
 
@@ -605,6 +605,8 @@ The phase of each polarization is defined at the origin (z = 0).
 	(number) The electric field amplitude of the s- and p-polarizations of the planewave.
 =s_phase, p_phase=
 	(number) The phase of the s- and p-polarizations of the planewave, relative to z = 0 (the beginning of the first layer).
+=order=
+	(number) An optional positive integer specifying which order (mode index) to excite. Defaults to 1. This is the same index that GetDiffractionOrder returns.
 
 ### Return values
 
@@ -908,7 +910,7 @@ Returns the volume integral of the electromagnetic energy density (epsilon*|E|^2
 
 ### Usage
 
-	U = S:GetLayerEnergyDensityIntegral(layer)
+	Ur,Ui = S:GetLayerEnergyDensityIntegral(layer)
 
 ### Arguments
 
@@ -917,8 +919,8 @@ Returns the volume integral of the electromagnetic energy density (epsilon*|E|^2
 
 ### Return values
 
-=U=
-	The integral of the energy density throughout the volume of the layer's unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).
+=Ur,Ui=
+	The real and imaginary parts of the integral of the energy density throughout the volume of the layer's unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).
 
 
 ---
@@ -929,7 +931,7 @@ Returns the volume integral of the electric energy density (epsilon*|E|^2) over 
 
 ### Usage
 
-	U = S:GetLayerElectricEnergyDensityIntegral(layer)
+	Ur,Ui = S:GetLayerElectricEnergyDensityIntegral(layer)
 
 ### Arguments
 
@@ -939,7 +941,7 @@ Returns the volume integral of the electric energy density (epsilon*|E|^2) over 
 ### Return values
 
 =U=
-	The integral of the electric energy density throughout the volume of the layer's unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).
+	The real and imaginary parts of the integral of the electric energy density throughout the volume of the layer's unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).
 
 
 ---
@@ -950,7 +952,7 @@ Returns the volume integral of the magnetic energy density (|H|^2) over a unit c
 
 ### Usage
 
-	U = S:GetLayerMagneticEnergyDensityIntegral(layer)
+	Ur,Ui = S:GetLayerMagneticEnergyDensityIntegral(layer)
 
 ### Arguments
 
@@ -959,8 +961,8 @@ Returns the volume integral of the magnetic energy density (|H|^2) over a unit c
 
 ### Return values
 
-=U=
-	The integral of the magnetic energy density throughout the volume of the layer's unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).
+=Ur,Ui=
+	The real and imaginary parts of the integral of the magnetic energy density throughout the volume of the layer's unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).
 
 
 ---
@@ -971,7 +973,7 @@ Returns the volume integral of the squared electric field intensity (|E|^2) over
 
 ### Usage
 
-	U = S:GetLayerElectricFieldIntensityIntegral(layer)
+	Ur,Ui = S:GetLayerElectricFieldIntensityIntegral(layer)
 
 ### Arguments
 
@@ -980,8 +982,8 @@ Returns the volume integral of the squared electric field intensity (|E|^2) over
 
 ### Return values
 
-=U=
-	The integral of the square electric field intensity throughout the volume of the layer's unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).
+=Ur,Ui=
+	The real and imaginary parts of the integral of the square electric field intensity throughout the volume of the layer's unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).
 
 ---
 
@@ -1290,7 +1292,7 @@ Sets the type of lattice truncation to use when selecting G-vectors.
 	=Circular=
 		This is the default. The G-vectors are selected to have shortest length (by l2 norm).
 	=Parallelogramic=
-		Chooses the G-vectors within a parallelogram aligned with the reciprocal lattice basis. The number chosen will always be a perfect square of an odd number. This is equivalent to selecting the shortested G-vectors in the l-infinity norm.
+		Chooses the G-vectors within a parallelogram aligned with the reciprocal lattice basis. The number chosen will always be a perfect square of an odd number.
 
 ### Return values
 

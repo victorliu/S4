@@ -8,6 +8,12 @@
 [S4 Home](index.html) | [Download](download.html) | [FAQ](faq.html) | [Lua API](s4_lua_api.html) | [Developer information](dev_info.html) | [Changelog](changelog.html)
 
 # Changelog
+=2013-10-31=
+	Added optional order parameter to SetExcitationPlanewave.
+=2013-10-16=
+	Layer integrals now also return imaginary parts.
+=2013-08-15=
+	Fixed bug with SetLatticeTruncation not having an effect.
 =2013-05-29=
         Added additional options to Lanczos smoothing. Upgraded support to Lua 5.2 (dropped support for 5.1).
 =2013-03-30=

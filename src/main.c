@@ -1424,6 +1424,7 @@ static int S4L_Simulation_SetExcitationDipole(lua_State *L){
  */
 static int S4L_Simulation_SetExcitationPlanewave(lua_State *L){
 	int j, ret;
+	int order = 0;
 	double angle[2];
 	double pol_s[2]; /* s polarization; E out of plane */
 	double pol_p[2]; /* p polarization; E in plane */
@@ -1468,7 +1469,9 @@ static int S4L_Simulation_SetExcitationPlanewave(lua_State *L){
 	pol_s[1] *= (M_PI/180.);
 	pol_p[1] *= (M_PI/180.);
 
-	ret = Simulation_MakeExcitationPlanewave(S, angle, pol_s, pol_p);
+	order = luaL_optunsigned(L, 5, 0);
+	if(order > 0){ order--; }
+	ret = Simulation_MakeExcitationPlanewave(S, angle, pol_s, pol_p, order);
 	if(0 != ret){
 		HandleSolutionErrorCode(L, "SetExcitationPlanewave", ret);
 		return 0;
@@ -2157,7 +2160,7 @@ static int S4L_Simulation_GetStressTensorIntegral(lua_State *L){
  */
 static int S4L_Simulation_GetLayerVolumeIntegral(lua_State *L, char which, const char *name){
 	int ret;
-	double integral;
+	double integral[2];
 	const char *layer_name;
 	Layer *layer;
 	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
@@ -2170,13 +2173,14 @@ static int S4L_Simulation_GetLayerVolumeIntegral(lua_State *L, char which, const
 		return 0;
 	}
 	
-	ret = Simulation_GetLayerVolumeIntegral(S, layer, which, &integral);
+	ret = Simulation_GetLayerVolumeIntegral(S, layer, which, integral);
 	if(0 != ret){
 		HandleSolutionErrorCode(L, name, ret);
 	}
 	
-	lua_pushnumber(L, integral);
-	return 1;
+	lua_pushnumber(L, integral[0]);
+	lua_pushnumber(L, integral[1]);
+	return 2;
 }
 static int S4L_Simulation_GetLayerEnergyDensityIntegral(lua_State *L){
 	return S4L_Simulation_GetLayerVolumeIntegral(L, 'U', "GetLayerEnergyDensityIntegral");

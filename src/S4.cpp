@@ -200,6 +200,7 @@ void Simulation_Init(Simulation *S){
 	S->exc.sub.planewave.hx[1] = 0;
 	S->exc.sub.planewave.hy[0] = 0;
 	S->exc.sub.planewave.hy[1] = 0;
+	S->exc.sub.planewave.order = 0;
 	
 	S->options.use_discretized_epsilon = 0;
 	S->options.use_subpixel_smoothing = 0;
@@ -988,12 +989,15 @@ int Simulation_ComputeLayerSolution(Simulation *S, Layer *L, LayerBands **layer_
 	int error = 0;
 	if(0 == S->exc.type){
 		// Front incidence by planewave
+		size_t order = S->exc.sub.planewave.order;
 		size_t phicopy_size = (NULL == lphi[0] ? 0 : n2*n2);
 		std::complex<double> *a0 = (std::complex<double>*)S4_malloc(sizeof(std::complex<double>)*(n2+phicopy_size));
 		std::complex<double> *phicopy = (NULL == lphi[0] ? NULL : a0 + n2);
 		RNP::TBLAS::Fill(n2, 0., a0,1);
-		a0[0] = std::complex<double>(S->exc.sub.planewave.hx[0], S->exc.sub.planewave.hx[1]);
-		a0[S->n_G] = std::complex<double>(S->exc.sub.planewave.hy[0], S->exc.sub.planewave.hy[1]);
+		if(order < n){
+			a0[order+0] = std::complex<double>(S->exc.sub.planewave.hx[0], S->exc.sub.planewave.hx[1]);
+			a0[order+n] = std::complex<double>(S->exc.sub.planewave.hy[0], S->exc.sub.planewave.hy[1]);
+		}
 		// [ kp.phi.inv(q) -kp.phi.inv(q) ] [ a ] = [-ey;ex ]
 		// [     phi            phi       ] [ b ]   [ hx;hy ]
 		// We assume b = 0.
@@ -2384,7 +2388,7 @@ int Simulation_GetStressTensorIntegral(Simulation *S, Layer *layer, double offse
 // Returns a solution error code
 // which can be 'U', 'E', 'H', 'e'
 // 'E' is epsilon*|E|^2, 'H' is |H|^2, 'e' is |E|^2, 'U' is 'E'+'H'
-int Simulation_GetLayerVolumeIntegral(Simulation *S, Layer *layer, char which, double *integral){
+int Simulation_GetLayerVolumeIntegral(Simulation *S, Layer *layer, char which, double integral[2]){
 	S4_TRACE("> Simulation_GetLayerVolumeIntegral(S=%p, layer=%p, which=%c, integral=%p)\n", S, layer, which, integral);
 	
 	int ret = 0;
@@ -2416,13 +2420,16 @@ int Simulation_GetLayerVolumeIntegral(Simulation *S, Layer *layer, char which, d
 		return 1;
 	}
 
+	std::complex<double> zintegral;
 	GetLayerVolumeIntegral(which,
 		n, S->solution->kx, S->solution->ky,
 		std::complex<double>(S->omega[0],S->omega[1]),
-		layer->thickness, Lbands->q, Lbands->kp, Lbands->phi, Lbands->Epsilon_inv, Lbands->Epsilon2, Lbands->epstype, Lsoln->ab, integral, work);
+		layer->thickness, Lbands->q, Lbands->kp, Lbands->phi, Lbands->Epsilon_inv, Lbands->Epsilon2, Lbands->epstype, Lsoln->ab, &zintegral, work);
 
 	S4_free(work);
 	
+	integral[0] = zintegral.real();
+	integral[1] = zintegral.imag();
 	
 	S4_TRACE("< Simulation_GetLayerVolumeIntegral\n");
 	return 0;
@@ -2473,7 +2480,7 @@ int Simulation_GetLayerZIntegral(Simulation *S, Layer *layer, const double r[2],
 	return 0;
 }
 
-int Simulation_MakeExcitationPlanewave(Simulation *S, const double angle[2], const double pol_s[2], const double pol_p[2]){
+int Simulation_MakeExcitationPlanewave(Simulation *S, const double angle[2], const double pol_s[2], const double pol_p[2], size_t order){
 	S4_TRACE("> Simulation_MakeExcitationPlanewave(S=%p, angle=%p (%f,%f), pol_s=%p (%f,%f), pol_p=%p (%f,%f))\n", S,
 		angle, (NULL != angle) ? angle[0] : 0, (NULL != angle) ? angle[1] : 0,
 		pol_s, (NULL != pol_s) ? pol_s[0] : 0, (NULL != pol_s) ? pol_s[1] : 0,
@@ -2534,6 +2541,7 @@ int Simulation_MakeExcitationPlanewave(Simulation *S, const double angle[2], con
 	S->exc.sub.planewave.hx[1] = -c0*c1*pol_s[0]*s_s - s1*pol_p[0]*s_p;
 	S->exc.sub.planewave.hy[0] = -c0*s1*pol_s[0]*c_s + c1*pol_p[0]*c_p;
 	S->exc.sub.planewave.hy[1] = -c0*s1*pol_s[0]*s_s + c1*pol_p[0]*s_p;
+	S->exc.sub.planewave.order = order;
 	/*
 	S->ex[0] = ;
 	S->ex[1] = ;

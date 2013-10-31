@@ -1231,7 +1231,7 @@ void GetLayerVolumeIntegral(
 	const std::complex<double> *epsilon2, // size (2*glist.n)^2
 	int epstype,
 	const std::complex<double> *ab, // length 4*glist.n
-	double *integral,
+	std::complex<double> *integral,
 	std::complex<double> *work
 ){
 	const size_t n2 = 2*n;
@@ -1371,7 +1371,7 @@ void GetLayerVolumeIntegral(
 			std::complex<double> term = Q[i+j*n4] * std::conj(ab[i]) * ab[j];
 			term *= thickness*std::exp(std::complex<double>(0,d_2) * (q[qj] - std::conj(q[qi])));
 			term *= zsinc(d_2 * (sj*q[qj] - si*std::conj(q[qi])));
-			*integral += term.real();
+			*integral += term;
 		}
 	}
 	if(NULL == work){

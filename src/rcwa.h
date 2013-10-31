@@ -547,7 +547,7 @@ void GetLayerVolumeIntegral(
 	const std::complex<double> *epsilon2, // size (2*glist.n)^2
 	int epstype,
 	const std::complex<double> *ab, // length 4*glist.n
-	double *integral,
+	std::complex<double> *integral,
 	std::complex<double> *work
 );
 
