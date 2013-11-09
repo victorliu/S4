@@ -181,10 +181,17 @@ typedef struct Excitation_Dipole_{
 	// The source is at the layer interface after the layer specified by ex_layer.
 } Excitation_Dipole;
 
+typedef struct Excitation_Exterior_{
+	size_t n;
+	int *Gindex1; /* 1-based G index, negative means backwards (length n) */
+	double *coeff; /* complex coefficients of each G index (length 2n) */
+} Excitation_Exterior;
+
 typedef struct Excitation_{
 	union{
 		Excitation_Planewave planewave; // type 0
 		Excitation_Dipole dipole; // type 1
+		Excitation_Exterior exterior; // type 2
 	} sub;
 	int type;
 	char *layer; // name of layer after which excitation is applied
@@ -285,6 +292,9 @@ int Simulation_RemoveLayerPatterns(Simulation *S, Layer *layer);
 int Simulation_ChangeLayerThickness(Simulation *S, Layer *layer, const double *thickness);
 
 // Returns 14 if no layers present
+// exg is length 2*n, pairs of G index (1-based index, negative for backwards modes), and 0,1 polarization (E field x,y)
+// ex is length 2*n, pairs of re,im complex coefficients
+int Simulation_MakeExcitationExterior(Simulation *S, int n, const int *exg, const double *ex);
 int Simulation_MakeExcitationPlanewave(Simulation *S, const double angle[2], const double pol_s[2], const double pol_p[2], size_t order);
 int Simulation_MakeExcitationDipole(Simulation *S, const double k[2], const char *layer, const double pos[2], const double moment[6]);
 

@@ -8,6 +8,8 @@
 [S4 Home](index.html) | [Download](download.html) | [FAQ](faq.html) | [Lua API](s4_lua_api.html) | [Developer information](dev_info.html) | [Changelog](changelog.html)
 
 # Changelog
+=2013-11-09=
+	Added SetExcitationExterior.
 =2013-10-31=
 	Added optional order parameter to SetExcitationPlanewave.
 =2013-10-16=

@@ -1026,6 +1026,53 @@ int Simulation_ComputeLayerSolution(Simulation *S, Layer *L, LayerBands **layer_
 			NULL, // bN
 			(*layer_solution)->ab);
 		S4_free(a0);
+	}else if(2 == S->exc.type){
+		Excitation_Exterior *ext = &(S->exc.sub.exterior);
+		// Front incidence by planewave
+		size_t phicopy_size = (NULL == lphi[0] ? 0 : n2*n2);
+		std::complex<double> *a0 = (std::complex<double>*)S4_malloc(sizeof(std::complex<double>)*(n4+phicopy_size));
+		std::complex<double> *bN = a0 + n2;
+		RNP::TBLAS::Fill(n4, 0., a0,1);
+		for(size_t i = 0; i < ext->n; ++i){
+			int gindex = ext->Gindex1[2*i+0];
+			const int pol = ext->Gindex1[2*i+1];
+			if(gindex > 0){
+				gindex--;
+				if(0 == pol){ // pol is for E field
+					a0[gindex+n] =  std::complex<double>(ext->coeff[2*i+0], ext->coeff[2*i+1]);
+				}else{
+					a0[gindex+0] = -std::complex<double>(ext->coeff[2*i+0], ext->coeff[2*i+1]);
+				}
+			}else if(gindex < 0){
+				gindex++;
+				gindex = -gindex;
+				if(0 == pol){ // pol is for E field
+					bN[gindex+n] = -std::complex<double>(ext->coeff[2*i+0], ext->coeff[2*i+1]);
+				}else{
+					bN[gindex+0] =  std::complex<double>(ext->coeff[2*i+0], ext->coeff[2*i+1]);
+				}
+			}
+		}
+		
+		S4_TRACE("I  Calling SolveInterior(layer_count=%d, which_layer=%d, n=%d, lthick,lq,lkp,lphi={\n", layer_count, which_layer, S->n_G);
+		for(size_t i = 0; i < layer_count; ++i){
+			S4_TRACE("I    %f, %p (0,0=%f,%f), %p (0,0=%f,%f), %p (0,0=%f,%f)\n", lthick[i],
+				lq[i], lq[i][0].real(), lq[i][0].imag(),
+				lkp[i], NULL != lkp[i] ? lkp[i][0].real() : 0., NULL != lkp[i] ? lkp[i][0].imag() : 0.,
+				lphi[i], NULL != lphi[0] ? lphi[i][0].real() : 1., NULL != lphi[0] ? lphi[i][0].imag() : 0.);
+		}
+		S4_TRACE("I   }, a0[0]=%f,%f, a0[n]=%f,%f, ...) [omega=%f]\n", a0[0].real(), a0[0].imag(), a0[S->n_G].real(), a0[S->n_G].imag(), S->omega[0]);
+
+		error = SolveInterior(
+			layer_count, which_layer,
+			S->n_G,
+			S->solution->kx, S->solution->ky,
+			std::complex<double>(S->omega[0], S->omega[1]),
+			lthick, lq, lepsinv, lepstype, lkp, lphi,
+			a0, // length 2*n
+			bN, // bN
+			(*layer_solution)->ab);
+		S4_free(a0);
 	}else if(1 == S->exc.type){
 		Layer *l[2];
 		int li;
@@ -2593,6 +2640,34 @@ int Simulation_MakeExcitationDipole(Simulation *S, const double k[2], const char
 	return 0;
 }
 
+int Simulation_MakeExcitationExterior(Simulation *S, int n, const int *exg, const double *ex){
+	S4_TRACE("> Simulation_MakeExcitationExterior(S=%p, n=%d, exg=%p, ex=%p)\n", S,
+		n, exg, ex);
+	int ret = 0;
+	if(NULL == S){ ret = -1; }
+	if(0 == n){ ret = -2; }
+	if(NULL == exg){ ret = -3; }
+	if(NULL == ex){ ret = -4; }
+	if(0 != ret){
+		S4_TRACE("< Simulation_MakeExcitationExterior (failed; ret = %d)\n", ret);
+		return ret;
+	}
+	
+	Simulation_DestroySolution(S);
+	S->exc.type = 2;
+	
+	Excitation_Exterior *ext = &(S->exc.sub.exterior);
+	
+	ext->n = n;
+	ext->Gindex1 = (int*)malloc(sizeof(int) * 2*n);
+	memcpy(ext->Gindex1, exg, sizeof(int) * 2*n);
+	ext->coeff = (double*)malloc(sizeof(double) * 2*n);
+	memcpy(ext->coeff, ex, sizeof(double) * 2*n);
+	
+	S4_TRACE("< Simulation_MakeExcitationExterior\n");
+	return 0;
+}
+
 void Simulation_InvalidateFieldCache(Simulation *S){
 	S4_TRACE("> Simulation_InvalidateFieldCache(S=%p) [omega=%f]\n", S, S->omega[0]);
 	while(NULL != S->field_cache){
@@ -2636,6 +2711,9 @@ void Simulation_SetExcitationType(Simulation *S, int type){
 		if(NULL != S->exc.layer){
 			free(S->exc.layer);
 		}
+	}else if(2 == S->exc.type){
+		if(NULL != S->exc.sub.exterior.Gindex1){ free(S->exc.sub.exterior.Gindex1); }
+		if(NULL != S->exc.sub.exterior.coeff){ free(S->exc.sub.exterior.coeff); }
 	}
 	S->exc.type = type;
 	S4_TRACE("< Simulation_SetExcitationType\n");
@@ -2645,6 +2723,12 @@ void Simulation_CopyExcitation(const Simulation *from, Simulation *to){
 	memcpy(&(to->exc), &(from->exc), sizeof(Excitation));
 	if(1 == to->exc.type){
 		to->exc.layer = strdup(from->exc.layer);
+	}else if(2 == to->exc.type){
+		const int n = from->exc.sub.exterior.n;
+		to->exc.sub.exterior.Gindex1 = (int*)malloc(sizeof(int) * 2*n);
+		memcpy(to->exc.sub.exterior.Gindex1, from->exc.sub.exterior.Gindex1, sizeof(int) * 2*n);
+		to->exc.sub.exterior.coeff = (double*)malloc(sizeof(double) * 2*n);
+		memcpy(to->exc.sub.exterior.coeff, from->exc.sub.exterior.coeff, sizeof(double) * 2*n);
 	}
 	S4_TRACE("< Simulation_CopyExcitation\n");
 }

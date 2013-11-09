@@ -40,6 +40,7 @@ Here we describe all of the S4 specific functions that can be called within the 
     * [SetLayerPatternRectangle](#S4_Simulation_SetLayerPatternRectangle)
     * [SetLayerPatternPolygon](#S4_Simulation_SetLayerPatternPolygon)
     * [SetExcitationPlanewave](#S4_Simulation_SetExcitationPlanewave)
+    * [SetExcitationExterior](#S4_Simulation_SetExcitationExterior)
     * [SetFrequency](#S4_Simulation_SetFrequency)
   * Outputs requiring no solutions
     * [GetReciprocalLattice](#S4_Simulation_GetReciprocalLattice)
@@ -607,6 +608,31 @@ The phase of each polarization is defined at the origin (z = 0).
 	(number) The phase of the s- and p-polarizations of the planewave, relative to z = 0 (the beginning of the first layer).
 =order=
 	(number) An optional positive integer specifying which order (mode index) to excite. Defaults to 1. This is the same index that GetDiffractionOrder returns.
+
+### Return values
+
+None
+
+---
+## <a name="S4_Simulation_SetExcitationExterior" />SetExcitationExterior
+
+Low level function to set excitations by a superposition of incident modes of the exterior layers. For unpatterned layers, the incident modes are forward propagating planewaves in the front, and backward propagating planewaves in the back.
+
+### Usage
+
+	S:SetExcitationExterior{
+	    { G-index, pol, { amp-re, amp-im } },
+		...
+	}
+
+### Arguments
+
+=G-index=
+	(number) Index of the mode. This is the same index that GetDiffractionOrder returns.
+=pol=
+	(string) Either 'x' or 'y' for the polarization of the electric field in unpatterned layers.
+=amp-re, amp-im=
+	(number) Real and imaginary parts of the amplitude coefficient for the mode.
 
 ### Return values
 

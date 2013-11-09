@@ -1328,6 +1328,85 @@ static int S4L_Simulation_SetLayerPatternPolygon(lua_State *L){
 	return 0;
 }
 
+
+/* Expected stack:
+ *   1 Simulation
+ *   2 table
+ * First table:
+ *   Each entry a table of three entries, first is integer, second is 'x' or 'y', third is table of two entries re and im
+ *   If integer is negative, indicates a backward propagating mode.
+ */
+static int S4L_Simulation_SetExcitationExterior(lua_State *L){
+	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	double *ex;
+	int *exg;
+	const char *pol;
+	int i, j, n;
+	luaL_argcheck(L, lua_istable(L, 2), 2, "SetExcitationExterior: table of order coefficients expected.");
+	
+	n = lua_rawlen(L, 2);
+	ex = (double*)malloc(sizeof(double) * 2*n);
+	exg = (int*)malloc(sizeof(int) * 2*n);
+	
+	for(i = 0; i < n; ++i){
+		lua_pushinteger(L, i+1);
+		lua_gettable(L, 2);
+		if(!lua_istable(L, -1)){
+			S4L_error(L, "SetExcitationExterior: List items must be {G-index, pol, {re, im}}.");
+		}
+		/* Get G index */
+		lua_rawgeti(L, -1, 1);
+		if(!lua_isnumber(L, -1)){
+			S4L_error(L, "SetExcitationExterior: List items must be {G-index, pol, {re, im}}.");
+		}
+		exg[2*i+0] = lua_tointeger(L, -1);
+		if(0 == exg[2*i+0]){
+			S4L_error(L, "SetExcitationExterior: G-index cannot be zero.");
+		}
+		lua_pop(L, 1);
+		
+		/* Get polarization */
+		lua_rawgeti(L, -1, 2);
+		if(!lua_isstring(L, -1)){
+			S4L_error(L, "SetExcitationExterior: List items must be {G-index, pol, {re, im}}.");
+		}
+		pol = lua_tostring(L, -1);
+		if(0 == strcmp("x", pol)){
+			exg[2*i+1] = 0;
+		}else if(0 == strcmp("y", pol)){
+			exg[2*i+1] = 1;
+		}else{
+			S4L_error(L, "SetExcitationExterior: polarization must be 'x' or 'y'.");
+		}
+		lua_pop(L, 1);
+		
+		/* get {re,im} */
+		lua_rawgeti(L, -1, 3);
+		if(!lua_istable(L, -1)){
+			S4L_error(L, "SetExcitationExterior: List items must be {G-index, pol, {re, im}}.");
+		}
+		for(j = 0; j < 2; ++j){
+			lua_rawgeti(L, -1, j+1);
+			if(!lua_isnumber(L, -1)){
+				S4L_error(L, "SetExcitationExterior: List items must be {G-index, pol, {re, im}}.");
+			}
+			ex[2*i+j] = lua_tonumber(L, -1);
+			lua_pop(L, 1);
+		}
+		lua_pop(L, 1);
+		
+		lua_pop(L, 1);
+	}
+	Simulation_MakeExcitationExterior(S, n, exg, ex);
+	return 0;
+}
+
+static int S4L_Simulation_SetExcitationInterior(lua_State *L){
+	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	S4L_error(L, "SetExcitationInterior: Not implemented.");
+	return 0;
+}
+
 /* Expected stack:
  *   1 Simulation
  *   2 layer name string
@@ -2277,6 +2356,8 @@ static int S4_openlib(lua_State *L){
 		{"SetLayerPatternPolygon", S4L_Simulation_SetLayerPatternPolygon},
 		{"SetExcitationPlanewave", S4L_Simulation_SetExcitationPlanewave},
 		{"SetExcitationDipoleK", S4L_Simulation_SetExcitationDipole},
+		{"SetExcitationExterior", S4L_Simulation_SetExcitationExterior},
+		{"SetExcitationInterior", S4L_Simulation_SetExcitationInterior},
 		{"SetFrequency", S4L_Simulation_SetFrequency},
 		/* Outputs requiring solutions */
 		{"GetGList", S4L_Simulation_GetGList},
