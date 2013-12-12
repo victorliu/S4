@@ -14,14 +14,18 @@ CC  = gcc
 
 CFLAGS = -O3
 
+# Without Lapack/BLAS
+CPPFLAGS = -Isrc -Isrc/RNP -I/home/victor/code/lua-5.2.3/install/include -Isrc/kiss_fft
+LIBS = -L/home/victor/code/lua-5.2.3/install/lib -llua -ldl -lm
+
 # Plain
-#CPPFLAGS = -Isrc -Isrc/RNP -Ilua-5.1.5/src -Isrc/kiss_fft -DHAVE_LAPACK -DHAVE_BLAS
-#LIBS = -llapack -lblas -llua -Llua-5.1.5/src -ldl
+#CPPFLAGS = -Isrc -Isrc/RNP -Ilua-5.2.3/src -Isrc/kiss_fft -DHAVE_LAPACK -DHAVE_BLAS
+#LIBS = -llapack -lblas -llua -Llua-5.2.3/src -ldl
 
 # All bells and whistles
 # Note that HAVE_UNISTD_H goes with HAVE_PTHREAD on Unix based systems
-CPPFLAGS = -Isrc -Isrc/RNP -Ilua-5.1.5/src -Isrc/kiss_fft -I/usr/include/suitesparse -DHAVE_LAPACK -DHAVE_BLAS -DHAVE_LIBCHOLMOD -DHAVE_UNISTD_H -DHAVE_LIBPTHREAD -DHAVE_LIBFFTW3
-LIBS = -llapack -lblas -llua -Llua-5.1.5/src -ldl -lcholmod -lamd -lcolamd -lcamd -lccolamd -lfftw3 -lpthread
+#CPPFLAGS = -Isrc -Isrc/RNP -Ilua-5.2.3/src -Isrc/kiss_fft -I/usr/include/suitesparse -DHAVE_LAPACK -DHAVE_BLAS -DHAVE_LIBCHOLMOD -DHAVE_UNISTD_H -DHAVE_LIBPTHREAD -DHAVE_LIBFFTW3
+#LIBS = -llapack -lblas -llua -Llua-5.2.3/src -ldl -lcholmod -lamd -lcolamd -lcamd -lccolamd -lfftw3 -lpthread
 
 ##################### DO NOT EDIT BELOW THIS LINE #####################
 
@@ -49,7 +53,8 @@ SOURCES = \
   src/cubature.c \
   src/Interpolator.c \
   src/convert.c \
-  src/main.c
+  src/main.c \
+  src/RNP/Eigensystems.cpp
 
 all: objdir objs link
 
@@ -57,6 +62,7 @@ link:
 	$(CXX) obj/*.o -o S4 $(LIBS)
 
 objs: \
+	obj/Eigensystems.o \
 	obj/main.o \
 	obj/S4.o \
 	obj/rcwa.o \
@@ -130,6 +136,8 @@ obj/convert.o:
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/convert.c -o $@
 obj/main.o:
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/main.c -o $@
+obj/Eigensystems.o:
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/RNP/Eigensystems.cpp -o $@
 
 objdir:
 	mkdir -p obj

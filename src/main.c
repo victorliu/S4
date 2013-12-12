@@ -2430,11 +2430,15 @@ static int S4_openlib(lua_State *L){
 
 void threadsafe_init(){
 	extern void exactinit();
+#ifdef HAVE_LAPACK
 	extern float slamch_(const char *);
 	extern double dlamch_(const char *);
+#endif
 	exactinit();
+#ifdef HAVE_LAPACK
 	slamch_("E");
 	dlamch_("E");
+#endif
 	fft_init();
 }
 void threadsafe_destroy(){

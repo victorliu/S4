@@ -57,19 +57,19 @@ static inline void rcwa_free(void *ptr){
 	free_aligned(ptr);
 }
 
-//typedef int integer;
-extern "C" void zgelss_(
-	const integer &m, const integer &n, const integer &nRHS,
-	std::complex<double> *a, const integer &lda,
-	std::complex<double> *b, const integer &ldb,
-	double *s, const double &rcond, integer *rank,
-	std::complex<double> *work, const integer &lwork,
-	double *rwork, integer *info
-);
 static void SingularLinearSolve(
 	size_t m, size_t n, size_t nRHS, std::complex<double> *a, size_t lda,
 	std::complex<double> *b, size_t ldb, const double &rcond
 ){
+#ifdef HAVE_LAPACK
+	extern "C" void zgelss_(
+		const integer &m, const integer &n, const integer &nRHS,
+		std::complex<double> *a, const integer &lda,
+		std::complex<double> *b, const integer &ldb,
+		double *s, const double &rcond, integer *rank,
+		std::complex<double> *work, const integer &lwork,
+		double *rwork, integer *info
+	);
 	integer info, rank;
 	std::complex<double> dummy;
 	zgelss_(m, n, nRHS, a, lda, b, ldb, NULL, rcond, &rank, &dummy, -1, NULL, &info);
@@ -81,6 +81,9 @@ static void SingularLinearSolve(
 	
 	rcwa_free(rwork);
 	rcwa_free(work);
+#else
+	RNP::LinearSolve<'N'>(n, nRHS, a, lda, b, ldb);
+#endif
 }
 	
 
@@ -915,8 +918,14 @@ void TranslateAmplitudes(
 	const size_t n2 = 2*n;
 	for(size_t i = 0; i < n2; ++i){
 		std::complex<double> iq = std::complex<double>(0,1)*q[i];
-		ab[i]    *= std::exp(iq*dz);
-		ab[i+n2] *= std::exp(iq*(thickness-dz));
+		// When extrapolating, the exponentials can be huge, so we need to check
+		// against overflow. This doesn't solve the problem completely, but it helps.
+		if(0. != ab[i]){
+			ab[i]    *= std::exp(iq*dz);
+		}
+		if(0. != ab[i]){
+			ab[i+n2] *= std::exp(iq*(thickness-dz));
+		}
 	}
 }
 

@@ -9,7 +9,7 @@
 # define RNP_FORTRAN_NAME(LCASE,UCASE) F77_FUNC(LCASE,UCASE)
 #endif
 
-typedef long int integer;
+typedef int integer;
 
 extern "C" void RNP_FORTRAN_NAME(zgeev,ZGEEV)(const char *jobvl, const char *jobvr, const integer &n, 
 	std::complex<double> *a, const integer &lda, std::complex<double> *w, std::complex<double> *vl, 

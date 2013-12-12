@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.65])
 AC_INIT(S4, 1.0.0, vkl@stanford.edu, S4)
-AM_INIT_AUTOMAKE(S4, 1.0.0)
+AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/rcwa.cpp])
 AC_CONFIG_HEADERS([src/config.h])
 
@@ -64,8 +64,8 @@ AC_CHECK_LIB(fftw3, fftw_malloc)
 # Checks for BLAS and LAPACK libraries:
 sinclude(m4/ax_blas.m4)
 sinclude(m4/ax_lapack.m4)
-AX_BLAS([], [AC_MSG_ERROR([BLAS was not found!])])
-AX_LAPACK([], [AC_MSG_ERROR([LAPACK was not found!])])
+AX_BLAS([], [AC_MSG_WARN([BLAS was not found!])])
+AX_LAPACK([], [AC_MSG_WARN([LAPACK was not found!])])
 LIBS="$LAPACK_LIBS $BLAS_LIBS $LIBS $FLIBS"
 
 #AC_ARG_ENABLE(blacs, AS_HELP_STRING([--with-blacs], [Blacs support]))

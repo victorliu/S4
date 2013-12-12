@@ -5,7 +5,7 @@
 #include <complex>
 
 namespace RNP{
-typedef long int integer;
+typedef int integer;
 namespace TBLAS{
 
 //#define RNP_FORTRAN_NAME(LCASE,UCASE) LCASE ## _

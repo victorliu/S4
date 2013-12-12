@@ -1727,7 +1727,7 @@ static void zlaqr3_(bool wantt, bool wantz, size_t n, size_t ktop, size_t kbot, 
 			RNP::TLASupport::ApplyElementaryReflector<'R'>(*ns, *ns, _work, 1, tau, _t, ldt, &_work[jw]);
 			RNP::TLASupport::ApplyElementaryReflector<'R'>(jw, *ns, _work, 1, tau, _v, ldv, &_work[jw]);
 
-			RNP::TLASupport::HessenbergReduction(jw, 0, (*ns)-1, _t, ldt, _work, &_work[jw]);
+			RNP::TLASupport::HessenbergReduction(jw, 0, (*ns)-1, _t, ldt, _work, &_work[jw], jw);
 		}
 
 /*        ==== Copy updated reduced window into place ==== */
@@ -4567,7 +4567,7 @@ int RNP::Eigensystem(size_t n,
 
 	const size_t itau = 0;
 	size_t iwrk = itau + n;
-	RNP::TLASupport::HessenbergReduction(n, ilo-1, ihi-1, a, lda, &work[itau], &work[iwrk]);
+	RNP::TLASupport::HessenbergReduction(n, ilo-1, ihi-1, a, lda, &work[itau], &work[iwrk], n);
 
 	int info;
 	if(wantvl){
