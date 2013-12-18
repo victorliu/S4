@@ -12,7 +12,7 @@
 CXX = g++
 CC  = gcc
 
-CFLAGS = -O3
+CFLAGS = -O0 -ggdb
 
 # Without Lapack/BLAS
 CPPFLAGS = -Isrc -Isrc/RNP -I/home/victor/code/lua-5.2.3/install/include -Isrc/kiss_fft
@@ -88,56 +88,56 @@ objs: \
 	obj/Interpolator.o \
 	obj/convert.o
 
-obj/S4.o:
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/S4.cpp -o $@
-obj/rcwa.o:
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/rcwa.cpp -o $@
-obj/fmm_common.o:
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/fmm/fmm_common.cpp -o $@
-obj/fmm_FFT.o:
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/fmm/fmm_FFT.cpp -o $@
-obj/fmm_kottke.o:
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/fmm/fmm_kottke.cpp -o $@
-obj/fmm_closed.o:
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/fmm/fmm_closed.cpp -o $@
-obj/fmm_PolBasisNV.o:
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/fmm/fmm_PolBasisNV.cpp -o $@
-obj/fmm_PolBasisVL.o:
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/fmm/fmm_PolBasisVL.cpp -o $@
-obj/fmm_PolBasisJones.o:
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/fmm/fmm_PolBasisJones.cpp -o $@
-obj/fmm_experimental.o:
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/fmm/fmm_experimental.cpp -o $@
-obj/fft_iface.o:
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) src/fmm/fft_iface.cpp -o $@
-obj/pattern.o:
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/pattern/pattern.c -o $@
-obj/intersection.o:
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/pattern/intersection.c -o $@
-obj/predicates.o:
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/pattern/predicates.c -o $@
-obj/numalloc.o:
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/numalloc.c -o $@
-obj/gsel.o:
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/gsel.c -o $@
-obj/sort.o:
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/sort.c -o $@
-obj/kiss_fft.o:
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/kiss_fft/kiss_fft.c -o $@
-obj/kiss_fftnd.o:
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/kiss_fft/tools/kiss_fftnd.c -o $@
-obj/SpectrumSampler.o:
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/SpectrumSampler.c -o $@
-obj/cubature.o:
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/cubature.c -o $@
-obj/Interpolator.o:
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/Interpolator.c -o $@
-obj/convert.o:
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/convert.c -o $@
-obj/main.o:
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/main.c -o $@
-obj/Eigensystems.o:
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) src/RNP/Eigensystems.cpp -o $@
+obj/S4.o: src/S4.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/rcwa.o: src/rcwa.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/fmm_common.o: src/fmm/fmm_common.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/fmm_FFT.o: src/fmm/fmm_FFT.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/fmm_kottke.o: src/fmm/fmm_kottke.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/fmm_closed.o: src/fmm/fmm_closed.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/fmm_PolBasisNV.o: src/fmm/fmm_PolBasisNV.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/fmm_PolBasisVL.o: src/fmm/fmm_PolBasisVL.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/fmm_PolBasisJones.o: src/fmm/fmm_PolBasisJones.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/fmm_experimental.o: src/fmm/fmm_experimental.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/fft_iface.o: src/fmm/fft_iface.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/pattern.o: src/pattern/pattern.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/intersection.o: src/pattern/intersection.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/predicates.o: src/pattern/predicates.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/numalloc.o: src/numalloc.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/gsel.o: src/gsel.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/sort.o: src/sort.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/kiss_fft.o: src/kiss_fft/kiss_fft.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/kiss_fftnd.o: src/kiss_fft/tools/kiss_fftnd.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/SpectrumSampler.o: src/SpectrumSampler.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/cubature.o: src/cubature.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/Interpolator.o: src/Interpolator.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/convert.o: src/convert.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/main.o: src/main.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+obj/Eigensystems.o: src/RNP/Eigensystems.cpp
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 objdir:
 	mkdir -p obj

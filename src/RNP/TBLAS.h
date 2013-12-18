@@ -338,15 +338,13 @@ struct MultTrV{ // ztrmv, dtrmv, ctrmv, strmv
 					T *x2 = xx;
 					if(noconj){
 						if(nounit){ temp *= a[j+j*lda]; }
-						size_t i = j-1;
-						while(i --> 0){
+						for(size_t i = (j > 0 ? j-1 : 0); i-- > 0; ){
 							x2 -= incx;
 							temp += a[i+j*lda]*(*x2);
 						}
 					}else{
 						if(nounit){ temp *= _RealOrComplexChooser<T>::_conj(a[j+j*lda]); }
-						size_t i = j-1;
-						while(i --> 0){
+						for(size_t i = (j > 0 ? j-1 : 0); i-- > 0; ){
 							x2 -= incx;
 							temp += _RealOrComplexChooser<T>::_conj(a[i+j*lda])*(*x2);
 						}

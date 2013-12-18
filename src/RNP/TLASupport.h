@@ -40,6 +40,8 @@ and are in the public domain.
 
 */
 
+#include <iostream>
+
 #include <complex>
 #include <cmath>
 #include <limits>
@@ -1062,13 +1064,13 @@ void GenerateElementaryReflector(size_t n, T *alpha, T *x, size_t incx, T *tau){
 	using namespace std;
 
 	if(n == 0){
-		tau = 0;
+		*tau = 0;
 		return;
 	}
 	
 	real_type xnorm = RNP::TBLAS::Norm2( n-1, x, incx );
 	if(xnorm == 0 && RNP::TBLAS::_RealOrComplexChooser<T>::_imag(*alpha) == 0){ // H  =  I
-		tau = 0;
+		*tau = 0;
 	}else{ // general case
 		real_type beta = RNP::TLASupport::Pythag3( RNP::TBLAS::_RealOrComplexChooser<T>::_real(*alpha), RNP::TBLAS::_RealOrComplexChooser<T>::_imag(*alpha), xnorm );
 		if(RNP::TBLAS::_RealOrComplexChooser<T>::_real(*alpha) > 0){ beta = -beta; };
@@ -1923,10 +1925,10 @@ void HessenbergReduction(size_t n, size_t ilo, size_t ihi, T *a, size_t lda, T *
 	}
 
 	size_t i = ilo;
-	
+
 	if(nb < nbmin || nb >= nh){
 	}else{ // use blocked code
-		for(i = ilo; i <= ihi-1-nx; i += nb){
+		for(i = ilo; i+nx+1 <= ihi; i += nb){
 			size_t ib = (nb < (ihi-i) ? nb : (ihi-i));
 			// Reduce columns i:i+ib-1 to Hessenberg form, returning the
 			// matrices V and T of the block reflector H = I - V*T*V'
