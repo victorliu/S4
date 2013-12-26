@@ -25,6 +25,7 @@
 #include <cstring>
 #include <float.h>
 #include "rcwa.h"
+#include "fmm/fft_iface.h"
 #include <TBLAS.h>
 #ifdef HAVE_BLAS
 # include <TBLAS_ext.h>
@@ -57,10 +58,6 @@ static inline void rcwa_free(void *ptr){
 	free_aligned(ptr);
 }
 
-static void SingularLinearSolve(
-	size_t m, size_t n, size_t nRHS, std::complex<double> *a, size_t lda,
-	std::complex<double> *b, size_t ldb, const double &rcond
-){
 #ifdef HAVE_LAPACK
 	extern "C" void zgelss_(
 		const integer &m, const integer &n, const integer &nRHS,
@@ -70,6 +67,13 @@ static void SingularLinearSolve(
 		std::complex<double> *work, const integer &lwork,
 		double *rwork, integer *info
 	);
+#endif
+
+static void SingularLinearSolve(
+	size_t m, size_t n, size_t nRHS, std::complex<double> *a, size_t lda,
+	std::complex<double> *b, size_t ldb, const double &rcond
+){
+#ifdef HAVE_LAPACK
 	integer info, rank;
 	std::complex<double> dummy;
 	zgelss_(m, n, nRHS, a, lda, b, ldb, NULL, rcond, &rank, &dummy, -1, NULL, &info);
@@ -1119,26 +1123,29 @@ void GetFieldAtPoint(
 	fH[1] = 0;
 	fH[2] = 0;
 	
+	if(NULL != efield && NULL != epsilon_inv){
+		for(size_t i = 0; i < n; ++i){
+			eh[i] = (ky[i]*hx[i] - kx[i]*hy[i]);
+		}
+		RNP::TBLAS::MultMV<'N'>(n,n, z_one,epsilon_inv,n, eh,1, z_zero,&eh[n],1);
+	}
+	
 	for(size_t i = 0; i < n; ++i){
-		double theta = (kx[i]*r[0] + ky[i]*r[1]);
+		const double theta = (kx[i]*r[0] + ky[i]*r[1]);
 
-		std::complex<double> phase(cos(theta),sin(theta));
+		const std::complex<double> phase(cos(theta),sin(theta));
 		fH[0] += hx[i]*phase;
 		fH[1] += hy[i]*phase;
 		fE[0] += ex[i]*phase;
 		fE[1] -= ney[i]*phase;
-		fH[2] += (kx[i] * -ney[i] - ky[i] * ex[i]) / omega *phase;
-		eh[i] = (ky[i]*hx[i] - kx[i]*hy[i]) *phase;
+		fH[2] += (kx[i] * -ney[i] - ky[i] * ex[i]) * (phase / omega);
+		fE[2] += eh[n+i] * (phase / omega);
 	}
 	
 	if(NULL != efield && NULL != epsilon_inv){
 		efield[0] = fE[0];
 		efield[1] = fE[1];
-		efield[2] = 0;
-		RNP::TBLAS::MultMV<'N'>(n,n, z_one,epsilon_inv,n, eh,1, z_zero,&eh[n],1);
-		for(size_t i = 0; i < n; ++i){
-			efield[2] += eh[n+i]/omega;
-		}
+		efield[2] = fE[2];
 	}
 	if(NULL != hfield){
 		hfield[0] = fH[0];
@@ -1148,6 +1155,89 @@ void GetFieldAtPoint(
 	
 	if(NULL == work){
 		rcwa_free(eh);
+	}
+}
+void GetFieldOnGrid(
+	size_t n, // glist.n
+	int *G,
+	const double *kx, const double *ky,
+	std::complex<double> omega,
+	const std::complex<double> *q, // length 2*glist.n
+	const std::complex<double> *kp, // size (2*glist.n)^2 (k-parallel matrix)
+	const std::complex<double> *phi, // size (2*glist.n)^2
+	const std::complex<double> *epsilon_inv, // size (glist.n)^2, non NULL for efield != NULL || kp == NULL
+	int epstype,
+	const std::complex<double> *ab, // length 4*glist.n
+	const size_t nxy[2], // number of points per lattice direction
+	std::complex<double> *efield,
+	std::complex<double> *hfield
+){
+	const std::complex<double> z_zero(0.);
+	const std::complex<double> z_one(1.);
+	const size_t n2 = 2*n;
+	const size_t N = nxy[0]*nxy[1];
+	const int nxyoff[2] = { (int)(nxy[0]/2), (int)(nxy[1]/2) };
+	int inxy[2] = { (int)nxy[0], (int)nxy[1] };
+	
+	std::complex<double> *eh = (std::complex<double>*)rcwa_malloc(sizeof(std::complex<double>) * 8*n2);
+	
+	GetInPlaneFieldVector(n, kx, ky, omega, q, epsilon_inv, epstype, kp, phi, ab, eh);
+	const std::complex<double> *hx  = &eh[3*n2+0];
+	const std::complex<double> *hy  = &eh[3*n2+n];
+	const std::complex<double> *ney = &eh[4*n2+0];
+	const std::complex<double> *ex  = &eh[4*n2+n];
+
+	std::complex<double> *from[6];
+	std::complex<double> *to[6];
+	fft_plan plan[6];
+	for(unsigned i = 0; i < 6; ++i){
+		from[i] = fft_alloc_complex(N);
+		to[i] = fft_alloc_complex(N);
+		memset(from[i], 0, sizeof(std::complex<double>) * N);
+		fft_plan_dft_2d(inxy, from[i], to[i], 1);
+	}
+	
+	for(size_t i = 0; i < n; ++i){
+		eh[i] = (ky[i]*hx[i] - kx[i]*hy[i]);
+		RNP::TBLAS::MultMV<'N'>(n,n, z_one,epsilon_inv,n, eh,1, z_zero,&eh[n],1);
+	}
+	for(size_t i = 0; i < n; ++i){
+		const int iu = G[2*i+0];
+		const int iv = G[2*i+1];
+		if(
+			(nxyoff[0] - (int)nxy[0] < iu && iu <= nxyoff[0]) &&
+			(nxyoff[1] - (int)nxy[1] < iv && iv <= nxyoff[1])
+		){
+			const int ii = (iu >= 0 ? iu : iu + nxy[0]);
+			const int jj = (iv >= 0 ? iv : iv + nxy[1]);
+			from[0][ii+jj*nxy[0]] = hx[i];
+			from[1][ii+jj*nxy[0]] = hy[i];
+			from[2][ii+jj*nxy[0]] = (kx[i] * ney[i] + ky[i] * ex[i]) / omega;
+			from[3][ii+jj*nxy[0]] = ex[i];
+			from[4][ii+jj*nxy[0]] = -ney[i];
+			from[5][ii+jj*nxy[0]] = eh[n+i] / omega;
+		}
+	}
+	
+	for(unsigned i = 0; i < 6; ++i){
+		fft_plan_exec(plan[i]);
+	}
+	
+	for(size_t j = 0; j < nxy[1]; ++j){
+		for(size_t i = 0; i < nxy[0]; ++i){
+			hfield[3*(i+j*nxy[0])+0] = to[0][i+j*nxy[0]];
+			hfield[3*(i+j*nxy[0])+1] = to[1][i+j*nxy[0]];
+			hfield[3*(i+j*nxy[0])+2] = to[2][i+j*nxy[0]];
+			efield[3*(i+j*nxy[0])+0] = to[3][i+j*nxy[0]];
+			efield[3*(i+j*nxy[0])+1] = to[4][i+j*nxy[0]];
+			efield[3*(i+j*nxy[0])+2] = to[5][i+j*nxy[0]];
+		}
+	}
+	
+	for(unsigned i = 0; i < 6; ++i){
+		fft_plan_destroy(plan[i]);
+		fft_free(to[i]);
+		fft_free(from[i]);
 	}
 }
 

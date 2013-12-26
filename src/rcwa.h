@@ -462,6 +462,21 @@ void GetFieldAtPoint(
 	std::complex<double> hfield[3],
 	std::complex<double> *work = NULL
 );
+void GetFieldOnGrid(
+	size_t n, // glist.n
+	int *G, // length 2*glist.n, pairs of uv coordinates of Lk
+	const double *kx, const double *ky,
+	std::complex<double> omega,
+	const std::complex<double> *q, // length 2*glist.n
+	const std::complex<double> *kp, // size (2*glist.n)^2 (k-parallel matrix)
+	const std::complex<double> *phi, // size (2*glist.n)^2
+	const std::complex<double> *epsilon_inv, // size (glist.n)^2, non NULL for efield != NULL || kp == NULL
+	int epstype,
+	const std::complex<double> *ab, // length 4*glist.n
+	const size_t nxy[2], // number of points per lattice direction
+	std::complex<double> *efield,
+	std::complex<double> *hfield
+);
 
 // Purpose
 // =======
