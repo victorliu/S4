@@ -1127,7 +1127,12 @@ void GetFieldAtPoint(
 		for(size_t i = 0; i < n; ++i){
 			eh[i] = (ky[i]*hx[i] - kx[i]*hy[i]);
 		}
-		RNP::TBLAS::MultMV<'N'>(n,n, z_one,epsilon_inv,n, eh,1, z_zero,&eh[n],1);
+		if(EPSILON2_TYPE_BLKDIAG1_SCALAR == epstype || EPSILON2_TYPE_BLKDIAG2_SCALAR == epstype){
+			RNP::TBLAS::Scale(n, epsilon_inv[0], eh,1);
+			RNP::TBLAS::Copy(n, eh,1, &eh[n], 1);
+		}else{
+			RNP::TBLAS::MultMV<'N'>(n,n, z_one,epsilon_inv,n, eh,1, z_zero,&eh[n],1);
+		}
 	}
 	
 	for(size_t i = 0; i < n; ++i){
@@ -1199,7 +1204,12 @@ void GetFieldOnGrid(
 	
 	for(size_t i = 0; i < n; ++i){
 		eh[i] = (ky[i]*hx[i] - kx[i]*hy[i]);
-		RNP::TBLAS::MultMV<'N'>(n,n, z_one,epsilon_inv,n, eh,1, z_zero,&eh[n],1);
+		if(EPSILON2_TYPE_BLKDIAG1_SCALAR == epstype || EPSILON2_TYPE_BLKDIAG2_SCALAR == epstype){
+			RNP::TBLAS::Scale(n, epsilon_inv[0], eh,1);
+			RNP::TBLAS::Copy(n, eh,1, &eh[n], 1);
+		}else{
+			RNP::TBLAS::MultMV<'N'>(n,n, z_one,epsilon_inv,n, eh,1, z_zero,&eh[n],1);
+		}
 	}
 	for(size_t i = 0; i < n; ++i){
 		const int iu = G[2*i+0];
@@ -1285,7 +1295,12 @@ void GetZStressTensorIntegral(
 		hz[i] = (kx[i] * -ney[i] - ky[i] * ex[i]) / omega;
 		dz[i] = (hy[i]*hx[i] - kx[i]*hy[i]) / omega;
 	}
-	RNP::TBLAS::MultMV<'N'>(n,n, z_one,epsilon_inv,n, dz,1, z_zero,ez,1);
+	if(EPSILON2_TYPE_BLKDIAG1_SCALAR == epstype || EPSILON2_TYPE_BLKDIAG2_SCALAR == epstype){
+		RNP::TBLAS::Copy(n, dz,1, ez, 1);
+		RNP::TBLAS::Scale(n, epsilon_inv[0], ez,1);
+	}else{
+		RNP::TBLAS::MultMV<'N'>(n,n, z_one,epsilon_inv,n, dz,1, z_zero,ez,1);
+	}
 	RNP::TBLAS::MultMV<'N'>(n2,n2, z_one,epsilon2,n2, ney,1, z_zero,ndy,1);
 	
 	for(size_t i = 0; i < n; ++i){
@@ -1381,7 +1396,11 @@ void GetLayerVolumeIntegral(
 			Q[i+n2+(i+n2)*n4] *= omega2_2;
 		}
 	}else if('e' == which){
-		RNP::TBLAS::MultMM<'C','N'>(n,n,n, z_one,epsilon_inv,n, epsilon_inv,n, z_zero,&Q[n2+n2*n4],n4);
+		if(EPSILON2_TYPE_BLKDIAG1_SCALAR == epstype || EPSILON2_TYPE_BLKDIAG2_SCALAR == epstype){
+			RNP::TBLAS::SetMatrix<'A'>(n,n, 0.,std::norm(epsilon_inv[0]), &Q[n2+n2*n4],n4);
+		}else{
+			RNP::TBLAS::MultMM<'C','N'>(n,n,n, z_one,epsilon_inv,n, epsilon_inv,n, z_zero,&Q[n2+n2*n4],n4);
+		}
 		RNP::TBLAS::CopyMatrix<'A'>(n,n, &Q[n2+n2*n4],n4, &Q[n2+n+n2*n4],n4);
 		RNP::TBLAS::CopyMatrix<'A'>(n,n, &Q[n2+n2*n4],n4, &Q[n2+(n2+n)*n4],n4);
 		RNP::TBLAS::CopyMatrix<'A'>(n,n, &Q[n2+n2*n4],n4, &Q[n2+n+(n2+n)*n4],n4);
@@ -1518,7 +1537,12 @@ void GetLayerZIntegral(
 		f[0*n4+1*n+i] = std::complex<double>(cos(theta),-sin(theta)); // note the minus
 	}
 	RNP::TBLAS::Copy(n, &f[n],1, &f[1*n4+0*n],1); // -ey
-	RNP::TBLAS::MultMV<'C'>(n,n, iomega,epsilon_inv,n, &f[n4],1, zero,&f[2*n4+n2],1); // ez
+	if(EPSILON2_TYPE_BLKDIAG1_SCALAR == epstype || EPSILON2_TYPE_BLKDIAG2_SCALAR == epstype){
+		RNP::TBLAS::Copy(n, &f[n4],1, &f[2*n4+n2],1); // ez
+		RNP::TBLAS::Scale(n, iomega*epsilon_inv[0], &f[2*n4+n2],1);
+	}else{
+		RNP::TBLAS::MultMV<'C'>(n,n, iomega,epsilon_inv,n, &f[n4],1, zero,&f[2*n4+n2],1); // ez
+	}
 	RNP::TBLAS::Copy(n, &f[2*n4+n2],1, &f[2*n4+n2+n],1); // ez
 	for(size_t i = 0; i < n; ++i){ // ez
 		f[2*n4+n2+i] *= ky[i];
