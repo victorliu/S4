@@ -372,6 +372,7 @@ int Simulation_OutputLayerPatternRealization(Simulation *S, Layer *layer, int nu
 // Returns a solution error code
 // E field is stored as {Exr,Eyr,Ezr,Exi,Eyi,Ezi}
 int Simulation_GetField(Simulation *S, const double r[3], double fE[6], double fH[6]);
+int Simulation_GetFieldPlane(Simulation *S, int nxy[2], double z, double *E, double *H);
 
 // Returns a solution error code
 int Simulation_GetEpsilon(Simulation *S, const double r[3], double eps[2]); // eps is {real,imag}

@@ -1194,7 +1194,7 @@ void GetFieldOnGrid(
 		from[i] = fft_alloc_complex(N);
 		to[i] = fft_alloc_complex(N);
 		memset(from[i], 0, sizeof(std::complex<double>) * N);
-		fft_plan_dft_2d(inxy, from[i], to[i], 1);
+		plan[i] = fft_plan_dft_2d(inxy, from[i], to[i], 1);
 	}
 	
 	for(size_t i = 0; i < n; ++i){
@@ -1239,6 +1239,7 @@ void GetFieldOnGrid(
 		fft_free(to[i]);
 		fft_free(from[i]);
 	}
+	rcwa_free(eh);
 }
 
 void GetZStressTensorIntegral(

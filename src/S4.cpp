@@ -2253,6 +2253,73 @@ int Simulation_GetField(Simulation *S, const double r[3], double fE[6], double f
 	S4_TRACE("< Simulation_GetField\n");
 	return 0;
 }
+int Simulation_GetFieldPlane(Simulation *S, int nxy[2], double zz, double *E, double *H){
+	S4_TRACE("> Simulation_GetFieldPlane(S=%p, nxy=%p (%d,%d), z=%f, E=%p, H=%p)\n",
+		S, (NULL == nxy ? 0 : nxy[0]), (NULL == nxy ? 0 : nxy[1]), z, E, H);
+	if(NULL == S){
+		S4_TRACE("< Simulation_GetFieldPlane (failed; S == NULL)\n");
+		return -1;
+	}
+	if(NULL == nxy){
+		S4_TRACE("< Simulation_GetFieldPlane (failed; r == NULL)\n");
+		return -2;
+	}
+	if(NULL == E || NULL == H){
+		S4_TRACE("< Simulation_GetFieldPlane (early exit; E or H are NULL)\n");
+		return 0;
+	}
+	
+	const size_t n2 = 2*S->n_G;
+	const size_t n4 = 2*n2;
+	
+	Layer *L = S->layer;
+	double dz = zz;
+	{
+		double z = 0;
+		while(NULL != L && zz > z+L->thickness){
+			z += L->thickness;
+			dz -= L->thickness;
+			if(NULL == L->next){ break; }
+			L = L->next;
+		}
+	}
+	if(NULL == L){
+		S4_TRACE("< Simulation_GetField (failed; no layers found)\n");
+		return 14;
+	}
+//fprintf(stderr, "(%f,%f,%f) in %s: dz = %f\n", r[0], r[1], r[2], L->name, dz);
+	
+	LayerBands *Lbands;
+	LayerSolution *Lsoln;
+	int ret = Simulation_GetLayerSolution(S, L, &Lbands, &Lsoln);
+	if(0 != ret){
+		S4_TRACE("< Simulation_GetField (failed; Simulation_GetLayerSolution returned %d)\n", ret);
+		return ret;
+	}
+	
+	std::complex<double> *ab = (std::complex<double>*)S4_malloc(sizeof(std::complex<double>) * (n4+8*n2));
+	if(NULL == ab){
+		S4_TRACE("< Simulation_GetField (failed; allocation failed)\n");
+		return 1;
+	}
+	std::complex<double> *work = ab + n4;
+	
+	RNP::TBLAS::Copy(n4, Lsoln->ab,1, ab,1);
+	//RNP::IO::PrintVector(n4, ab, 1);
+	TranslateAmplitudes(S->n_G, Lbands->q, L->thickness, dz, ab);
+	size_t snxy[2] = { nxy[0], nxy[1] };
+	GetFieldOnGrid(
+		S->n_G, S->solution->G, S->solution->kx, S->solution->ky, std::complex<double>(S->omega[0],S->omega[1]),
+		Lbands->q, Lbands->kp, Lbands->phi, Lbands->Epsilon_inv, Lbands->epstype,
+		ab, snxy,
+		reinterpret_cast<std::complex<double>*>(E),
+		reinterpret_cast<std::complex<double>*>(H)
+	);
+	S4_free(ab);
+	
+	S4_TRACE("< Simulation_GetFieldPlane\n");
+	return 0;
+}
 
 int Simulation_GetEpsilon(Simulation *S, const double r[3], double eps[2]){
 	S4_TRACE("> Simulation_GetEpsilon(S=%p, r=%p (%f,%f,%f), eps=%p)\n",

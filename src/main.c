@@ -1668,7 +1668,7 @@ static int S4L_Simulation_GetPoyntingFlux(lua_State *L){
 	}
 	ret = Simulation_GetPoyntingFlux(S, 
 		layer,
-		luaL_checknumber(L, 3),
+		luaL_optnumber(L, 3, 0),
 		power);
 
 	lua_pushnumber(L, power[0]); /* real forw (time averaged) */
@@ -2152,6 +2152,161 @@ static int S4L_Simulation_GetFields(lua_State *L){
 	}
 	return 12;
 }
+
+/* S:GetFieldPlane(z, {nu, nv}, format, filename)
+ *   z: number specify global z coordinates
+ *   format: string specifying return format
+ *     'Array': returns a pair (E and H) of 2D arrays of 3D complex vectors
+ *     'FileWrite': dumps to filename.E or filename.H (x, y, components)
+ *     'FileAppend': appends to filename.E or filename.H (x, y, z, components)
+ */
+static int S4L_Simulation_GetFieldPlane(lua_State *L){
+	int i, j, ret;
+	int nxy[2];
+	double z;
+	double *Efields, *Hfields;
+	const char *fmt;
+	const char *fbasename; size_t len;
+	char *filename;
+	FILE *fp;
+	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	luaL_argcheck(L, S != NULL, 1, "GetFieldPlane: 'Simulation' object expected.");
+	
+	z = luaL_checknumber(L, 2);
+	luaL_argcheck(L, lua_istable(L, 3) && (lua_rawlen(L, 3) == 2), 3, "GetFieldPlane: pair of grid sample counts expected.");
+	for(i = 0; i < 2; ++i){
+		lua_rawgeti(L, 3, i+1);
+		if(!lua_isnumber(L, -1)){
+			S4L_error(L, "GetFieldPlane: pair of grid sample counts expected.");
+		}
+		nxy[i] = (int)lua_tointeger(L, -1);
+		if(nxy[i] <= 0){
+			S4L_error(L, "GetFieldPlane: grid sample counts must be positive.");
+		}
+		lua_pop(L, 1);
+	}
+	fmt = luaL_checkstring(L, 4);
+	fbasename = luaL_optlstring(L, 5, "field", &len);
+	filename = (char*)malloc(sizeof(char) * (len+3));
+	strcpy(filename, fbasename);
+	filename[len+0] = '.';
+	filename[len+2] = '\0';
+	
+	Efields = (double*)malloc(sizeof(double) * 2*3 * nxy[0] * nxy[1]);
+	Hfields = (double*)malloc(sizeof(double) * 2*3 * nxy[0] * nxy[1]);
+	
+	Simulation_GetFieldPlane(S, nxy, z, Efields, Hfields);
+	
+	ret = 0;
+	if(0 == strcmp("FileWrite", fmt)){
+		filename[len+1] = 'E';
+		fp = fopen(filename, "wb");
+		for(i = 0; i < nxy[0]; ++i){
+			for(j = 0; j < nxy[1]; ++j){
+				fprintf(fp,
+					"%d\t%d\t%.14g\t%.14g\t%.14g\t%.14g\t%.14g\t%.14g\n",
+					i, j,
+					Efields[2*(3*(i+j*nxy[0])+0)+0],
+					Efields[2*(3*(i+j*nxy[0])+0)+1],
+					Efields[2*(3*(i+j*nxy[0])+1)+0],
+					Efields[2*(3*(i+j*nxy[0])+1)+1],
+					Efields[2*(3*(i+j*nxy[0])+2)+0],
+					Efields[2*(3*(i+j*nxy[0])+2)+1]
+				);
+			}
+			fprintf(fp, "\n");
+		}
+		fclose(fp);
+		filename[len+1] = 'H';
+		fp = fopen(filename, "wb");
+		for(i = 0; i < nxy[0]; ++i){
+			for(j = 0; j < nxy[1]; ++j){
+				fprintf(fp,
+					"%d\t%d\t%.14g\t%.14g\t%.14g\t%.14g\t%.14g\t%.14g\n",
+					i, j,
+					Hfields[2*(3*(i+j*nxy[0])+0)+0],
+					Hfields[2*(3*(i+j*nxy[0])+0)+1],
+					Hfields[2*(3*(i+j*nxy[0])+1)+0],
+					Hfields[2*(3*(i+j*nxy[0])+1)+1],
+					Hfields[2*(3*(i+j*nxy[0])+2)+0],
+					Hfields[2*(3*(i+j*nxy[0])+2)+1]
+				);
+			}
+			fprintf(fp, "\n");
+		}
+		fclose(fp);
+	}else if(0 == strcmp("FileAppend", fmt)){
+		filename[len+1] = 'E';
+		fp = fopen(filename, "ab");
+		for(i = 0; i < nxy[0]; ++i){
+			for(j = 0; j < nxy[1]; ++j){
+				fprintf(fp,
+					"%d\t%d\t%.14g\t%.14g\t%.14g\t%.14g\t%.14g\t%.14g\t%.14g\n",
+					i, j, z,
+					Efields[2*(3*(i+j*nxy[0])+0)+0],
+					Efields[2*(3*(i+j*nxy[0])+0)+1],
+					Efields[2*(3*(i+j*nxy[0])+1)+0],
+					Efields[2*(3*(i+j*nxy[0])+1)+1],
+					Efields[2*(3*(i+j*nxy[0])+2)+0],
+					Efields[2*(3*(i+j*nxy[0])+2)+1]
+				);
+			}
+			fprintf(fp, "\n");
+		}
+		fprintf(fp, "\n");
+		fclose(fp);
+		filename[len+1] = 'H';
+		fp = fopen(filename, "ab");
+		for(i = 0; i < nxy[0]; ++i){
+			for(j = 0; j < nxy[1]; ++j){
+				fprintf(fp,
+					"%d\t%d\t%.14g\t%.14g\t%.14g\t%.14g\t%.14g\t%.14g\t%.14g\n",
+					i, j, z,
+					Hfields[2*(3*(i+j*nxy[0])+0)+0],
+					Hfields[2*(3*(i+j*nxy[0])+0)+1],
+					Hfields[2*(3*(i+j*nxy[0])+1)+0],
+					Hfields[2*(3*(i+j*nxy[0])+1)+1],
+					Hfields[2*(3*(i+j*nxy[0])+2)+0],
+					Hfields[2*(3*(i+j*nxy[0])+2)+1]
+				);
+			}
+			fprintf(fp, "\n");
+		}
+		fprintf(fp, "\n");
+		fclose(fp);
+	}else{ /* Array */
+		unsigned k, i3, i2;
+		double *F[2] = { Efields, Hfields };
+		
+		for(k = 0; k < 2; ++k){
+			lua_createtable(L, nxy[0], 0);
+			for(i = 0; i < nxy[0]; ++i){
+				lua_createtable(L, nxy[1], 0);
+				for(j = 0; j < nxy[1]; ++j){
+					lua_createtable(L, 3, 0);
+					for(i3 = 0; i3 < 3; ++i3){
+						lua_createtable(L, 2, 0);
+						for(i2 = 0; i2 < 2; ++i2){
+							lua_pushnumber(L, F[k][2*(3*(i+j*nxy[0])+i3)+i2]);
+							lua_rawseti(L, -2, i2+1);
+						}
+						lua_rawseti(L, -2, i3+1);
+					}
+					lua_rawseti(L, -2, j+1);
+				}
+				lua_rawseti(L, -2, i+1);
+			}
+		}
+		
+		ret = 2;
+	}
+	
+	free(Hfields);
+	free(Efields);
+	free(filename);
+	return ret;
+}
+
 static int S4L_Simulation_GetSMatrixDeterminant(lua_State *L){
 	int ret;
 	double mant[2], base;
@@ -2376,6 +2531,7 @@ static int S4_openlib(lua_State *L){
 		{"GetEField", S4L_Simulation_GetEField},
 		{"GetHField", S4L_Simulation_GetHField},
 		{"GetFields", S4L_Simulation_GetFields},
+		{"GetFieldPlane", S4L_Simulation_GetFieldPlane},
 		{"GetSMatrixDeterminant", S4L_Simulation_GetSMatrixDeterminant},
 		/* Outputs not requiring solutions */
 		{"GetReciprocalLattice", S4L_Simulation_GetReciprocalLattice},
