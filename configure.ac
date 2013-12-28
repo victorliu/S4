@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.65])
 AC_INIT(S4, 1.0.0, vkl@stanford.edu, S4)
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 AC_CONFIG_SRCDIR([src/rcwa.cpp])
 AC_CONFIG_HEADERS([src/config.h])
 

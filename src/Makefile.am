@@ -39,7 +39,7 @@ S4@S4_SUFFIX@_SOURCES = \
   cubature.c \
   Interpolator.c \
   convert.c \
-  main.c
+  main_lua.c
 
 noinst_HEADERS = \
 	RNP \

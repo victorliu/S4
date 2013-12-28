@@ -53,7 +53,7 @@ SOURCES = \
   src/cubature.c \
   src/Interpolator.c \
   src/convert.c \
-  src/main.c \
+  src/main_lua.c \
   src/RNP/Eigensystems.cpp
 
 all: objdir objs link
@@ -134,7 +134,7 @@ obj/Interpolator.o: src/Interpolator.c
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 obj/convert.o: src/convert.c
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/main.o: src/main.c
+obj/main_lua.o: src/main_lua.c
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 obj/Eigensystems.o: src/RNP/Eigensystems.cpp
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
