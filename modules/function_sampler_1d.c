@@ -229,7 +229,7 @@ int function_sampler_1d_get_refine(
 		}
 		*/
 //printf("badness[%d] = %g\n", i, sampler->s[i].badness);
-		if(nret < nx || sampler->s[i].badness > best){
+		if(sampler->s[i].badness > 0 && (nret < nx || sampler->s[i].badness > best)){
 			int j;
 			double xnew = 0.5*sampler->s[i].x + 0.5*sampler->s[i+1].x;
 //printf("xnew = %g\n", xnew);
@@ -387,9 +387,9 @@ int function_sampler_1d_add(
 	}else{ /* internal sample */
 		if(sampler->s[ipos-1].badness > 0){ sampler->nbad--; }
 		sampler->s[ipos-1].badness = 0;
-		update(sampler, ipos-1);
+		if(ipos > 1){ update(sampler, ipos-1); }
 		update(sampler, ipos);
-		update(sampler, ipos+1);
+		if(ipos+2 < sampler->ns){ update(sampler, ipos+1); }
 	}
 	
 	return 0;
