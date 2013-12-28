@@ -14,8 +14,8 @@
 static void update_edge(const function_sampler_2d T, int h);
 void DT_eval_bad(const function_sampler_2d T);
 
-extern double orient2d(double*, double*, double*);
-extern double incircle(double*, double*, double*, double*);
+extern double orient2d(const double*, const double*, const double*);
+extern double incircle(const double*, const double*, const double*, const double*);
 
 /* Vertex data structure */
 typedef struct{
@@ -452,7 +452,7 @@ int function_sampler_2d_get_refine(
 			if(nret >= nx){ return nret; }
 		}
 		*/
-		if(nret < nxy || T->f[i].badness > best){
+		if(T->f[i].badness > 0 && (nret < nxy || T->f[i].badness > best)){
 			int j;
 			const int h = T->f[i].h;
 			const int ia = FROM(h);
