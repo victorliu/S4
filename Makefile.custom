@@ -1,9 +1,7 @@
-# Simple Makefile to avoid the Autotools hassle
 # To build:
-#   make -f Makefile.custom
-
-# Notes:
-# + We assume you have copied config.h.custom into config.h
+#   make -f Makefile.custom <target>
+# Use the 'lib' target first to build the library, then either the Lua
+# or Python targets are 'S4lua' and 'python_ext', respectively.
 
 # Set these to the flags needed to link against BLAS and Lapack.
 #  If left blank, then performance may be very poor.
@@ -40,13 +38,14 @@ CHOLMOD_INC =
 CHOLMOD_LIB =
 
 # Specify the MPI library
+MPI_INC =
 MPI_LIB =
 
 # Specify custom compilers if needed
 CXX = g++
 CC  = gcc
 
-CFLAGS = -O0 -ggdb -fPIC
+CFLAGS = -O3 -fPIC
 
 OBJDIR = ./build
 LIBNAME = $(OBJDIR)/libS4.a
@@ -66,20 +65,22 @@ CPPFLAGS += -DHAVE_LAPACK
 endif
 
 ifdef FFTW3_LIB
-CPPFLAGS += -DHAVE_FFTW3
+CPPFLAGS += -DHAVE_FFTW3 $(FFTW3_INC)
 endif
 
 ifdef PTHREAD_LIB
-CPPFLAGS += -DHAVE_LIBPTHREAD
+CPPFLAGS += -DHAVE_LIBPTHREAD $(PTHREAD_INC)
 endif
 
 ifdef CHOLMOD_LIB
-CPPFLAGS += -DHAVE_LIBCHOLMOD
+CPPFLAGS += -DHAVE_LIBCHOLMOD $(CHOLMOD_INC)
 endif
 
 ifdef MPI_LIB
-CPPFLAGS += -DHAVE_MPI
+CPPFLAGS += -DHAVE_MPI $(MPI_INC)
 endif
+
+ALL_LIBS = $(BLAS_LIB) $(LAPACK_LIB) $(FFTW3_LIB) $(PTHREAD_LIB) $(CHOLMOD_LIB)
 
 #### Compilation targets
 
@@ -119,7 +120,10 @@ endif
 
 lib: $(LIBNAME)
 
-$(LIBNAME): $(LIBOBJS)
+copyconfig:
+	cp src/config.h.custom src/config.h
+
+$(LIBNAME): objdir copyconfig $(LIBOBJS)
 	$(AR) crvs $@ $(LIBOBJS)
 
 $(OBJDIR)/S4.o: src/S4.cpp
@@ -172,12 +176,18 @@ $(OBJDIR)/Eigensystems.o: src/RNP/Eigensystems.cpp
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 #### Lua Frontend
-	
+
 $(OBJDIR)/main_lua.o: src/main_lua.c
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 S4lua:  $(OBJDIR)/main_lua.o $(LIBNAME)
 	$(CXX) $(CFLAGS) $(CPPFLAGS) $< -o $@ $(LIBNAME) $(LIBS)
 
+#### Python extension
+
+python_ext:
+	echo $(ALL_LIBS) > $(OBJDIR)/tmp.txt
+	sh gensetup.py.sh $(OBJDIR)
+	python setup.py build
 
 clean:
 	rm -f $(OBJDIR)/*.o S4
