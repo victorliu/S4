@@ -3,144 +3,181 @@
 #   make -f Makefile.custom
 
 # Notes:
-# + These flags below assume you have downloaded Lua 5.1.5 to this
-#   top level directory (so there is a directory named lua-5.1.5 here).
-#   and that you have gone into it and built Lua (e.g.: cd lua-5.1.5; make linux)
 # + We assume you have copied config.h.custom into config.h
-# + On Mac OS, replace '-llapack -lblas' with '-framework vecLib'
 
+# Set these to the flags needed to link against BLAS and Lapack.
+#  If left blank, then performance may be very poor.
+#  On Mac OS,
+#   BLAS_LIB = -framework vecLib
+#   LAPACK_LIB = -framework vecLib
+#  On Debian, with reference BLAS and Lapack (slow)
+#   BLAS_LIB = -lblas
+#   LAPACK_LIB = -llapack
+BLAS_LIB =
+LAPACK_LIB =
+
+# Specify the flags for Lua headers and libraries (only needed for Lua frontend)
+#  On Debian,
+#   LUA_INC = -I/usr/include/lua5.2
+#   LUA_LIB = -llua5.2 -ldl -lm
+LUA_INC = -I/home/victor/code/lua-5.2.3/install/include
+LUA_LIB = -L/home/victor/code/lua-5.2.3/install/lib -llua -ldl -lm
+
+# Typically if installed,
+#  FFTW3_INC can be left empty
+#  FFTW3_LIB = -lfftw3
+FFTW3_INC =
+FFTW3_LIB =
+
+# Typically, these are both set to '-lpthread'
+PTHREAD_INC = -lpthread
+PTHREAD_LIB = -lpthread
+
+# Typically if installed,
+#  CHOLMOD_INC can be left empty
+#  CHOLMOD_LIB = -lcholmod -lamd -lcolamd -lcamd -lccolamd
+CHOLMOD_INC =
+CHOLMOD_LIB =
+
+# Specify the MPI library
+MPI_LIB =
+
+# Specify custom compilers if needed
 CXX = g++
 CC  = gcc
 
-CFLAGS = -O0 -ggdb
+CFLAGS = -O0 -ggdb -fPIC
 
-# Without Lapack/BLAS
-CPPFLAGS = -Isrc -Isrc/RNP -I/home/victor/code/lua-5.2.3/install/include -Isrc/kiss_fft
-LIBS = -L/home/victor/code/lua-5.2.3/install/lib -llua -ldl -lm
-
-# Plain
-#CPPFLAGS = -Isrc -Isrc/RNP -Ilua-5.2.3/src -Isrc/kiss_fft -DHAVE_LAPACK -DHAVE_BLAS
-#LIBS = -llapack -lblas -llua -Llua-5.2.3/src -ldl
-
-# All bells and whistles
-# Note that HAVE_UNISTD_H goes with HAVE_PTHREAD on Unix based systems
-#CPPFLAGS = -Isrc -Isrc/RNP -Ilua-5.2.3/src -Isrc/kiss_fft -I/usr/include/suitesparse -DHAVE_LAPACK -DHAVE_BLAS -DHAVE_LIBCHOLMOD -DHAVE_UNISTD_H -DHAVE_LIBPTHREAD -DHAVE_LIBFFTW3
-#LIBS = -llapack -lblas -llua -Llua-5.2.3/src -ldl -lcholmod -lamd -lcolamd -lcamd -lccolamd -lfftw3 -lpthread
+OBJDIR = ./build
+LIBNAME = $(OBJDIR)/libS4.a
 
 ##################### DO NOT EDIT BELOW THIS LINE #####################
 
-SOURCES = \
-  src/S4.cpp \
-  src/rcwa.cpp \
-  src/fmm/fmm_common.cpp \
-  src/fmm/fmm_FFT.cpp \
-  src/fmm/fmm_kottke.cpp \
-  src/fmm/fmm_closed.cpp \
-  src/fmm/fmm_PolBasisNV.cpp \
-  src/fmm/fmm_PolBasisVL.cpp \
-  src/fmm/fmm_PolBasisJones.cpp \
-  src/fmm/fmm_experimental.cpp \
-  src/fmm/fft_iface.cpp \
-  src/pattern/pattern.c \
-  src/pattern/intersection.c \
-  src/pattern/predicates.c \
-  src/numalloc.c \
-  src/gsel.c \
-  src/sort.c \
-  src/kiss_fft/kiss_fft.c \
-  src/kiss_fft/tools/kiss_fftnd.c \
-  src/SpectrumSampler.c \
-  src/cubature.c \
-  src/Interpolator.c \
-  src/convert.c \
-  src/main_lua.c \
-  src/RNP/Eigensystems.cpp
+#### Set the compilation flags
 
-all: objdir objs link
+CPPFLAGS = -Isrc -Isrc/RNP -Isrc/kiss_fft
 
-link:
-	$(CXX) obj/*.o -o S4 $(LIBS)
+ifdef BLAS_LIB
+CPPFLAGS += -DHAVE_BLAS
+endif
 
-objs: \
-	obj/Eigensystems.o \
-	obj/main.o \
-	obj/S4.o \
-	obj/rcwa.o \
-	obj/fmm_common.o \
-	obj/fmm_FFT.o \
-	obj/fmm_kottke.o \
-	obj/fmm_closed.o \
-	obj/fmm_PolBasisNV.o \
-	obj/fmm_PolBasisVL.o \
-	obj/fmm_PolBasisJones.o \
-	obj/fmm_experimental.o \
-	obj/fft_iface.o \
-	obj/pattern.o \
-	obj/intersection.o \
-	obj/predicates.o \
-	obj/numalloc.o \
-	obj/gsel.o \
-	obj/sort.o \
-	obj/kiss_fft.o \
-	obj/kiss_fftnd.o \
-	obj/SpectrumSampler.o \
-	obj/cubature.o \
-	obj/Interpolator.o \
-	obj/convert.o
+ifdef LAPACK_LIB
+CPPFLAGS += -DHAVE_LAPACK
+endif
 
-obj/S4.o: src/S4.cpp
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/rcwa.o: src/rcwa.cpp
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/fmm_common.o: src/fmm/fmm_common.cpp
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/fmm_FFT.o: src/fmm/fmm_FFT.cpp
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/fmm_kottke.o: src/fmm/fmm_kottke.cpp
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/fmm_closed.o: src/fmm/fmm_closed.cpp
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/fmm_PolBasisNV.o: src/fmm/fmm_PolBasisNV.cpp
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/fmm_PolBasisVL.o: src/fmm/fmm_PolBasisVL.cpp
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/fmm_PolBasisJones.o: src/fmm/fmm_PolBasisJones.cpp
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/fmm_experimental.o: src/fmm/fmm_experimental.cpp
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/fft_iface.o: src/fmm/fft_iface.cpp
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/pattern.o: src/pattern/pattern.c
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/intersection.o: src/pattern/intersection.c
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/predicates.o: src/pattern/predicates.c
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/numalloc.o: src/numalloc.c
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/gsel.o: src/gsel.c
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/sort.o: src/sort.c
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/kiss_fft.o: src/kiss_fft/kiss_fft.c
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/kiss_fftnd.o: src/kiss_fft/tools/kiss_fftnd.c
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/SpectrumSampler.o: src/SpectrumSampler.c
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/cubature.o: src/cubature.c
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/Interpolator.o: src/Interpolator.c
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/convert.o: src/convert.c
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/main_lua.o: src/main_lua.c
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-obj/Eigensystems.o: src/RNP/Eigensystems.cpp
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+ifdef FFTW3_LIB
+CPPFLAGS += -DHAVE_FFTW3
+endif
+
+ifdef PTHREAD_LIB
+CPPFLAGS += -DHAVE_LIBPTHREAD
+endif
+
+ifdef CHOLMOD_LIB
+CPPFLAGS += -DHAVE_LIBCHOLMOD
+endif
+
+ifdef MPI_LIB
+CPPFLAGS += -DHAVE_MPI
+endif
+
+#### Compilation targets
+
+all: lib
 
 objdir:
-	mkdir -p obj
+	mkdir -p $(OBJDIR)
+
+LIBOBJS = \
+	$(OBJDIR)/S4.o \
+	$(OBJDIR)/rcwa.o \
+	$(OBJDIR)/fmm_common.o \
+	$(OBJDIR)/fmm_FFT.o \
+	$(OBJDIR)/fmm_kottke.o \
+	$(OBJDIR)/fmm_closed.o \
+	$(OBJDIR)/fmm_PolBasisNV.o \
+	$(OBJDIR)/fmm_PolBasisVL.o \
+	$(OBJDIR)/fmm_PolBasisJones.o \
+	$(OBJDIR)/fmm_experimental.o \
+	$(OBJDIR)/fft_iface.o \
+	$(OBJDIR)/pattern.o \
+	$(OBJDIR)/intersection.o \
+	$(OBJDIR)/predicates.o \
+	$(OBJDIR)/numalloc.o \
+	$(OBJDIR)/gsel.o \
+	$(OBJDIR)/sort.o \
+	$(OBJDIR)/kiss_fft.o \
+	$(OBJDIR)/kiss_fftnd.o \
+	$(OBJDIR)/SpectrumSampler.o \
+	$(OBJDIR)/cubature.o \
+	$(OBJDIR)/Interpolator.o \
+	$(OBJDIR)/convert.o
+
+ifndef LAPACK_LIB
+  LIBOBJS += $(OBJDIR)/Eigensystems.o
+endif
+
+lib: $(LIBNAME)
+
+$(LIBNAME): $(LIBOBJS)
+	$(AR) crvs $@ $(LIBOBJS)
+
+$(OBJDIR)/S4.o: src/S4.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/rcwa.o: src/rcwa.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/fmm_common.o: src/fmm/fmm_common.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/fmm_FFT.o: src/fmm/fmm_FFT.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/fmm_kottke.o: src/fmm/fmm_kottke.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/fmm_closed.o: src/fmm/fmm_closed.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/fmm_PolBasisNV.o: src/fmm/fmm_PolBasisNV.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/fmm_PolBasisVL.o: src/fmm/fmm_PolBasisVL.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/fmm_PolBasisJones.o: src/fmm/fmm_PolBasisJones.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/fmm_experimental.o: src/fmm/fmm_experimental.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/fft_iface.o: src/fmm/fft_iface.cpp
+	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/pattern.o: src/pattern/pattern.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/intersection.o: src/pattern/intersection.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/predicates.o: src/pattern/predicates.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/numalloc.o: src/numalloc.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/gsel.o: src/gsel.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/sort.o: src/sort.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/kiss_fft.o: src/kiss_fft/kiss_fft.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/kiss_fftnd.o: src/kiss_fft/tools/kiss_fftnd.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/SpectrumSampler.o: src/SpectrumSampler.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/cubature.o: src/cubature.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/Interpolator.o: src/Interpolator.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/convert.o: src/convert.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+$(OBJDIR)/Eigensystems.o: src/RNP/Eigensystems.cpp
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+#### Lua Frontend
+	
+$(OBJDIR)/main_lua.o: src/main_lua.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+S4lua:  $(OBJDIR)/main_lua.o $(LIBNAME)
+	$(CXX) $(CFLAGS) $(CPPFLAGS) $< -o $@ $(LIBNAME) $(LIBS)
+
 
 clean:
-	rm -f obj/*.o S4
+	rm -f $(OBJDIR)/*.o S4
