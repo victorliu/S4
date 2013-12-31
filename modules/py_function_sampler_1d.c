@@ -1,8 +1,6 @@
 #include "Python.h"
 #include "function_sampler_1d.h"
 
-static PyObject *ErrorObject;
-
 typedef struct{
 	PyObject_HEAD
 	function_sampler_1d sampler;
@@ -353,10 +351,11 @@ static PyMethodDef FunctionSampler1D_funcs[] = {
 	{NULL , NULL} /* sentinel */
 };
 
-PyDoc_STRVAR(module_doc, "Adaptive resolution sampler for (smooth/Lipschitz) functions.");
 
 /* Initialization function for the module (*must* be called PyInit_FunctionSampler1D) */
 
+#if PY_MAJOR_VERSION >= 3
+PyDoc_STRVAR(module_doc, "Adaptive resolution sampler for (smooth/Lipschitz) functions.");
 static struct PyModuleDef FunctionSampler1D_module = {
 	PyModuleDef_HEAD_INIT,
 	"FunctionSampler1D",
@@ -369,28 +368,31 @@ static struct PyModuleDef FunctionSampler1D_module = {
 	NULL
 };
 
-PyMODINIT_FUNC PyInit_FunctionSampler1D(void){
+#define INITERROR return NULL
+PyObject *PyInit_FunctionSampler1D(void)
+#else
+#define INITERROR return
+void initFunctionSampler1D(void)
+#endif
+{
 	PyObject *m = NULL;
-
 	/* Finalize the type object including setting type of the new type
 	 * object; doing it here is required for portability, too. */
 	if(PyType_Ready(&FunctionSampler1D_Type) < 0){ goto fail; }
 	if(PyType_Ready(&FunctionSampler1DOptions_Type) < 0){ goto fail; }
 
 	/* Create the module and add the functions */
-	m = PyModule_Create(&FunctionSampler1D_module);
+#if PY_MAJOR_VERSION >= 3
+    m = PyModule_Create(&FunctionSampler1D_module);
+#else
+    m = Py_InitModule("FunctionSampler1D", FunctionSampler1D_funcs);
+#endif
 	if(m == NULL){ goto fail; }
 
-	/* Add some symbolic constants to the module */
-	if(ErrorObject == NULL){
-		ErrorObject = PyErr_NewException("FunctionSampler1D.error", NULL, NULL);
-		if(ErrorObject == NULL){ goto fail; }
-	}
-	Py_INCREF(ErrorObject);
-	PyModule_AddObject(m, "error", ErrorObject);
-
+#if PY_MAJOR_VERSION >= 3
 	return m;
+#endif
 fail:
 	Py_XDECREF(m);
-	return NULL;
+	INITERROR;
 }

@@ -1,8 +1,6 @@
 #include "Python.h"
 #include "function_sampler_2d.h"
 
-static PyObject *ErrorObject;
-
 typedef struct{
 	PyObject_HEAD
 	function_sampler_2d sampler;
@@ -384,10 +382,11 @@ static PyMethodDef FunctionSampler2D_funcs[] = {
 	{NULL , NULL} /* sentinel */
 };
 
-PyDoc_STRVAR(module_doc, "Adaptive resolution sampler for (smooth/Lipschitz) functions.");
 
 /* Initialization function for the module (*must* be called PyInit_FunctionSampler2D) */
 
+#if PY_MAJOR_VERSION >= 3
+PyDoc_STRVAR(module_doc, "Adaptive resolution sampler for (smooth/Lipschitz) functions.");
 static struct PyModuleDef FunctionSampler2D_module = {
 	PyModuleDef_HEAD_INIT,
 	"FunctionSampler2D",
@@ -400,7 +399,13 @@ static struct PyModuleDef FunctionSampler2D_module = {
 	NULL
 };
 
-PyMODINIT_FUNC PyInit_FunctionSampler2D(void){
+#define INITERROR return NULL
+PyObject *PyInit_FunctionSampler2D(void)
+#else
+#define INITERROR return
+void initFunctionSampler2D(void)
+#endif
+{
 	PyObject *m = NULL;
 
 	/* Finalize the type object including setting type of the new type
@@ -409,19 +414,17 @@ PyMODINIT_FUNC PyInit_FunctionSampler2D(void){
 	if(PyType_Ready(&FunctionSampler2DOptions_Type) < 0){ goto fail; }
 
 	/* Create the module and add the functions */
-	m = PyModule_Create(&FunctionSampler2D_module);
+#if PY_MAJOR_VERSION >= 3
+    m = PyModule_Create(&FunctionSampler2D_module);
+#else
+    m = Py_InitModule("FunctionSampler2D", FunctionSampler2D_funcs);
+#endif
 	if(m == NULL){ goto fail; }
 
-	/* Add some symbolic constants to the module */
-	if(ErrorObject == NULL){
-		ErrorObject = PyErr_NewException("FunctionSampler2D.error", NULL, NULL);
-		if(ErrorObject == NULL){ goto fail; }
-	}
-	Py_INCREF(ErrorObject);
-	PyModule_AddObject(m, "error", ErrorObject);
-
+#if PY_MAJOR_VERSION >= 3
 	return m;
+#endif
 fail:
 	Py_XDECREF(m);
-	return NULL;
+	INITERROR;
 }
