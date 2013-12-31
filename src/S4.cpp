@@ -147,7 +147,7 @@ void Material_Init(Material *M, const char *name, const double eps[2]){
 	if(NULL != eps){
 		M->eps.s[0] = eps[0];
 		M->eps.s[1] = eps[1];
-	}else{ M->eps.s[0] = M->eps.s[1] = 0; }
+	}else{ M->eps.s[0] = 1; M->eps.s[1] = 0; }
 	S4_TRACE("< Material_Init\n");
 }
 void Material_InitTensor(Material *M, const char *name, const double abcde[10]){
@@ -164,6 +164,9 @@ void Material_InitTensor(Material *M, const char *name, const double abcde[10]){
 		for(size_t i = 0; i < 10; ++i){	M->eps.abcde[i] = abcde[i]; }
 	}else{
 		for(size_t i = 0; i < 10; ++i){	M->eps.abcde[i] = 0; }
+		M->eps.abcde[0] = 1;
+		M->eps.abcde[6] = 1;
+		M->eps.abcde[8] = 1;
 	}
 	S4_TRACE("< Material_InitTensor\n");
 }
@@ -2284,7 +2287,7 @@ int Simulation_GetFieldPlane(Simulation *S, int nxy[2], double zz, double *E, do
 		}
 	}
 	if(NULL == L){
-		S4_TRACE("< Simulation_GetField (failed; no layers found)\n");
+		S4_TRACE("< Simulation_GetFieldPlane (failed; no layers found)\n");
 		return 14;
 	}
 //fprintf(stderr, "(%f,%f,%f) in %s: dz = %f\n", r[0], r[1], r[2], L->name, dz);
@@ -2293,13 +2296,13 @@ int Simulation_GetFieldPlane(Simulation *S, int nxy[2], double zz, double *E, do
 	LayerSolution *Lsoln;
 	int ret = Simulation_GetLayerSolution(S, L, &Lbands, &Lsoln);
 	if(0 != ret){
-		S4_TRACE("< Simulation_GetField (failed; Simulation_GetLayerSolution returned %d)\n", ret);
+		S4_TRACE("< Simulation_GetFieldPlane (failed; Simulation_GetLayerSolution returned %d)\n", ret);
 		return ret;
 	}
 	
 	std::complex<double> *ab = (std::complex<double>*)S4_malloc(sizeof(std::complex<double>) * (n4+8*n2));
 	if(NULL == ab){
-		S4_TRACE("< Simulation_GetField (failed; allocation failed)\n");
+		S4_TRACE("< Simulation_GetFieldPlane (failed; allocation failed)\n");
 		return 1;
 	}
 	std::complex<double> *work = ab + n4;

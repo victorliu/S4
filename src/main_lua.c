@@ -917,6 +917,7 @@ static int S4L_Simulation_SetMaterial(lua_State *L){
 	double eps[18];
 	const char *name;
 	Material *M;
+	int existed = 1;
 	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
 	luaL_argcheck(L, S != NULL, 1, "SetMaterial: 'Simulation' object expected.");
 	
@@ -928,6 +929,7 @@ static int S4L_Simulation_SetMaterial(lua_State *L){
 			S4L_error(L, "SetMaterial: There was a problem allocating the material named '%s'.", name);
 			return 0;
 		}
+		existed = 0;
 	}
 	
 	if(2 == lua_rawlen(L, 3)){
@@ -941,8 +943,12 @@ static int S4L_Simulation_SetMaterial(lua_State *L){
 			}
 			lua_pop(L, 1);
 		}
-		M->eps.s[0] = eps[0];
-		M->eps.s[1] = eps[1];
+		if(!existed){
+			Material_Init(M, name, eps);
+		}else{
+			M->eps.s[0] = eps[0];
+			M->eps.s[1] = eps[1];
+		}
 	}else if(9 == lua_rawlen(L, 3)){
 		for(i = 0; i < 9; ++i){
 			lua_pushinteger(L, 1+i);
@@ -963,11 +969,15 @@ static int S4L_Simulation_SetMaterial(lua_State *L){
 		 * [ d e f ] -> [ d e   ]
 		 * [ g h i ]    [     i ]
 		 */
-		eps[4] = eps[6]; eps[5] = eps[7];
-		eps[6] = eps[8]; eps[7] = eps[9];
-		eps[8] = eps[16]; eps[9] = eps[17];
-		for(i = 0; i < 10; ++i){
-			M->eps.abcde[i] = eps[i];
+		if(!existed){
+			Material_InitTensor(M, name, eps);
+		}else{
+			eps[4] = eps[6]; eps[5] = eps[7];
+			eps[6] = eps[8]; eps[7] = eps[9];
+			eps[8] = eps[16]; eps[9] = eps[17];
+			for(i = 0; i < 10; ++i){
+				M->eps.abcde[i] = eps[i];
+			}
 		}
 	}else{
 		S4L_error(L, "SetMaterial: Expected either a scalar or tensor value for material %s.", name);
@@ -1029,7 +1039,7 @@ static int S4L_Simulation_SetLayerThickness(lua_State *L){
 	name = luaL_checklstring(L, 2, NULL);
 	layer = Simulation_GetLayerByName(S, name, NULL);
 	if(NULL == layer){
-		S4L_error(L, "SetLayerThickness: Layer named '%s' not found.", layer);
+		S4L_error(L, "SetLayerThickness: Layer named '%s' not found.", name);
 	}else{
 		double thick = luaL_checknumber(L, 3);
 		if(thick < 0){
@@ -2186,6 +2196,7 @@ static int S4L_Simulation_GetFieldPlane(lua_State *L){
 		lua_pop(L, 1);
 	}
 	fmt = luaL_checkstring(L, 4);
+	len = 5;
 	fbasename = luaL_optlstring(L, 5, "field", &len);
 	filename = (char*)malloc(sizeof(char) * (len+3));
 	strcpy(filename, fbasename);
@@ -2195,7 +2206,10 @@ static int S4L_Simulation_GetFieldPlane(lua_State *L){
 	Efields = (double*)malloc(sizeof(double) * 2*3 * nxy[0] * nxy[1]);
 	Hfields = (double*)malloc(sizeof(double) * 2*3 * nxy[0] * nxy[1]);
 	
-	Simulation_GetFieldPlane(S, nxy, z, Efields, Hfields);
+	ret = Simulation_GetFieldPlane(S, nxy, z, Efields, Hfields);
+	if(0 != ret){
+		HandleSolutionErrorCode(L, "GetFieldPlane", ret);
+	}
 	
 	ret = 0;
 	if(0 == strcmp("FileWrite", fmt)){
