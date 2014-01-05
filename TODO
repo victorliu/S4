@@ -31,9 +31,6 @@
 
 * Add Scalapack support
 
-* Alias GetPoyntingFlux to GetPowerFlux, etc.
-  * Update documentation
-
 * Debug GetLayerEnergyDensityIntegral, etc. for z-components
 
 * Add Lua wrapper for HDF5.
