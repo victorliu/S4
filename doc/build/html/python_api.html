@@ -1,0 +1,1036 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Python API reference &mdash; S4 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="S4 1.1 documentation" href="index.html" />
+    <link rel="next" title="Units &amp; Coordinates" href="units.html" />
+    <link rel="prev" title="Lua API reference" href="lua_api.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="lua-modindex.html" title="Lua Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="units.html" title="Units &amp; Coordinates"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="lua_api.html" title="Lua API reference"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">S4 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="python-api-reference">
+<span id="python-api-label"></span><h1>Python API reference<a class="headerlink" href="#python-api-reference" title="Permalink to this headline">¶</a></h1>
+<p>S<sup>4</sup> can be built as a <a class="reference external" href="http://python.org">Python</a> extension, in addition to the original <a class="reference external" href="http://www.lua.org">Lua</a> interface.
+The current Python interface is not as fully featured as the Lua interface, but it should ultimately achieve feature parity.
+Much auxilliary functionality, such as numerical integration, is not included here since <a class="reference external" href="http://www.numpy.org/">Numpy</a> and <a class="reference external" href="http://www.scipy.org/">Scipy</a> can easily be used instead.</p>
+<div class="section" id="module-S4">
+<span id="s4-module"></span><h2>S4 module<a class="headerlink" href="#module-S4" title="Permalink to this headline">¶</a></h2>
+<p>All top level functions of S<sup>4</sup> are located in the <tt class="docutils literal"><span class="pre">S4</span></tt> library.</p>
+<dl class="function">
+<dt id="S4.New">
+<tt class="descclassname">S4.</tt><tt class="descname">New</tt><big>(</big><em>Lattice</em>, <em>NumBasis</em><big>)</big><a class="headerlink" href="#S4.New" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a new <a class="reference internal" href="#simulation-object">Simulation object</a>.</p>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">S</span> <span class="o">=</span> <span class="n">S4</span><span class="o">.</span><span class="n">NewSimulation</span><span class="p">(</span><span class="n">Lattice</span><span class="o">=</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)),</span> <span class="n">NumBasis</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Lattice</dt>
+<dd>Sets the lattice vectors for the structure. This can be a single real number in the case of a 1D periodic lattice, or a pair of vectors for a 2D periodic lattice.</dd>
+<dt>NumBasis</dt>
+<dd>Sets the maximum number of in-plane (x and y) Fourier expansion orders to use.
+All fields and eigenmodes of the system use the same Fourier basis of the same dimension.
+The computation time is roughly proportional to the cube of this number, and the memory usage is roughly proportional to the square.
+This is equivalent to the &#8220;NumG&#8221; setting in the Lua interface.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>S</dt>
+<dd>A new <a class="reference internal" href="#simulation-object">Simulation object</a>.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+</div>
+<div class="section" id="simulation-object">
+<h2>Simulation object<a class="headerlink" href="#simulation-object" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="S4.Simulation">
+<em class="property">class </em><tt class="descclassname">S4.</tt><tt class="descname">Simulation</tt><a class="headerlink" href="#S4.Simulation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>The Simulation object is the primary object which computes solutions to systems.
+When a new Simulation object is requested from <a class="reference internal" href="#S4.New" title="S4.New"><tt class="xref py py-func docutils literal"><span class="pre">New()</span></tt></a>, all settings are in a blank state, with no materals, layers, or excitation.
+When solutions are requested, only a minimal set of internal computations are performed in order to satisfy the request.</p>
+<div class="section" id="parameter-specification">
+<h3>Parameter specification<a class="headerlink" href="#parameter-specification" title="Permalink to this headline">¶</a></h3>
+<dl class="method">
+<dt id="S4.Simulation.SetMaterial">
+<tt class="descclassname">Simulation.</tt><tt class="descname">SetMaterial</tt><big>(</big><em>Name</em>, <em>Epsilon</em><big>)</big><a class="headerlink" href="#S4.Simulation.SetMaterial" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Updates an existing material with a new dielectric constant or adds a material if none exists.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S.SetMaterial(Name = 'Silicon, Epsilon = 12+0.01j)
+S.SetMaterial(Name = 'Silicon', Epsilon = (
+        (12+0.01j, 0, 0),
+        (0, 12+0.01j, 0),
+        (0, 0, 12+0.01j)
+        ))</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Name</dt>
+<dd>(string) The name of the material to update, or the name of a new material if no material by that name exists.</dd>
+<dt>Epsilon</dt>
+<dd>(number, complex number, or 3x3 tensor) The relative permittivity of the material. The imaginary part should generally be positive for lossy materials.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation.AddLayer">
+<tt class="descclassname">Simulation.</tt><tt class="descname">AddLayer</tt><big>(</big><em>Name</em>, <em>Thickness</em>, <em>Material</em><big>)</big><a class="headerlink" href="#S4.Simulation.AddLayer" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Adds a new unpatterned layer with a specified thickness and material.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">S</span><span class="o">.</span><span class="n">AddLayer</span><span class="p">(</span><span class="n">Name</span> <span class="o">=</span> <span class="s">&#39;slab&#39;</span><span class="p">,</span> <span class="n">Thickness</span> <span class="o">=</span> <span class="mf">0.6</span><span class="p">,</span> <span class="n">Material</span> <span class="o">=</span> <span class="s">&#39;Silicon&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Name</dt>
+<dd>(string) The name of the layer. Each layer should have a unique name if it is to be referenced later.</dd>
+<dt>Thickness</dt>
+<dd>(number) The thickness of the layer.</dd>
+<dt>Material</dt>
+<dd>(string) The name of the material which comprises the layer. With patterning, this is the default (background) material of the layer.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation.AddLayerCopy">
+<tt class="descclassname">Simulation.</tt><tt class="descname">AddLayerCopy</tt><big>(</big><em>Name</em>, <em>Thickness</em>, <em>Layer</em><big>)</big><a class="headerlink" href="#S4.Simulation.AddLayerCopy" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Adds a new layer with a specified thickness, but identical patterning as another existing layer.
+Note that this merely creates a reference to the copied layer; further patterning of the copied layer also affects the new layer. Additionally, a copy of a copy cannot be made.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">S</span><span class="o">.</span><span class="n">AddLayerCopy</span><span class="p">(</span><span class="n">Name</span> <span class="o">=</span> <span class="s">&#39;slab2&#39;</span><span class="p">,</span> <span class="n">Thickness</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">Layer</span> <span class="o">=</span> <span class="s">&#39;slab&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Name</dt>
+<dd>(string) The name of the new layer, different from the layer being copied.</dd>
+<dt>Thickness</dt>
+<dd>(number) The thickness of the new layer.</dd>
+<dt>Layer</dt>
+<dd>(string) The name of the layer which whose pattern is to be copied. That layer cannot itself be a copy of a layer.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation.SetLayerThickness">
+<tt class="descclassname">Simulation.</tt><tt class="descname">SetLayerThickness</tt><big>(</big><em>Layer</em>, <em>Thickness</em><big>)</big><a class="headerlink" href="#S4.Simulation.SetLayerThickness" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Updates an existing layer with a new thickness.
+Previously cached layer eigenmodes are preserved, making this function the preferred way to update a layer&#8217;s thickness.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">S</span><span class="o">.</span><span class="n">SetLayerThickness</span><span class="p">(</span><span class="n">Layer</span> <span class="o">=</span> <span class="s">&#39;slab&#39;</span><span class="p">,</span> <span class="n">thickness</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Layer</dt>
+<dd>(string) The name of the layer to update.</dd>
+<dt>Thickness</dt>
+<dd>(number) The new thickness of the layer.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation.RemoveLayerRegions">
+<tt class="descclassname">Simulation.</tt><tt class="descname">RemoveLayerRegions</tt><big>(</big><em>Layer</em><big>)</big><a class="headerlink" href="#S4.Simulation.RemoveLayerRegions" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Removes all layer regions from an existing layer.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">S</span><span class="o">.</span><span class="n">RemoveLayerRegions</span><span class="p">(</span><span class="n">Layer</span> <span class="o">=</span> <span class="s">&#39;slab&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Layer</dt>
+<dd>(string) The name of the layer to modify.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation.SetRegionCircle">
+<tt class="descclassname">Simulation.</tt><tt class="descname">SetRegionCircle</tt><big>(</big><em>Layer</em>, <em>Material</em>, <em>Center</em>, <em>Radius</em><big>)</big><a class="headerlink" href="#S4.Simulation.SetRegionCircle" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Adds a (filled) circle of a specified material to an existing non-copy layer.
+The circle should not intersect any other patterning shapes, but may contain or be contained within other shapes.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">S</span><span class="o">.</span><span class="n">SetRegionCircle</span><span class="p">(</span>
+        <span class="n">Layer</span> <span class="o">=</span> <span class="s">&#39;slab&#39;</span><span class="p">,</span>
+        <span class="n">Material</span> <span class="o">=</span> <span class="s">&#39;Vacuum&#39;</span><span class="p">,</span>
+        <span class="n">Center</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span>
+        <span class="n">Radius</span> <span class="o">=</span> <span class="mf">0.2</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Layer</dt>
+<dd>(string) The name of the layer to pattern. This layer cannot be a copy of another layer.</dd>
+<dt>Material</dt>
+<dd>(string) The name of the material which fills the interior of the circle.</dd>
+<dt>Center</dt>
+<dd>(pair of numbers) x- and y-coordinates of the center of the circle relative to the center of the unit cell (the origin).</dd>
+<dt>Radius</dt>
+<dd>(number) Radius of the circle.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation.SetRegionEllipse">
+<tt class="descclassname">Simulation.</tt><tt class="descname">SetRegionEllipse</tt><big>(</big><em>Layer</em>, <em>Material</em>, <em>Center</em>, <em>Angle</em>, <em>Halfwidths</em><big>)</big><a class="headerlink" href="#S4.Simulation.SetRegionEllipse" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Adds a (filled) ellipse of a specified material to an existing non-copy layer.
+The ellipse should not intersect any other patterning shapes, but may contain or be contained within other shapes.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">S</span><span class="o">.</span><span class="n">SetRegionEllipse</span><span class="p">(</span>
+        <span class="n">Layer</span> <span class="o">=</span> <span class="s">&#39;slab&#39;</span><span class="p">,</span>
+        <span class="n">Material</span> <span class="o">=</span> <span class="s">&#39;Vacuum&#39;</span><span class="p">,</span>
+        <span class="n">Center</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span>
+        <span class="n">Angle</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span>            <span class="c"># in degrees</span>
+        <span class="n">Halfwidths</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.3</span><span class="p">,</span><span class="mf">0.4</span><span class="p">)</span> <span class="c"># semi-axis lengths</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Layer</dt>
+<dd>(string) The name of the layer to pattern. This layer cannot be a copy of another layer.</dd>
+<dt>Material</dt>
+<dd>(string) The name of the material which fills the interior of the ellipse.</dd>
+<dt>Center</dt>
+<dd>(numeric table, length 2) x- and y-coordinates of the center of the ellipse relative to the center of the unit cell (the origin).</dd>
+<dt>Angle</dt>
+<dd>(number) The angle (in degrees) by which the x-axis of the ellipse should be rotated (CCW).</dd>
+<dt>Halfwidths</dt>
+<dd>(pair of numbers) The lengths of the semi-major axes of the ellipse. For an angle of 0, the first length is the semi-major axis in the x-direction, and the second length is the semi-major axis in the y-direction.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation.SetRegionRectangle">
+<tt class="descclassname">Simulation.</tt><tt class="descname">SetRegionRectangle</tt><big>(</big><em>Layer</em>, <em>Material</em>, <em>Center</em>, <em>Angle</em>, <em>Halfwidths</em><big>)</big><a class="headerlink" href="#S4.Simulation.SetRegionRectangle" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Adds a (filled) rectangle of a specified material to an existing non-copy layer.
+The rectangle should not intersect any other patterning shapes, but may contain or be contained within other shapes.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">S</span><span class="o">.</span><span class="n">SetRegionRectangle</span><span class="p">(</span>
+        <span class="n">Layer</span> <span class="o">=</span> <span class="s">&#39;slab&#39;</span><span class="p">,</span>
+        <span class="n">Material</span> <span class="o">=</span> <span class="s">&#39;Vacuum&#39;</span><span class="p">,</span>
+        <span class="n">Center</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span>
+        <span class="n">Angle</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span>            <span class="c"># in degrees</span>
+        <span class="n">Halfwidths</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.3</span><span class="p">,</span><span class="mf">0.4</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Layer</dt>
+<dd>(string) The name of the layer to pattern. This layer cannot be a copy of another layer.</dd>
+<dt>Material</dt>
+<dd>(string) The name of the material which fills the interior of the rectangle.</dd>
+<dt>Center</dt>
+<dd>(numeric table, length 2) x- and y-coordinates of the center of the rectangle relative to the center of the unit cell (the origin).</dd>
+<dt>Angle</dt>
+<dd>(number) The angle (in degrees) by which the x-axis of the rectangle should be rotated (CCW).</dd>
+<dt>Halfwidths</dt>
+<dd>(pair of numbers) The half-widths of the rectangle. For an angle of 0, the first length is half the width of the rectangle in the x-direction, and the second length is half the height in the y-direction.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation.SetRegionPolygon">
+<tt class="descclassname">Simulation.</tt><tt class="descname">SetRegionPolygon</tt><big>(</big><em>Layer</em>, <em>Material</em>, <em>Center</em>, <em>Angle</em>, <em>Vertices</em><big>)</big><a class="headerlink" href="#S4.Simulation.SetRegionPolygon" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Adds a (filled) polygon of a specified material to an existing non-copy layer.
+The polygon should not self-intersect nor intersect any other patterning shapes, but may contain or be contained within other shapes. The polygon must also be specified with positive orientation (the vertices circle CCW about an interior point).</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">S</span><span class="o">.</span><span class="n">SetRegionPolygon</span><span class="p">(</span>
+        <span class="n">Layer</span> <span class="o">=</span> <span class="s">&#39;slab&#39;</span><span class="p">,</span>
+        <span class="n">Material</span> <span class="o">=</span> <span class="s">&#39;Vacuum&#39;</span><span class="p">,</span>
+        <span class="n">Center</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span>
+        <span class="n">Angle</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>            <span class="c"># in degrees</span>
+        <span class="n">Vertices</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span>
+                <span class="p">(</span><span class="mf">0.2</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span>
+                <span class="p">(</span><span class="mf">0.2</span><span class="p">,</span><span class="mf">0.2</span><span class="p">),</span>
+                <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.2</span><span class="p">),</span>
+                <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.1</span><span class="p">),</span>
+                <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.1</span><span class="p">)</span>
+        <span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Layer</dt>
+<dd>(string) The name of the layer to pattern. This layer cannot be a copy of another layer.</dd>
+<dt>Material</dt>
+<dd>(string) The name of the material which fills the interior of the polygon.</dd>
+<dt>Center</dt>
+<dd>(numeric table, length 2) x- and y-coordinates of the center of the polygon relative to the center of the unit cell (the origin).</dd>
+<dt>Angle</dt>
+<dd>(number) The angle (in degrees) by which the polygon should be rotated (CCW).</dd>
+<dt>Vertices</dt>
+<dd>(tuple of pairs) The x- and y-coordinates of the vertices of the (unrotated) polygon, one after another, in counter-clockwise order.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation.SetExcitationPlanewave">
+<tt class="descclassname">Simulation.</tt><tt class="descname">SetExcitationPlanewave</tt><big>(</big><em>IncidenceAngles, sAmplitude=0, pAmplitude=0, Order=0]</em><big>)</big><a class="headerlink" href="#S4.Simulation.SetExcitationPlanewave" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Sets the excitation to be a planewave incident upon the front (first layer specified) of the structure.
+If both tilt angles are specified to be zero, then the planewave is normally incident with the electric field polarized along the x-axis for the p-polarization.
+The phase of each polarization is defined at the origin (z = 0).</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">S</span><span class="o">.</span><span class="n">SetExcitationPlanewave</span><span class="p">(</span>
+        <span class="n">IncidenceAngles</span><span class="o">=</span><span class="p">(</span>
+                <span class="mi">10</span><span class="p">,</span> <span class="c"># polar angle in [0,180)</span>
+                <span class="mi">30</span>  <span class="c"># azimuthal angle in [0,360)</span>
+        <span class="p">),</span>
+        <span class="n">sAmplitude</span> <span class="o">=</span> <span class="mf">0.707</span><span class="o">+</span><span class="mf">0.707j</span><span class="p">,</span>
+        <span class="n">pAmplitude</span> <span class="o">=</span> <span class="mf">0.707</span><span class="o">-</span><span class="mf">0.707j</span><span class="p">,</span>
+        <span class="n">Order</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>IncidenceAngles</dt>
+<dd>(pair of numbers) Of the form (phi,theta) with angles in degrees.
+<tt class="docutils literal"><span class="pre">phi</span></tt> and <tt class="docutils literal"><span class="pre">theta</span></tt> give the spherical coordinate angles of the planewave k-vector.
+For zero angles, the k-vector is assumed to be (0, 0, kz), while the electric field is assumed to be (E0, 0, 0), and the magnetic field is in (0, H0, 0). The angle <tt class="docutils literal"><span class="pre">phi</span></tt> specifies first the angle by which the E,H,k frame should be rotated (CW) about the y-axis, and the angle <tt class="docutils literal"><span class="pre">theta</span></tt> specifies next the angle by which the E,H,k frame should be rotated (CCW) about the z-axis.
+Note the different directions of rotations for each angle.</dd>
+<dt>sAmplitude</dt>
+<dd>(complex number) The electric field amplitude of the s-polarizations of the planewave.</dd>
+<dt>pAmplitude</dt>
+<dd>(complex number) The electric field amplitude of the p-polarizations of the planewave.</dd>
+<dt>Order</dt>
+<dd>(integer) An optional positive integer specifying which order (mode index) to excite. Defaults to 0. Refer to <a class="reference internal" href="#S4.Simulation.GetBasisSet" title="S4.Simulation.GetBasisSet"><tt class="xref py py-func docutils literal"><span class="pre">GetBasisSet()</span></tt></a> for details.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation.SetFrequency">
+<tt class="descclassname">Simulation.</tt><tt class="descname">SetFrequency</tt><big>(</big><em>freq</em><big>)</big><a class="headerlink" href="#S4.Simulation.SetFrequency" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Sets the operating frequency of the system (and excitation).</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">S</span><span class="o">.</span><span class="n">SetFrequency</span><span class="p">(</span><span class="mf">1.2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>freq</dt>
+<dd>(complex number) The frequency of the excitation. This is not the angular frequency (the angular frequency is 2pi times of this).
+If a complex number is specified (typically for mode solving), the imaginary part should be negative for a physical (decaying in time) system.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+</div>
+<div class="section" id="outputs-requiring-no-solutions">
+<h3>Outputs requiring no solutions<a class="headerlink" href="#outputs-requiring-no-solutions" title="Permalink to this headline">¶</a></h3>
+<dl class="method">
+<dt id="S4.Simulation.GetReciprocalLattice">
+<tt class="descclassname">Simulation.</tt><tt class="descname">GetReciprocalLattice</tt><big>(</big><big>)</big><a class="headerlink" href="#S4.Simulation.GetReciprocalLattice" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Retrieves the reciprocal lattice basis vectors.
+The vectors lack the scaling by 2pi (multiply them by 2pi to obtain the true reciprocal lattice basis vectors).</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">(</span><span class="n">Gu</span><span class="p">,</span><span class="n">Gv</span><span class="p">)</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">GetReciprocalLattice</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div>None.</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Gu, Gv</dt>
+<dd>The first and second reciprocal lattice basis vectors.
+Their relative geometric orientation is the same as the lattice specified in <a class="reference internal" href="#S4.New" title="S4.New"><tt class="xref py py-func docutils literal"><span class="pre">New()</span></tt></a>.
+Each vector is a tuple of length 2, holding the x- and y-coordinates of the vector.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation.GetEpsilon">
+<tt class="descclassname">Simulation.</tt><tt class="descname">GetEpsilon</tt><big>(</big><em>x</em>, <em>y</em>, <em>z</em><big>)</big><a class="headerlink" href="#S4.Simulation.GetEpsilon" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Retrieves the dielectric constant at a particular point in the system by reconstructing the Fourier series using the G-vectors of the system.</p>
+<p>Note that this reconstruction is not representative of the actual dielectric constant profile used in simulations (such a notion is not meaningful). The reconstruction is created using the closed-form Fourier series coefficients of the specified patterning, summed over the terms comprising the G-vector list obtained from lattice truncation. This function exists to provide an intuitive sense for the spatial resolution of a particular G-vector truncation order.</p>
+</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">eps</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">GetEpsilon</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>x, y, z</dt>
+<dd>(number) The coordinates of the point at which to retrieve the dielectric constant.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>eps</dt>
+<dd>The (usually complex) relative dielectric constant at the specified point.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation.OutputLayerPatternPostscript">
+<tt class="descclassname">Simulation.</tt><tt class="descname">OutputLayerPatternPostscript</tt><big>(</big><em>Layer</em><span class="optional">[</span>, <em>Filename</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#S4.Simulation.OutputLayerPatternPostscript" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Outputs a list of PostScript commands to render the exact layer pattern description from the specified patterning commands. Assumes letter-sized paper.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">S</span><span class="o">.</span><span class="n">OutputLayerPatternPostscript</span><span class="p">(</span><span class="n">Layer</span> <span class="o">=</span> <span class="s">&#39;slab&#39;</span><span class="p">,</span> <span class="n">Filename</span> <span class="o">=</span> <span class="s">&#39;out.ps&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Layer</dt>
+<dd>(string) Name of the layer whose pattern description should be output.</dd>
+<dt>Filename</dt>
+<dd>(string, optional) Filename to which the description should be output. If this argument is not provided, standard output is used.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None.</div></blockquote>
+</dd></dl>
+
+</div>
+<div class="section" id="outputs-requiring-solutions">
+<h3>Outputs requiring solutions<a class="headerlink" href="#outputs-requiring-solutions" title="Permalink to this headline">¶</a></h3>
+<dl class="method">
+<dt id="S4.Simulation.OutputStructurePOVRay">
+<tt class="descclassname">Simulation.</tt><tt class="descname">OutputStructurePOVRay</tt><big>(</big><span class="optional">[</span><em>Filename</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#S4.Simulation.OutputStructurePOVRay" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Outputs a <a class="reference external" href="http://www.povray.org">POV-Ray</a> script that will render one unit cell of the structure in 3D. Materials named <tt class="docutils literal"><span class="pre">air</span></tt> or <tt class="docutils literal"><span class="pre">vacuum</span></tt> (case insensitive) will be completely transparent.
+Note that the output is not guaranteed to be correct or parsable by POV-Ray; it is only meant as a starting point to produce publication-ready figures.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">S</span><span class="o">.</span><span class="n">OutputStructurePOVRay</span><span class="p">(</span><span class="n">Filename</span> <span class="o">=</span> <span class="s">&#39;out.pov&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Filename</dt>
+<dd>(string, optional) Filename to which the structure should be output. If this argument is not provided, standard output is used.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None.</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation.GetBasisSet">
+<tt class="descclassname">Simulation.</tt><tt class="descname">GetBasisSet</tt><big>(</big><big>)</big><a class="headerlink" href="#S4.Simulation.GetBasisSet" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns a tuple of reciprocal lattice coordinates of the Fourier series orders used.
+The coordinates are in the reciprocal lattice basis, and so they are integers.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Glist</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">GetBasisSet</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div>None.</div></blockquote>
+<p>Return values</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Glist</dt>
+<dd>A tuples of tuples of length 2 holding the pairs of integer recprical lattice coordinates.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation.GetAmplitudes">
+<tt class="descclassname">Simulation.</tt><tt class="descname">GetAmplitudes</tt><big>(</big><em>Layer</em>, <em>zOffset=0</em><big>)</big><a class="headerlink" href="#S4.Simulation.GetAmplitudes" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the raw mode amplitudes within a particular layer.
+For uniform (unpatterned) layers, the modes are simply the diffracted orders, and the indexing of the returned amplitudes corresponds to the value obtained from GetDiffractedOrder.
+The first value is guaranteed to be the straight transmitted or specularly reflected diffraction order.
+For patterned layers, there is typically no meaningful information in these amplitudes.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">(</span><span class="n">forw</span><span class="p">,</span><span class="n">back</span><span class="p">)</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">GetAmplitudes</span><span class="p">(</span><span class="n">Layer</span> <span class="o">=</span> <span class="s">&#39;substrate&#39;</span><span class="p">,</span> <span class="n">zOffset</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Layer</dt>
+<dd>(string) The name of the layer in which to obtain mode amplitudes.</dd>
+<dt>zOffset</dt>
+<dd>(number) The z-offset at which to obtain the mode amplitudes.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>forw,back</dt>
+<dd>Tuples of length 2*NumBasis containing the complex amplitudes of each forward and backward mode.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation.GetPowerFlux">
+<tt class="descclassname">Simulation.</tt><tt class="descname">GetPowerFlux</tt><big>(</big><em>Layer</em>, <em>zOffset=0</em><big>)</big><a class="headerlink" href="#S4.Simulation.GetPowerFlux" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the integral of the power flux density over a unit cell surface normal to the z-direction.
+In other words, the z-component of the integrated Poynting flux is returned.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">(</span><span class="n">forw</span><span class="p">,</span><span class="n">back</span><span class="p">)</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">GetPowerFlux</span><span class="p">(</span><span class="n">Layer</span> <span class="o">=</span> <span class="s">&#39;substrate&#39;</span><span class="p">,</span> <span class="n">zOffset</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Layer</dt>
+<dd>(string) The name of the layer in which the integration surface lies.</dd>
+<dt>zOffset</dt>
+<dd>(number, optional) The z-offset of the integration surface from the beginning of the layer. This only matters for lossy layers.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>forw</dt>
+<dd>The forward component of the complex Poynting vector. Note that the result is not time averaged (no factor of 0.5 multiplied in). The forward component is defined as (E_total^* x H_forw + H_total^* x E_forw) / 2, where E_forw and H_forw are the fields reconstructed from only the forward propagating waveguide modes of the layer.</dd>
+<dt>back</dt>
+<dd>The backward component of the complex Poynting vector. Note that the result is not time averaged (no factor of 0.5 multiplied in). An analogous definition of the backward component of the Poynting vector follows from above.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation.GetPowerFluxByOrder">
+<tt class="descclassname">Simulation.</tt><tt class="descname">GetPowerFluxByOrder</tt><big>(</big><em>Layer</em>, <em>zOffset=0</em><big>)</big><a class="headerlink" href="#S4.Simulation.GetPowerFluxByOrder" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the integral of the Poynting flux density over a unit cell surface normal to the z-direction for each Fourier series order.
+In other words, the z-component of the Poynting flux for each order is returned.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">P</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">GetPowerFluxByOrder</span><span class="p">(</span><span class="n">Layer</span> <span class="o">=</span> <span class="s">&#39;substrate&#39;</span><span class="p">,</span> <span class="n">zOffset</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Layer</dt>
+<dd>(string) The name of the layer in which the integration surface lies.</dd>
+<dt>zOffset</dt>
+<dd>(number) The z-offset of the integration surface from the beginning of the layer. This only matters for lossy layers.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>P</dt>
+<dd>A tuple with length equal to the number of Fourier series orders used.
+Each entry of the is a pair (tuple) of forward and backward complex powers.
+These power quantities are described in the section for <a class="reference internal" href="#S4.Simulation.GetPowerFlux" title="S4.Simulation.GetPowerFlux"><tt class="xref py py-func docutils literal"><span class="pre">GetPowerFlux()</span></tt></a>.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<tt class="descname">Simulation:GetStressTensorIntegral(Layer, zOffset=0)</tt></dt>
+<dd><blockquote>
+<div>Returns the integral of the electromagnetic stress tensor over a unit cell surface normal to the z-direction.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">(</span><span class="n">Tx</span><span class="p">,</span> <span class="n">Ty</span><span class="p">,</span> <span class="n">Tz</span><span class="p">)</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">GetStressTensorIntegral</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Layer</dt>
+<dd>(string) The name of the layer in which the integration surface lies.</dd>
+<dt>zOffset</dt>
+<dd>(number) The z-offset of the integration surface from the beginning of the layer.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Tx,Ty,Tz</dt>
+<dd>The real and imaginary parts of the x-, y-, and z-components of the stress tensor integrated over the specified surface, assuming a unit normal vector in the +z direction. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation.GetLayerVolumeIntegral">
+<tt class="descclassname">Simulation.</tt><tt class="descname">GetLayerVolumeIntegral</tt><big>(</big><em>Layer</em>, <em>Quantity</em><big>)</big><a class="headerlink" href="#S4.Simulation.GetLayerVolumeIntegral" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the volume integral of a particular density over a unit cell throughout the entire thickness of a layer.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">I</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">GetLayerVolumeIntegral</span><span class="p">(</span><span class="n">Layer</span> <span class="o">=</span> <span class="s">&#39;slab&#39;</span><span class="p">,</span> <span class="n">Quantity</span> <span class="o">=</span> <span class="s">&#39;U&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Layer</dt>
+<dd>(string) The name of the layer in which to integrate over.</dd>
+<dt>Quantity</dt>
+<dd><p class="first">(string) The quantity to integrate. Currently, the choices are:</p>
+<dl class="last docutils">
+<dt>U</dt>
+<dd>(epsilon*|E|^2 + |H|^2)</dd>
+<dt>E</dt>
+<dd>(epsilon*|E|^2)</dd>
+<dt>H</dt>
+<dd>(|H|^2)</dd>
+<dt>e</dt>
+<dd>(|E|^2)</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>I</dt>
+<dd>The complex integral of the density throughout the volume of the layer&#8217;s unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<tt class="descname">Simulation:GetLayerZIntegral(Layer, xy)</tt></dt>
+<dd><blockquote>
+<div>Returns the line integral along z (depth direction) of the squared magnitudes of electric and magnetic field components (|Ex|^2, |Ey|^2, etc.) throughout the entire thickness of a layer.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">E</span><span class="p">,</span><span class="n">H</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">GetLayerZIntegral</span><span class="p">(</span><span class="n">Layer</span> <span class="o">=</span> <span class="s">&#39;slab&#39;</span><span class="p">,</span> <span class="n">xy</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Layer</dt>
+<dd>(string) The name of the layer in which to integrate through.</dd>
+<dt>xy</dt>
+<dd>(pair of numbers) The in-plane coordinates at which to integrate.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>E,H</dt>
+<dd>Tuples of length 3 containing the x-, y-, and z-components of the integrated squared magnitude of the E or H field throughout the thickness of the layer. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation.GetFields">
+<tt class="descclassname">Simulation.</tt><tt class="descname">GetFields</tt><big>(</big><em>x</em>, <em>y</em>, <em>z</em><big>)</big><a class="headerlink" href="#S4.Simulation.GetFields" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the electric and magnetic field at a particular point within the structure.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">(</span><span class="n">E</span><span class="p">,</span><span class="n">H</span><span class="p">)</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">GetFields</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>x, y, z</dt>
+<dd>(number) The coordinates of the point at which to obtain the field.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>E,H</dt>
+<dd>Tuples of length 3 of the complex electric or magnetic field at the specified point. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation.GetFieldsOnGrid">
+<tt class="descclassname">Simulation.</tt><tt class="descname">GetFieldsOnGrid</tt><big>(</big><em>z</em>, <em>NumSamples</em>, <em>Format</em>, <em>BaseFilename</em><big>)</big><a class="headerlink" href="#S4.Simulation.GetFieldsOnGrid" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the electric and magnetic fields on a regular grid over the unit cell (fundamental parallelogram) at a particular z coordinate.
+It is more efficient to use this function than <a class="reference internal" href="#S4.Simulation.GetFields" title="S4.Simulation.GetFields"><tt class="xref py py-func docutils literal"><span class="pre">GetFields()</span></tt></a>.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">E</span><span class="p">,</span><span class="n">H</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">GetFieldsOnGrid</span><span class="p">(</span><span class="n">z</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">NumSamples</span><span class="o">=</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span><span class="mi">100</span><span class="p">),</span> <span class="n">Format</span> <span class="o">=</span> <span class="s">&#39;Array&#39;</span><span class="p">)</span>
+<span class="n">S</span><span class="o">.</span><span class="n">GetFieldsOnGrid</span><span class="p">(</span><span class="n">z</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">NumSamples</span><span class="o">=</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span><span class="mi">100</span><span class="p">),</span> <span class="n">Format</span> <span class="o">=</span> <span class="s">&#39;FileWrite&#39;</span><span class="p">,</span> <span class="n">BaseFilename</span> <span class="o">=</span> <span class="s">&#39;field&#39;</span><span class="p">)</span>
+<span class="n">S</span><span class="o">.</span><span class="n">GetFieldsOnGrid</span><span class="p">(</span><span class="n">z</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">NumSamples</span><span class="o">=</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span><span class="mi">100</span><span class="p">),</span> <span class="n">Format</span> <span class="o">=</span> <span class="s">&#39;FileAppend&#39;</span><span class="p">,</span> <span class="n">BaseFilename</span> <span class="o">=</span> <span class="s">&#39;field&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>z</dt>
+<dd>(number) The z-coordinate of the plane on which to obtain the field.</dd>
+<dt>NumSamples</dt>
+<dd>(pair of integers) The number of sample points to use in each lattice vector direction.</dd>
+<dt>Format</dt>
+<dd><p class="first">(string) Specifies the format of the output. Current choices are:</p>
+<dl class="last docutils">
+<dt>Array</dt>
+<dd>Returns a pair of (tuple) arrays of dimension <cite>nu</cite> by <cite>nv</cite>, each element is a tuple of length 3, containing complex numbers of the E or H field components.</dd>
+<dt>FileWrite</dt>
+<dd>Outputs the field data to files, overwriting the files.</dd>
+<dt>FileAppend</dt>
+<dd>Outputs the field data to files, appending to the files. This is useful of volume fields are needed.</dd>
+</dl>
+</dd>
+<dt>BaseFilename</dt>
+<dd>(string) The base filename for file output. The outputs are named <tt class="docutils literal"><span class="pre">BaseFilename</span> <span class="pre">+</span> <span class="pre">'.E'</span></tt> and <tt class="docutils literal"><span class="pre">basefilename</span> <span class="pre">+</span> <span class="pre">'.H'</span></tt>.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>E,H</dt>
+<dd>Only returned if format is &#8216;Array&#8217;.
+Arrays (tuples) of dimension <cite>nu</cite> by <cite>nv</cite>, each element is a tuple of length 3, containing complex numbers of the E or H field components.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation.GetSMatrixDeterminant">
+<tt class="descclassname">Simulation.</tt><tt class="descname">GetSMatrixDeterminant</tt><big>(</big><big>)</big><a class="headerlink" href="#S4.Simulation.GetSMatrixDeterminant" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the determinant of the S-matrix (scattering matrix) of the entire structure.
+The determinant is an analytic function in the complex frequency plane and has poles at the complex modal frequencies of the system.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">(</span><span class="n">mant</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">expo</span><span class="p">)</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">GetSMatrixDeterminant</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div>None.</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>mant</dt>
+<dd>The determinant typically causes overflow or underflow, so it is returned as a mantissa multiplying a base raised to an exponent. The value of the determinant is mant*base^expo.</dd>
+<dt>base</dt>
+<dd>The base of the determinant representation (see above).</dd>
+<dt>expo</dt>
+<dd>The exponent of the determinant representation (see above).</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+</div>
+<div class="section" id="options">
+<h3>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h3>
+<dl class="method">
+<dt id="S4.Simulation.SetOptions">
+<tt class="descclassname">Simulation.</tt><tt class="descname">SetOptions</tt><big>(</big><em>...</em><big>)</big><a class="headerlink" href="#S4.Simulation.SetOptions" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Sets various options for a <a class="reference internal" href="#simulation-object">Simulation object</a>. The options are described below, and any option not specified is left unchanged.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">S</span><span class="o">.</span><span class="n">SetOptions</span><span class="p">(</span> <span class="c"># these are the defaults</span>
+        <span class="n">Verbosity</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">LatticeTruncation</span> <span class="o">=</span> <span class="s">&#39;Circular&#39;</span><span class="p">,</span>
+        <span class="n">DiscretizedEpsilon</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+        <span class="n">DiscretizationResolution</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
+        <span class="n">PolarizationDecomposition</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+        <span class="n">PolarizationBasis</span> <span class="o">=</span> <span class="s">&#39;Default&#39;</span><span class="p">,</span>
+        <span class="n">LanczosSmoothing</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+        <span class="n">SubpixelSmoothing</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+        <span class="n">ConserveMemory</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Verbosity</dt>
+<dd>(integer) The larger this value, the more status output is generated. Valid values are in the range of 0-9, inclusive. A value of 0 disables all status output.</dd>
+<dt>LatticeTruncation</dt>
+<dd><p class="first">(string) Sets the type of lattice truncation to use when selecting G-vectors. Can be one of the following values:</p>
+<dl class="last docutils">
+<dt>Circular</dt>
+<dd>This is the default. The G-vectors are selected to have shortest length (by l2 norm).</dd>
+<dt>Parallelogramic</dt>
+<dd>Chooses the G-vectors within a parallelogram aligned with the reciprocal lattice basis. The number chosen will always be a perfect square of an odd number.</dd>
+</dl>
+</dd>
+<dt>DiscretizedEpsilon</dt>
+<dd>(boolean) Enables or disables the use of discretization in generating the Fourier coefficients of the in-plane epsilon profiles, instead of using values from closed-form equations. When enabled, the coefficients are obtained by FFT.</dd>
+<dt>DiscretizationResolution</dt>
+<dd>(integer) This option only has an effect when <tt class="docutils literal"><span class="pre">DiscretizedEpsilon</span></tt> or <tt class="docutils literal"><span class="pre">SubpixelSmoothing</span></tt> are used.
+This function sets the resolution of the FFT grid and vector field generated by <tt class="docutils literal"><span class="pre">PolarizationDecomposition</span></tt>.
+The resolution is multiplied by the largest G-vector extent (integer lattice coordinate), and should be at least 2 to satisfy the Nyquist limit. It is best to use a number with small integer factors in order for the FFT to be computed efficiently. The size of each dimension of the FFT is obviously proportional to this value. The default is 8.
+See the <a class="reference internal" href="tutorial.html#fmm-formulations-label"><em>Fourier Modal Method formulations</em></a> for details.</dd>
+<dt>PolarizationDecomposition</dt>
+<dd>(boolean) Enables or disables the use of proper in-plane Fourier factorization rules by decomposing fields into a polarization basis which conforms to the material boundaries.
+The polarization basis field is generated automatically by computing a quasi-harmonic vector field everywhere tangent to the layer pattern boundaries.
+This option is not guaranteed to work in the presence of tensor dielectric constants.
+Enabling this feature typically improves convergence with respect to the number of G-vectors.
+See the <a class="reference internal" href="tutorial.html#fmm-formulations-label"><em>Fourier Modal Method formulations</em></a> for details.</dd>
+<dt>PolarizationBasis</dt>
+<dd><p class="first">(string) Sets the method by which the polarization decomposition basis is generated.
+This option only has an effect when <tt class="docutils literal"><span class="pre">PolarizationDecomposition</span></tt> is set.
+See the <a class="reference internal" href="tutorial.html#fmm-formulations-label"><em>Fourier Modal Method formulations</em></a> for details.
+Valid choices are:</p>
+<dl class="last docutils">
+<dt>Default</dt>
+<dd>Uses a smooth tangent vector field with respect to layer patterning.</dd>
+<dt>Normal</dt>
+<dd>Uses a unit normal vector field with respect to layer patterning.</dd>
+<dt>Jones</dt>
+<dd>Uses a complex-valued Jones polarization vector field.</dd>
+</dl>
+</dd>
+<dt>LanczosSmoothing</dt>
+<dd>(boolean or dict) A boolean value enables or disables smoothing of the Fourier series representations of the layer dielectric constants using the Lanczos sigma factor (box filtering). This reduces the Gibbs phenomenon ringing in the real space reconstruction.
+Otherwise, specify a dictionary with keys <tt class="docutils literal"><span class="pre">Power</span></tt> (positive integer) and/or <tt class="docutils literal"><span class="pre">Width</span></tt> (positive number) to change the properties of the smoothing function.</dd>
+<dt>SubpixelSmoothing</dt>
+<dd>(boolean) Enables or disables the use of second-order accurate epsilon averaging rules within a pixel.
+The average epsilon within a pixel is computed using the fill factor of each material and the interface direction.
+Enabling this feature may improve convergence with respect to the number of G-vectors.
+See the <a class="reference internal" href="tutorial.html#fmm-formulations-label"><em>Fourier Modal Method formulations</em></a> for details.</dd>
+<dt>ConserveMemory</dt>
+<dd>(boolean) Setting this option will prevent storage of certain intermediate results. This will save approximately 30% memory for non-trivial layers.
+The drawback is slower computation of any output quantities that require solutions.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None.</div></blockquote>
+</dd></dl>
+
+</div>
+<div class="section" id="miscellaneous">
+<h3>Miscellaneous<a class="headerlink" href="#miscellaneous" title="Permalink to this headline">¶</a></h3>
+<dl class="method">
+<dt id="S4.Simulation.Clone">
+<tt class="descclassname">Simulation.</tt><tt class="descname">Clone</tt><big>(</big><big>)</big><a class="headerlink" href="#S4.Simulation.Clone" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Duplicates an existing <a class="reference internal" href="#simulation-object">Simulation object</a>, copying all materials, layers, and excitation information.
+No partial solution information is copied.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">S2</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">Clone</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div>None.</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>A copy of the <a class="reference internal" href="#simulation-object">Simulation object</a>.</div></blockquote>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/s4.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Download &amp; Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lua_api.html">Lua API reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Python API reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-S4">S4 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#simulation-object">Simulation object</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#parameter-specification">Parameter specification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#outputs-requiring-no-solutions">Outputs requiring no solutions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#outputs-requiring-solutions">Outputs requiring solutions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#options">Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#miscellaneous">Miscellaneous</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="units.html">Units &amp; Coordinates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev_info.html">Developer Info</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License and Copyright</a></li>
+<li class="toctree-l1"><a class="reference internal" href="citing.html">How to cite</a></li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="lua_api.html"
+                        title="previous chapter">Lua API reference</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="units.html"
+                        title="next chapter">Units &amp; Coordinates</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/python_api.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="lua-modindex.html" title="Lua Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="units.html" title="Units &amp; Coordinates"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="lua_api.html" title="Lua API reference"
+             >previous</a> |</li>
+        <li><a href="index.html">S4 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Victor Liu.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.
+    </div>
+  </body>
+</html>

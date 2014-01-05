@@ -1,0 +1,214 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Introduction to S4 &mdash; S4 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="S4 1.1 documentation" href="#" />
+    <link rel="next" title="Download &amp; Installation" href="install.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="lua-modindex.html" title="Lua Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="install.html" title="Download &amp; Installation"
+             accesskey="N">next</a> |</li>
+        <li><a href="#">S4 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="introduction-to-s4">
+<h1>Introduction to S<sup>4</sup><a class="headerlink" href="#introduction-to-s4" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="what-is-it">
+<h2>What is it?<a class="headerlink" href="#what-is-it" title="Permalink to this headline">¶</a></h2>
+<p>S<sup>4</sup> (or simply S4) stands for Stanford Stratified Structure Solver, a frequency domain code to solve the linear Maxwell&#8217;s equations in layered periodic structures.
+Internally, it uses Rigorous Coupled Wave Analysis (RCWA; also called the Fourier Modal Method (FMM)) and the S-matrix algorithm.
+The program is implemented using a <a class="reference external" href="http://www.lua.org/">Lua</a> frontend, or alternatively, as a <a class="reference external" href="http://python.org">Python</a> extension.
+S<sup>4</sup> was developed by <a class="reference external" href="http://www.stanford.edu/~vkl/">Victor Liu</a> of the <a class="reference external" href="http://www.stanford.edu/group/fan/">Fan Group</a> in the <a class="reference external" href="http://ee.stanford.edu/">Stanford Electrical Engineering Department</a>.</p>
+<img alt="_images/schem_640.png" src="_images/schem_640.png" />
+</div>
+<div class="section" id="what-can-it-compute">
+<h2>What can it compute?<a class="headerlink" href="#what-can-it-compute" title="Permalink to this headline">¶</a></h2>
+<p>S<sup>4</sup> can compute transmission, reflection, or absorption spectra of structures composed of periodic, patterned, planar layers.
+The electromagnetic fields throughout the structure can also be obtained, as well as certain line and volume integrals.
+The spectra obtained from S<sup>4</sup> are extremely smooth, making it easier for local and global optimization.</p>
+<img alt="_images/spec.png" src="_images/spec.png" />
+</div>
+<div class="section" id="documentation-contents">
+<h2>Documentation Contents<a class="headerlink" href="#documentation-contents" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Download &amp; Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="install.html#binary-packages">Binary packages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#github-repository">GitHub repository</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#compiling-from-source">Compiling from source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#basic-usage">Basic Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#fourier-modal-method-formulations">Fourier Modal Method formulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lua_api.html">Lua API reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lua_api.html#module-S4">S4 library</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lua_api.html#simulation-object">Simulation object</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lua_api.html#spectrumsampler-object">SpectrumSampler object</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lua_api.html#interpolator-object">Interpolator object</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="python_api.html">Python API reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="python_api.html#module-S4">S4 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="python_api.html#simulation-object">Simulation object</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="units.html">Units &amp; Coordinates</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="units.html#length-time-and-frequency">Length, time, and frequency</a></li>
+<li class="toctree-l2"><a class="reference internal" href="units.html#amplitudes-and-powers">Amplitudes and powers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev_info.html">Developer Info</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dev_info.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev_info.html#porting">Porting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev_info.html#program-structure">Program structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev_info.html#areas-of-improvement">Areas of improvement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev_info.html#coding-conventions">Coding conventions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License and Copyright</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="license.html#specific-components">Specific components</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="citing.html">How to cite</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="releases">
+<h2>Releases<a class="headerlink" href="#releases" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">Version 1.1</p>
+<p>Latest version using Lua 5.2.x and supports Python.</p>
+</li>
+<li><p class="first">Version 1.0</p>
+<p>This is the original version that was published in Computer Physics Communications. It requires on Lua 5.1.x and packs Python bindings.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="indices-and-tables">
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="#">
+              <img class="logo" src="_static/s4.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Download &amp; Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lua_api.html">Lua API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python_api.html">Python API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="units.html">Units &amp; Coordinates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev_info.html">Developer Info</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License and Copyright</a></li>
+<li class="toctree-l1"><a class="reference internal" href="citing.html">How to cite</a></li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="install.html"
+                        title="next chapter">Download &amp; Installation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="lua-modindex.html" title="Lua Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="install.html" title="Download &amp; Installation"
+             >next</a> |</li>
+        <li><a href="#">S4 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Victor Liu.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.
+    </div>
+  </body>
+</html>

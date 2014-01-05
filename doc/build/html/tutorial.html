@@ -1,0 +1,307 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Tutorial &mdash; S4 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="S4 1.1 documentation" href="index.html" />
+    <link rel="next" title="Lua API reference" href="lua_api.html" />
+    <link rel="prev" title="Download &amp; Installation" href="install.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="lua-modindex.html" title="Lua Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="lua_api.html" title="Lua API reference"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="install.html" title="Download &amp; Installation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">S4 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="tutorial">
+<h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="basic-usage">
+<h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h2>
+<p>This section assumes that the Lua frontend is used.
+The program may be run with a Lua script as an argument, in which case the script is run and then the program terminates, or without an argument, in which case it enters interactive mode with a Lua shell.</p>
+<p>The basic flow of a script is listed below.
+To find more information about these functions and for a full listing, see the <a class="reference internal" href="lua_api.html#lua-api-label"><em>Lua API reference</em></a>.</p>
+<ol class="arabic">
+<li><p class="first">Obtain a new simulation object:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">S</span> <span class="o">=</span> <span class="n">S4</span><span class="o">.</span><span class="n">NewSimulation</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>S now contains a simulation object with a blank specification, and no solutions.</p>
+</li>
+<li><p class="first">Set the lattice and number of basis functions:</p>
+<div class="highlight-python"><pre>S:SetLattice({ux,uy}, {vx,vy})
+S:SetNumG(100)</pre>
+</div>
+<p>This sets the periodicity based on the lattice vectors (ux,uy) and (vx,vy).
+The number of basis functions is set to 100.</p>
+</li>
+<li><p class="first">Define all materials:</p>
+<div class="highlight-python"><pre>S:AddMaterial('Vacuum', 1)
+S:AddMaterial('Silicon', {12, 0.01})</pre>
+</div>
+<p>This adds a material called &#8220;Vacuum&#8221; with a dielectric constant of 1, and a material called &#8220;Silicon&#8221;, with a dielectric constant of 12+0.01i.</p>
+</li>
+<li><p class="first">Add all layers:</p>
+<div class="highlight-python"><pre>S:AddLayer('top', 0, 'Vacuum')
+S:AddLayer('slab', 0.5, 'Silicon')
+S:AddLayerCopy('bottom', 0, 'top')</pre>
+</div>
+<p>Here we are adding a semi-infinite Vacuum layer (the thickness is largely irrelevant), a middle slab layer made of silicon with a thickness of 0.5, and finally a bottom semi-infinite layer that is a copy of the top layer.
+It is always preferable to copy layers if possible since it reduces the computational cost.</p>
+</li>
+<li><p class="first">Add patterning to layers:</p>
+<div class="highlight-python"><pre>S:SetLayerPatternCircle('slab',   -- layer to pattern
+                        'Vacuum', -- material inside circle
+                        {0,0},    -- center of circle
+                        0.2)      -- radius of circle</pre>
+</div>
+</li>
+<li><p class="first">Specify the excitation mechanism:</p>
+<div class="highlight-python"><pre>S:SetExcitationPlanewave(
+        {0, 0}, -- phi in [0,180), theta in [0,360)
+        {1, 0}, -- s-polarization amplitude and phase in degrees
+        {0, 0}) -- p-polarization</pre>
+</div>
+<p>This sets the excitation to a normally incident planewave with amplitude 1.</p>
+</li>
+<li><p class="first">Specify the operating frequency:</p>
+<div class="highlight-python"><pre>S:SetFrequency(0.4)</pre>
+</div>
+</li>
+<li><p class="first">Obtain desired output:</p>
+<div class="highlight-python"><pre>transmission = S:GetPowerFlux('bottom')
+print(transmission)</pre>
+</div>
+<p>This obtains the forward power flux in the bottom layer, which is also the transmitted power.</p>
+</li>
+</ol>
+</div>
+<div class="section" id="fourier-modal-method-formulations">
+<span id="fmm-formulations-label"></span><h2>Fourier Modal Method formulations<a class="headerlink" href="#fourier-modal-method-formulations" title="Permalink to this headline">¶</a></h2>
+<p>There has been extensive literature on the best way to generate the Fourier series coefficients for the in-plane dielectric profiles of each layer. S4 implements a number of different formulations. The following functions determine which formulation is selected:</p>
+<ul class="simple">
+<li>UseDiscretizedEpsilon</li>
+<li>UsePolarizationDecomposition</li>
+<li>UseSubpixelSmoothing</li>
+<li>UseJonesVectorBasis</li>
+<li>UseNormalVectorBasis</li>
+</ul>
+<p>In addition, the following functions control accuracy and the lattice truncation:</p>
+<ul class="simple">
+<li>SetResolution</li>
+<li>SetLatticeTruncation</li>
+</ul>
+<p>To simplify the choice for users, the table below summarizes the recommended settings. It is recommended to always use circular truncation unless there is a good reason to do otherwise. Speed indicates the speed of the Fourier coefficient generation, which is usually not the dominant part of the simulation time.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="20%" />
+<col width="30%" />
+<col width="29%" />
+<col width="10%" />
+<col width="12%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Options</th>
+<th class="head">Can handle Anisotropic?</th>
+<th class="head">Recommended resolution</th>
+<th class="head">Speed</th>
+<th class="head">Accuracy</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>none</td>
+<td>yes</td>
+<td>N/A</td>
+<td>fast</td>
+<td>poor</td>
+</tr>
+<tr class="row-odd"><td>Disc</td>
+<td>yes</td>
+<td>8</td>
+<td>medium</td>
+<td>poor</td>
+</tr>
+<tr class="row-even"><td>Subpixel</td>
+<td>yes</td>
+<td>4</td>
+<td>medium</td>
+<td>medium</td>
+</tr>
+<tr class="row-odd"><td>Pol</td>
+<td>no</td>
+<td>8</td>
+<td>slow</td>
+<td>good</td>
+</tr>
+<tr class="row-even"><td>Pol+Normal</td>
+<td>no</td>
+<td>8</td>
+<td>slow</td>
+<td>good</td>
+</tr>
+<tr class="row-odd"><td>Pol+Jones</td>
+<td>no</td>
+<td>8</td>
+<td>slow</td>
+<td>good</td>
+</tr>
+<tr class="row-even"><td>Disc+Pol</td>
+<td>no <a class="footnote-reference" href="#f1" id="id1">[1]</a></td>
+<td>4</td>
+<td>slow</td>
+<td>medium</td>
+</tr>
+<tr class="row-odd"><td>Disc+Pol+Normal</td>
+<td>no <a class="footnote-reference" href="#f1" id="id2">[1]</a></td>
+<td>4</td>
+<td>slow</td>
+<td>medium</td>
+</tr>
+<tr class="row-even"><td>Disc+Pol+Jones</td>
+<td>no <a class="footnote-reference" href="#f1" id="id3">[1]</a></td>
+<td>4</td>
+<td>slow</td>
+<td>medium</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Footnotes</p>
+<table class="docutils footnote" frame="void" id="f1" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[1]</td><td><em>(<a class="fn-backref" href="#id1">1</a>, <a class="fn-backref" href="#id2">2</a>, <a class="fn-backref" href="#id3">3</a>)</em> The formulation does not strictly work correctly for anisotropic media however it may still work. Proper support for anisotropic materials is in principle possible. There are currently no plans for implementing generation of the proper basis fields for this feature.</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>The source distribution of S4 includes numerous fully working didactic examples as well as examples replicating published results.
+You can find these examples in the <tt class="docutils literal"><span class="pre">examples/</span></tt> directory of the source distribution.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/s4.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Download &amp; Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fourier-modal-method-formulations">Fourier Modal Method formulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lua_api.html">Lua API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python_api.html">Python API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="units.html">Units &amp; Coordinates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev_info.html">Developer Info</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License and Copyright</a></li>
+<li class="toctree-l1"><a class="reference internal" href="citing.html">How to cite</a></li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="install.html"
+                        title="previous chapter">Download &amp; Installation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="lua_api.html"
+                        title="next chapter">Lua API reference</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/tutorial.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="lua-modindex.html" title="Lua Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="lua_api.html" title="Lua API reference"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="install.html" title="Download &amp; Installation"
+             >previous</a> |</li>
+        <li><a href="index.html">S4 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Victor Liu.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.
+    </div>
+  </body>
+</html>

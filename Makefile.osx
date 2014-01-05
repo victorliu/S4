@@ -11,15 +11,15 @@
 #  On Debian, with reference BLAS and Lapack (slow)
 #   BLAS_LIB = -lblas
 #   LAPACK_LIB = -llapack
-BLAS_LIB = -lblas
-LAPACK_LIB = -llapack
+BLAS_LIB = -framework vecLib
+LAPACK_LIB = -framework vecLib
 
 # Specify the flags for Lua headers and libraries (only needed for Lua frontend)
 #  On Debian,
 #   LUA_INC = -I/usr/include/lua5.2
 #   LUA_LIB = -llua5.2 -ldl -lm
-LUA_INC = -I/usr/include/lua5.2
-LUA_LIB = -llua5.2 -ldl -lm
+LUA_INC = -Ilua-5.2.3/install/include
+LUA_LIB = -Llua-5.2.3/install/lib -llua -lm
 
 # Typically if installed,
 #  FFTW3_INC can be left empty

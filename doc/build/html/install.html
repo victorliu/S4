@@ -1,0 +1,214 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Download &amp; Installation &mdash; S4 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="S4 1.1 documentation" href="index.html" />
+    <link rel="next" title="Tutorial" href="tutorial.html" />
+    <link rel="prev" title="Introduction to S4" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="lua-modindex.html" title="Lua Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="Tutorial"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Introduction to S4"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">S4 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="download-installation">
+<h1>Download &amp; Installation<a class="headerlink" href="#download-installation" title="Permalink to this headline">¶</a></h1>
+<p>There are two choices for downloading S<sup>4</sup>: downloading a binary package from below, or cloning the GitHub respository and building from source.
+The latter is the preferred method for obtaining the latest features and bug fixes.</p>
+<div class="section" id="binary-packages">
+<h2>Binary packages<a class="headerlink" href="#binary-packages" title="Permalink to this headline">¶</a></h2>
+<p>The binary packages do not contain the examples and documentation, and are compiled with the bare minimum of features.
+You need to download that separately.</p>
+<ul class="simple">
+<li>Version 1.1<ul>
+<li><a class="reference external" href="files/S4-1.1.0-win32.7z">Windows (32-bit) EXE</a> (Lua frontend)</li>
+<li><a class="reference external" href="files/S4-1.1.0-osx.gz">Mac OS X (compiled on 10.8.5)</a> (Lua frontend)</li>
+<li><a class="reference external" href="files/S4-1.1.0-doc.tar.gz">Examples and documentation</a></li>
+</ul>
+</li>
+<li>Version 1.0 (not recommended)<ul>
+<li><a class="reference external" href="files/S4-1.0.0.tar.gz">Source with documentation and examples</a></li>
+<li><a class="reference external" href="files/S4-1.0.0-bin-win32.zip">Windows EXE</a></li>
+<li><a class="reference external" href="files/S4-1.0.0-bin-osx.tar.gz">Mac OS X 10.6.8</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="github-repository">
+<h2>GitHub repository<a class="headerlink" href="#github-repository" title="Permalink to this headline">¶</a></h2>
+<p>The source code is located at this <a class="reference external" href="https://github.com/victorliu/S4">GitHub repository</a>.
+You can clone it with the command:</p>
+<div class="highlight-python"><pre>git clone https://github.com/victorliu/S4.git</pre>
+</div>
+</div>
+<div class="section" id="compiling-from-source">
+<h2>Compiling from source<a class="headerlink" href="#compiling-from-source" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="dependencies">
+<h3>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h3>
+<p>Before compiling, there are a number of packages that are recommended.
+None of these is required except for either Lua or Python.</p>
+<ul class="simple">
+<li><a class="reference external" href="http://www.lua.org">Lua</a> 5.2.x - This is required for the Lua frontend.
+Either this or Python is required.
+On Ubuntu or Debian, the repository package is called <tt class="docutils literal"><span class="pre">liblua5.2-dev</span></tt>.</li>
+<li><a class="reference external" href="http://python.org">Python</a> 2.x or 3.x - This is required to build S<sup>4</sup> as a Python extension.
+Either this or Lua is required.
+On Ubuntu or Debian, the repository package is called <tt class="docutils literal"><span class="pre">python-dev</span></tt> or <tt class="docutils literal"><span class="pre">python3-dev</span></tt>.</li>
+<li>BLAS and Lapack implementation - Optional, but highly recommended. It is suggested that <a class="reference external" href="http://www.openblas.net/">OpenBLAS</a> be used.</li>
+<li><a class="reference external" href="http://fftw.org">FFTW3</a> - Optional, provides a 2-3x speedup in FFT computations.
+On Ubuntu or Debian, the repository package is called <tt class="docutils literal"><span class="pre">libfftw3-dev</span></tt>.</li>
+<li><a class="reference external" href="http://www.cise.ufl.edu/research/sparse/cholmod/">CHOLMOD</a> - Optional, provides a speedup in certain FMM formulations.
+On Ubuntu or Debian, install the repository package is called <tt class="docutils literal"><span class="pre">libsuitesparse-dev</span></tt>.</li>
+<li>POSIX Threads - Optional, typically provided by the compiler. Allows multi-threading support on shared-memory machines.</li>
+<li>MPI - Optional, provides support for parallel computing on distributed-memory machines.</li>
+</ul>
+</div>
+<div class="section" id="compilation">
+<h3>Compilation<a class="headerlink" href="#compilation" title="Permalink to this headline">¶</a></h3>
+<p># Edit Makefile.custom and set the library flags for all the dependencies that can be provided.
+# Run:</p>
+<div class="highlight-python"><pre>make lib</pre>
+</div>
+<p># Next, build either the Lua frontend:</p>
+<div class="highlight-python"><pre>      make S4lua
+
+or the Python extension::
+
+      make S4_pyext</pre>
+</div>
+<p># The resulting Lua binary is just called <tt class="docutils literal"><span class="pre">S4</span></tt>, and the Python shared object is <tt class="docutils literal"><span class="pre">build/lib.*/S4.so</span></tt>.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/s4.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="">Download &amp; Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#binary-packages">Binary packages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#github-repository">GitHub repository</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#compiling-from-source">Compiling from source</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compilation">Compilation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lua_api.html">Lua API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python_api.html">Python API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="units.html">Units &amp; Coordinates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev_info.html">Developer Info</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License and Copyright</a></li>
+<li class="toctree-l1"><a class="reference internal" href="citing.html">How to cite</a></li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Introduction to S<sup>4</sup></a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="tutorial.html"
+                        title="next chapter">Tutorial</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/install.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="lua-modindex.html" title="Lua Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="Tutorial"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Introduction to S4"
+             >previous</a> |</li>
+        <li><a href="index.html">S4 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Victor Liu.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,225 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Changelog &mdash; S4 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="S4 1.1 documentation" href="index.html" />
+    <link rel="next" title="Developer Info" href="dev_info.html" />
+    <link rel="prev" title="Frequently Asked Questions" href="faq.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="lua-modindex.html" title="Lua Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="dev_info.html" title="Developer Info"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="faq.html" title="Frequently Asked Questions"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">S4 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="changelog">
+<h1>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h1>
+<dl class="docutils">
+<dt>2013-12-31</dt>
+<dd>Added new Python extension frontend.</dd>
+<dt>2013-12-26</dt>
+<dd>Added ability to efficiently output fields on a regular grid of points using an FFT.</dd>
+<dt>2013-12-25</dt>
+<dd>Fixed incorrect output of z-components of E-fields (incorrect application Epsilon_inv).</dd>
+<dt>2013-10-31</dt>
+<dd>Added optional order parameter to SetExcitationPlanewave.</dd>
+<dt>2013-10-16</dt>
+<dd>Layer integrals now also return imaginary parts.</dd>
+<dt>2013-08-15</dt>
+<dd>Fixed bug with SetLatticeTruncation not having an effect.</dd>
+<dt>2013-05-29</dt>
+<dd>Added additional options to Lanczos smoothing. Upgraded support to Lua 5.2 (dropped support for 5.1).</dd>
+<dt>2013-03-30</dt>
+<dd>Added GetLayerZIntegral to return line integrals (thanks to Ken Wang for the feature request). Changed the return convention for GetAmplitudes, and added documentation for both functions.</dd>
+<dt>2013-03-21</dt>
+<dd>Added GetAmplitudes to return the raw amplitudes for phase retrieval (thanks to Olivier Gauthier-Lafaye for the feature request).</dd>
+<dt>2013-02-19</dt>
+<dd>pattern.c now detects 1D patterns and special cases them. Eigensolver performs workspace query for greater efficiency, and Fortran interfaces tidied up. Lanczos smoothing is now an option in FFT and PolBasisVL. Added SetLayerThickness to change only thickness and not affect the cached eigenmodes.</dd>
+<dt>2011-11-21</dt>
+<dd>Fixed bug with rotation and translation in OutputPatternDescription (thanks Aaswath).</dd>
+<dt>2011-09-16</dt>
+<dd>Eigenvector basis for uniform layers not stored (identity matrix). Added option UseLessMemory to not store kp (k-cross) matrices.</dd>
+<dt>2011-09-06</dt>
+<dd>Fixed minor bugs and passes Valgrind without problems (for a few test runs).</dd>
+<dt>2011-08-31</dt>
+<dd>Added GetDiffractionOrder().</dd>
+<dt>2011-08-30</dt>
+<dd>Fixed normal-vector bug, resolving convergence issues with subpixel-smoothing and rectangular shapes.</dd>
+<dt>2011-08-25</dt>
+<dd>Added CHOLMOD direct solver to pattern.c.</dd>
+<dt>2011-08-23</dt>
+<dd>Fixed segment-segment intersection code. Several cases of incorrect dielectric discretization have been fixed.
+Changed Enable/Disable* functions to Use*.</dd>
+<dt>2011-06-20</dt>
+<dd>Added MPI support. Compile with HAVE_MPI. S4.MPIRank and MPISize are available regardless of MPI support.</dd>
+<dt>2011-04-22</dt>
+<dd>Halved the Lanczos filter spatial width. This seems to improve convergence.
+Changed default resolution to 8 from 64.</dd>
+<dt>2011-04-21</dt>
+<dd>Added Kottke&#8217;s subpixel smoothing method. Disabled by default.
+SetLattice can now take a single number for 1D periodicity.
+SpectrumSampler can now be parallelized.</dd>
+<dt>2011-04-20</dt>
+<dd>Changed PolarizationBasisOversamplingFactor to Resolution.</dd>
+<dt>2011-04-18</dt>
+<dd>Fixed crash when using Kiss FFT. I overzealously converted free to S4_free for kiss_fft.</dd>
+<dt>2011-03-27</dt>
+<dd>Switched numerical memory allocation to 16-byte alignment. LinearSolve&#8217;s now use LAPACK blocked code. Fixed some memory leaks with S4_Simulation objects (field cache was not being freed).</dd>
+<dt>2011-03-20</dt>
+<dd>Added Integrate function.</dd>
+<dt>2010-10-28</dt>
+<dd>Fixed nan output due to uninitialized matrices Ml, Mlp1, Bl, Blp1 in rcwa.cpp.</dd>
+<dt>2010-09-10</dt>
+<dd>Fixed incorrect output of z-components of E- and H-fields (missing in-plane k-vector dependent phase).</dd>
+<dt>2010-08-23</dt>
+<dd>Fixed memory leak in S4_DestroySolution; kx and Bands and Solution structures were not freed.</dd>
+<dt>2010-08-10</dt>
+<dd>Fixed erroneous generation of values for Fourier transform for non-tensor materials in the context of a with-tensor stack.
+Added S4.ConvertUnits.</dd>
+<dt>2010-08-09</dt>
+<dd>Fixed a bug with S-Matrix generation between two identical layers (previous results were incorrect).</dd>
+<dt>2010-08-05</dt>
+<dd>Added anisotropic material support (currently incompatible with polarization basis, but without warning). Added cubic hermite spline interpolation.</dd>
+<dt>2010-08-04</dt>
+<dd>Added real material data for metals.</dd>
+<dt>2010-08-03</dt>
+<dd>Traced a problem with incorrect multithreaded results back to LAPACK. It is critical that LAPACK not use static allocation for local arrays (fixed with <cite>-frecursive</cite>).</dd>
+<dt>2010-07-29</dt>
+<dd>Fixed 1D lattice G selection (even numbers would cause duplicates)</dd>
+<dt>2010-07-28</dt>
+<dd>Fixed planewave excitation calculations for off-normal incidence. Previous s- and p-polarizations were mixed up and wrong. Added command line switches <cite>a</cite> and <cite>t</cite>.</dd>
+<dt>2010-07-26</dt>
+<dd>Fixed circular truncation code; was dropping certain orders (2,2 on a square lattice).</dd>
+<dt>2010-07-24</dt>
+<dd>Fixed polygon patterning (incorrect Fourier transform formulation).</dd>
+<dt>2010-07-23</dt>
+<dd>Added ability to output diffraction efficiency, obtain the G-vector list, and fixed the Fourier transforms for non-unit area unit cells.</dd>
+<dt>2010-07-22</dt>
+<dd>Added caching of polarization basis vector field Fourier transform matrices.
+Repeated computation of the same structure at different frequencies or k-vectors is much faster now that the vector field does not need to be recreated each time.</dd>
+<dt>2010-07-21</dt>
+<dd>Initial announcement of S4. Supports multithreading.</dd>
+</dl>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/s4.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Download &amp; Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lua_api.html">Lua API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python_api.html">Python API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="units.html">Units &amp; Coordinates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev_info.html">Developer Info</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License and Copyright</a></li>
+<li class="toctree-l1"><a class="reference internal" href="citing.html">How to cite</a></li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="faq.html"
+                        title="previous chapter">Frequently Asked Questions</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="dev_info.html"
+                        title="next chapter">Developer Info</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/changelog.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="lua-modindex.html" title="Lua Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="dev_info.html" title="Developer Info"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="faq.html" title="Frequently Asked Questions"
+             >previous</a> |</li>
+        <li><a href="index.html">S4 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Victor Liu.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.
+    </div>
+  </body>
+</html>

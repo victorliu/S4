@@ -1,0 +1,1816 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Lua API reference &mdash; S4 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="S4 1.1 documentation" href="index.html" />
+    <link rel="next" title="Python API reference" href="python_api.html" />
+    <link rel="prev" title="Tutorial" href="tutorial.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="lua-modindex.html" title="Lua Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="python_api.html" title="Python API reference"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="Tutorial"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">S4 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="lua-api-reference">
+<span id="lua-api-label"></span><h1>Lua API reference<a class="headerlink" href="#lua-api-reference" title="Permalink to this headline">¶</a></h1>
+<p>S<sup>4</sup> is built as a set of extensions to the <a class="reference external" href="http://www.lua.org">Lua scripting language</a>.
+Usage of S<sup>4</sup> involves writing a Lua script to call into various parts of S<sup>4</sup>.
+Here we describe all of the S<sup>4</sup> specific functions that can be called within the Lua environment.</p>
+<div class="section" id="module-S4">
+<span id="s4-library"></span><h2>S4 library<a class="headerlink" href="#module-S4" title="Permalink to this headline">¶</a></h2>
+<p>All top level functions of S<sup>4</sup> are located in the <tt class="docutils literal"><span class="pre">S4</span></tt> library.
+These functions mainly return objects which can be manipulated to obtain desired results.</p>
+<dl class="function">
+<dt id="S4.NewSimulation">
+<tt class="descclassname">S4.</tt><tt class="descname">NewSimulation</tt><big>(</big><big>)</big><a class="headerlink" href="#S4.NewSimulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a new blank <a class="reference internal" href="#simulation-object">Simulation object</a>.</p>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">S</span> <span class="o">=</span> <span class="n">S4</span><span class="o">.</span><span class="n">NewSimulation</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div>None.</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>S</dt>
+<dd>A new <a class="reference internal" href="#simulation-object">Simulation object</a>.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="S4.NewSpectrumSampler">
+<tt class="descclassname">S4.</tt><tt class="descname">NewSpectrumSampler</tt><big>(</big><em>f_start</em>, <em>f_end</em>, <em>options</em><big>)</big><a class="headerlink" href="#S4.NewSpectrumSampler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a new <a class="reference internal" href="#spectrumsampler-object">SpectrumSampler object</a>.</p>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">sampler</span> <span class="o">=</span> <span class="n">S4</span><span class="o">.</span><span class="n">NewSpectrumSampler</span><span class="p">(</span><span class="n">f_start</span><span class="p">,</span> <span class="n">f_end</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>f_start, f_end</dt>
+<dd>(number) Starting and ending frequencies of the frequency range in which to sample.</dd>
+<dt>options</dt>
+<dd>(table) A table of options controlling the sampling behavior. The keys and expected values are described below. If any option is not specified, the default value is used. Any out-of-range values are clamped to the valid range.</dd>
+<dt>InitialNumPoints</dt>
+<dd>(integer) The initial number of (uniformly spaced) sample points to use. If this value is not large enough, fine features may be missed. The default is 33.</dd>
+<dt>RangeThreshold</dt>
+<dd>(number) The threshold below which the difference between adjacent result values will not cause an interval to be subdivided. The default is 0.001.</dd>
+<dt>MaxBend</dt>
+<dd>(number) The cosine of the maximum bend angle of the normalized angle between adjacent segments.
+For angles larger than the maximum bend angle, one of the adjacent intervals is subdivided.
+The default bend angle is 10 degrees.</dd>
+<dt>MinimumSpacing</dt>
+<dd>(number) The relative frequency space (relative to the sampling interval size) below which subdivision will not occur. The default is 1e-6.</dd>
+<dt>Parallelize</dt>
+<dd>(boolean) Allows multiple frequency points to be solved in parallel. This option affects which methods can be called for a SpectrumSampler object. The default is false.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>sampler</dt>
+<dd>A new <a class="reference internal" href="#spectrumsampler-object">SpectrumSampler object</a>.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="S4.NewInterpolator">
+<tt class="descclassname">S4.</tt><tt class="descname">NewInterpolator</tt><big>(</big><em>type</em>, <em>table</em><big>)</big><a class="headerlink" href="#S4.NewInterpolator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a new <a class="reference internal" href="#interpolator-object">Interpolator object</a>.</p>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">interpolator</span> <span class="o">=</span> <span class="n">S4</span><span class="o">.</span><span class="n">NewInterpolator</span><span class="p">(</span><span class="s">&#39;type&#39;</span><span class="p">,</span> <span class="p">{</span>
+  <span class="p">{</span><span class="n">x1</span><span class="p">,</span> <span class="p">{</span><span class="n">y1_1</span><span class="p">,</span> <span class="n">y1_2</span><span class="p">,</span> <span class="o">...</span> <span class="p">}},</span>
+  <span class="p">{</span><span class="n">x2</span><span class="p">,</span> <span class="p">{</span><span class="n">y2_1</span><span class="p">,</span> <span class="n">y2_2</span><span class="p">,</span> <span class="o">...</span> <span class="p">}},</span>
+  <span class="o">...</span>
+<span class="p">})</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>type</dt>
+<dd><p class="first">(string) Type of interpolation to use.</p>
+<dl class="last docutils">
+<dt>&#8216;linear&#8217;</dt>
+<dd>Performs linear interpolation (and extrapolation) between values.</dd>
+<dt>&#8216;cubic hermite spline&#8217;</dt>
+<dd>Uses a cubic Hermite spline interpolation with Kochanek-Bartels tangents (really just a Catmull-Rom spline).</dd>
+</dl>
+</dd>
+<dt>table</dt>
+<dd>The second argument should be a table of tables.
+Each subtable should have as its first element the abscissa of a data sample, and the second element should be a table of all the ordinate values.
+The ordinate ordering is clearly important, and only the number of ordinate values for the first abscissa value determines the assumed number of ordinate values for the remaining abscissae.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>interpolator</dt>
+<dd>A new <a class="reference internal" href="#interpolator-object">Interpolator object</a>.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="S4.SolveInParallel">
+<tt class="descclassname">S4.</tt><tt class="descname">SolveInParallel</tt><big>(</big><em>layername</em>, <em>...</em><big>)</big><a class="headerlink" href="#S4.SolveInParallel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forces the computation of a layer solution for several simulation objects in parallel.
+When compiled without thread support, the computations are done serially.</p>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">S4</span><span class="o">.</span><span class="n">SolveInParallel</span><span class="p">(</span><span class="s">&#39;layer&#39;</span><span class="p">,</span> <span class="n">Sa</span><span class="p">,</span> <span class="n">Sb</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>layer</dt>
+<dd>(string) The name of the layer for which solutions should be computed. If the simulation objects do not have layer matching the provided name, then no solve is performed for that object.</dd>
+<dt>Sa, Sb, ...</dt>
+<dd>(Simulation object) The set of Simulation objects for which solutions are computed. It is useful to use the <tt class="xref lua lua-func docutils literal"><span class="pre">Clone()</span></tt> method to make copies.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None.</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="S4.ConvertUnits">
+<tt class="descclassname">S4.</tt><tt class="descname">ConvertUnits</tt><big>(</big><em>value</em>, <em>from_units</em>, <em>to_units</em><big>)</big><a class="headerlink" href="#S4.ConvertUnits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs unit conversions.</p>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">S4</span><span class="o">.</span><span class="n">ConvertUnits</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">from_units</span><span class="p">,</span> <span class="n">to_units</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>value=</dt>
+<dd>(number) The value to convert.</dd>
+<dt>from_units, to_units</dt>
+<dd><p class="first">(string) The units in which <cite>value</cite> is currently expressed, and the desired units.
+Currently supported units:</p>
+<blockquote class="last">
+<div>Lengths: &#8220;um&#8221;, &#8220;nm&#8221;, &#8220;m&#8221;, &#8220;cm&#8221;, &#8220;mm&#8221;
+Energies: &#8220;eV&#8221;, &#8220;J&#8221;
+Frequencies: &#8220;THz&#8221;, &#8220;GHz&#8221;, &#8220;Hz&#8221;, &#8220;rad/s&#8221;</div></blockquote>
+</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>The converted value, or nil if no conversion was possible.</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="S4.Integrate">
+<tt class="descclassname">S4.</tt><tt class="descname">Integrate</tt><big>(</big><em>func</em>, <em>range1</em>, <em>range2</em>, <em>...</em>, <em>opts</em><big>)</big><a class="headerlink" href="#S4.Integrate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs adaptive numerical integration in an arbitrary number of dimensions.</p>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">integral</span><span class="p">,</span><span class="n">error</span> <span class="o">=</span> <span class="n">S4</span><span class="o">.</span><span class="n">Integrate</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">range1</span><span class="p">,</span> <span class="n">range2</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>func</dt>
+<dd>(function) The function to integrate. It should take a number of arguments matching the number of range parameters passed in (the number of independent variables), and return a single number.</dd>
+<dt>range1, range2, ...</dt>
+<dd>(table) Each table should contain two elements corresponding to lower and upper limits of integration for the corresponding variable.</dd>
+<dt>opts</dt>
+<dd><p class="first">(table) Options to the integration routine. This table is distinguished from an integration limit range by the presence of string keys. The options are:</p>
+<dl class="last docutils">
+<dt>MaxEval</dt>
+<dd>(integer) Default is 1000000. Places an upper limit on the number of function evaluations allowed.</dd>
+<dt>AbsoluteError</dt>
+<dd>(number) Default is 0. Sets the termination criterion for the absolute error in the integral.</dd>
+<dt>RelativeError</dt>
+<dd>(number) Default is 1e-6. Sets the termination criterion for the relative error in the integral.</dd>
+<dt>Parallelize</dt>
+<dd>(boolean) Default is false. If true, the integrand may be evaluated in parallel. In this case, the function must accept an integer as the first argument corresponding to the number of evaluations required, and subsequent parameters are tables containing the set of independent variables for each evaluation. The function should then return a table containg all the results in the same order.</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>Returns the integrated value and an estimate of the error.</div></blockquote>
+</dd></dl>
+
+<dl class="data">
+<dt id="S4.arg">
+<tt class="descclassname">S4.</tt><tt class="descname">arg</tt><a class="headerlink" href="#S4.arg" title="Permalink to this definition">¶</a></dt>
+<dd><p>When used with the <cite>-a</cite> switch, the value of <tt class="docutils literal"><span class="pre">S4.arg</span></tt> is set to the command line switch argument.
+This is a convenient way of passing command line arguments to S4 scripts, or in parallel environments for specifying machine IDs.</p>
+<p>When no command line switch is specified, <tt class="docutils literal"><span class="pre">S4.arg</span></tt> is nil.</p>
+<p>Multiple variables may be passed in by passing in multiple Lua statements:</p>
+<div class="highlight-python"><pre>./S4 -a "a=1;b=2;c=3" input.lua</pre>
+</div>
+<p>Then within the script, the variables may be set with the statement:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">pcall</span><span class="p">(</span><span class="n">loadstring</span><span class="p">(</span><span class="n">S4</span><span class="o">.</span><span class="n">arg</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="data">
+<dt id="S4.MPIRank">
+<tt class="descclassname">S4.</tt><tt class="descname">MPIRank</tt><a class="headerlink" href="#S4.MPIRank" title="Permalink to this definition">¶</a></dt>
+<dd><p>On a version of S4 with MPI support, gives the MPI machine rank (0-based index of processor node). For versions without MPI support, this is always 0.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="S4.MPISize">
+<tt class="descclassname">S4.</tt><tt class="descname">MPISize</tt><a class="headerlink" href="#S4.MPISize" title="Permalink to this definition">¶</a></dt>
+<dd><p>On a version of S4 with MPI support, gives the MPI size (total number of processor nodes). For versions without MPI support, this is always 1.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="simulation-object">
+<h2>Simulation object<a class="headerlink" href="#simulation-object" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="S4.Simulation">
+<em class="property">class </em><tt class="descclassname">S4.</tt><tt class="descname">Simulation</tt><a class="headerlink" href="#S4.Simulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Simulation object is the primary object which computes solutions to systems.
+When a new Simulation object is requested from <a class="reference internal" href="#S4.NewSimulation" title="S4.NewSimulation"><tt class="xref lua lua-func docutils literal"><span class="pre">NewSimulation()</span></tt></a>, all settings are in a blank state, with no materals, layers, or excitation.
+When solutions are requested, only a minimal set of internal computations are performed in order to satisfy the request.</p>
+</dd></dl>
+
+<div class="section" id="parameter-specification">
+<h3>Parameter specification<a class="headerlink" href="#parameter-specification" title="Permalink to this headline">¶</a></h3>
+<dl class="method">
+<dt id="S4.Simulation:SetLattice">
+<tt class="descclassname">Simulation:</tt><tt class="descname">SetLattice</tt><big>(</big><em>L</em><big>)</big><a class="headerlink" href="#S4.Simulation:SetLattice" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descclassname">Simulation:</tt><tt class="descname">SetLattice</tt><big>(</big><em>{x1</em>, <em>y1}</em>, <em>{x2</em>, <em>y2}</em><big>)</big></dt>
+<dd><p>Sets the real-space lattice vectors.</p>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:SetLattice(L)
+S:SetLattice({x1,y1}, {x2,y2})</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div>This function can take a single numeric argument, which sets the period for a 1D lattice.
+This function can also take two table arguments, each of which must have two numeric elements.
+The first table specifies the x- and y-coordinates of the first lattice basis vector, while the second table specifies the second basis vector. The basis vectors should have positive orientation (the cross product of the first with the second should yield a vector with positive z-coordinate).</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:SetNumG">
+<tt class="descclassname">Simulation:</tt><tt class="descname">SetNumG</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#S4.Simulation:SetNumG" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Sets the maximum number of in-plane (x and y) Fourier expansion orders to use.
+All fields and eigenmodes of the system use the same Fourier basis of the same dimension.</p>
+<p>The computation time is roughly proportional to the cube of this number, and the memory usage is roughly proportional to the square.</p>
+</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:SetNumG(n)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>n</dt>
+<dd>(integer) The desired maximum number of Fourier orders to use. This number is an upper bound because internally, the Fourier lattice k-vectors (referred to as the G-vectors) are found in a symmetry-preserving manner starting from the origin and retaining those of shortest length. To obtain the actual number of Fourier orders used, use <tt class="xref lua lua-func docutils literal"><span class="pre">GetNumG()</span></tt>.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:AddMaterial">
+<tt class="descclassname">Simulation:</tt><tt class="descname">AddMaterial</tt><big>(</big><em>name</em>, <em>{eps_r</em>, <em>eps_i}</em><big>)</big><a class="headerlink" href="#S4.Simulation:AddMaterial" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descclassname">Simulation:</tt><tt class="descname">AddMaterial</tt><big>(</big><em>name</em>, <em>eps_tensor</em><big>)</big></dt>
+<dd><blockquote>
+<div>Adds a new material with a specified dielectric constant.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:AddMaterial(name, {eps_r, eps_i})
+S:AddMaterial(name, {
+    {xx_r, xx_i}, {xy_r, xy_i}, {xz_r, xz_i},
+    {yx_r, yx_i}, {yy_r, yy_i}, {yz_r, yz_i},
+    {zx_r, zx_i}, {zy_r, zy_i}, {zz_r, zz_i}
+    })</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>name</dt>
+<dd>(string) The name of the material. Each material must have a unique name.</dd>
+<dt>eps_r, eps_r</dt>
+<dd>(number) The real and imaginary parts of the relative permittivity of the material. The imaginary part should be positive.</dd>
+<dt>xx_r, xx_i, xy_r, ...</dt>
+<dd>(number) Components of the relative permittivity tensor of the material. Currently the xz, yz, zx, and zy components are ignored and assumed to be zero.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:SetMaterial">
+<tt class="descclassname">Simulation:</tt><tt class="descname">SetMaterial</tt><big>(</big><em>name</em>, <em>{eps_r</em>, <em>eps_i}</em><big>)</big><a class="headerlink" href="#S4.Simulation:SetMaterial" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descclassname">Simulation:</tt><tt class="descname">SetMaterial</tt><big>(</big><em>name</em>, <em>eps_tensor</em><big>)</big></dt>
+<dd><blockquote>
+<div>Updates an existing material with a new dielectric constant or adds a material if none exists.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:SetMaterial(name, {eps_r, eps_i})
+S:SetMaterial(name, {
+    {xx_r, xx_i}, {xy_r, xy_i}, {xz_r, xz_i},
+    {yx_r, yx_i}, {yy_r, yy_i}, {yz_r, yz_i},
+    {zx_r, zx_i}, {zy_r, zy_i}, {zz_r, zz_i}
+    })</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>name</dt>
+<dd>(string) The name of the material to update, or the name of a new material if no material by that name exists.</dd>
+<dt>eps_r, eps_r</dt>
+<dd>(number) The real and imaginary parts of the relative permittivity of the material. The imaginary part should be positive.</dd>
+<dt>xx_r, xx_i, xy_r, ...</dt>
+<dd>(number) Components of the relative permittivity tensor of the material. Currently the xz, yz, zx, and zy components are ignored and assumed to be zero.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:AddLayer">
+<tt class="descclassname">Simulation:</tt><tt class="descname">AddLayer</tt><big>(</big><em>name</em>, <em>thickness</em>, <em>material</em><big>)</big><a class="headerlink" href="#S4.Simulation:AddLayer" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Adds a new unpatterned layer with a specified thickness and material.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:AddLayer(name, thickness, material)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>name</dt>
+<dd>(string) The name of the layer. Each layer must have a unique name.</dd>
+<dt>thickness</dt>
+<dd>(number) The thickness of the layer.</dd>
+<dt>material</dt>
+<dd>(string) The name of the material which comprises the layer. With patterning, this is the default (background) material of the layer.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:SetLayer">
+<tt class="descclassname">Simulation:</tt><tt class="descname">SetLayer</tt><big>(</big><em>name</em>, <em>thickness</em>, <em>material</em><big>)</big><a class="headerlink" href="#S4.Simulation:SetLayer" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Updates an existing layer with a new thickness and removes all layer patterning.
+If no matching layer is found, adds a new unpatterned layer with a specified thickness and material.
+The behavior is undefined if the new material does not match the old material during an update (currently, the new material is ignored, but this may change in the future).
+If only the thickness needs to be modified, use <tt class="xref lua lua-func docutils literal"><span class="pre">SetLayerThickness()</span></tt>.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:SetLayer(name, thickness, material)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>name</dt>
+<dd>(string) The name of the layer to update. If no layer by that name exists, a new layer is created with this name.</dd>
+<dt>thickness</dt>
+<dd>(number) The new thickness of the layer.</dd>
+<dt>material</dt>
+<dd>(string) The name of the material which comprises the layer.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:SetLayerThickness">
+<tt class="descclassname">Simulation:</tt><tt class="descname">SetLayerThickness</tt><big>(</big><em>name</em>, <em>thickness</em><big>)</big><a class="headerlink" href="#S4.Simulation:SetLayerThickness" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Updates an existing layer with a new thickness.
+Previously cached layer eigenmodes are preserved, making this function the preferred way to update a layer&#8217;s thickness.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:SetLayerThickness(name, thickness)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>name</dt>
+<dd>(string) The name of the layer to update.</dd>
+<dt>thickness</dt>
+<dd>(number) The new thickness of the layer.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:AddLayerCopy">
+<tt class="descclassname">Simulation:</tt><tt class="descname">AddLayerCopy</tt><big>(</big><em>name</em>, <em>thickness</em>, <em>original_name</em><big>)</big><a class="headerlink" href="#S4.Simulation:AddLayerCopy" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Adds a new layer with a specified thickness, but identical patterning as another existing layer.
+Note that this merely creates a reference to the copied layer; further patterning of the copied layer also affects the new layer. Additionally, a copy of a copy cannot be made.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:AddLayerCopy(name, thickness, original_name)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>name</dt>
+<dd>(string) The name of the new layer, different from the layer being copied.</dd>
+<dt>thickness</dt>
+<dd>(number) The thickness of the new layer.</dd>
+<dt>original_name</dt>
+<dd>(string) The name of the layer which whose pattern is to be copied. That layer cannot itself be a copy of a layer.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:SetLayerPatternCircle">
+<tt class="descclassname">Simulation:</tt><tt class="descname">SetLayerPatternCircle</tt><big>(</big><em>layer</em>, <em>material</em>, <em>center</em>, <em>radius</em><big>)</big><a class="headerlink" href="#S4.Simulation:SetLayerPatternCircle" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Adds a (filled) circle of a specified material to an existing non-copy layer.
+The circle should not intersect any other patterning shapes, but may contain or be contained within other shapes.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:SetLayerPatternCircle(layer, material, center, radius)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>layer</dt>
+<dd>(string) The name of the layer to pattern. This layer cannot be a copy of another layer.</dd>
+<dt>material</dt>
+<dd>(string) The name of the material which fills the interior of the circle.</dd>
+<dt>center</dt>
+<dd>(numeric table, length 2) x- and y-coordinates of the center of the circle relative to the center of the unit cell (the origin).</dd>
+<dt>radius</dt>
+<dd>(number) Radius of the circle.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:SetLayerPatternEllipse">
+<tt class="descclassname">Simulation:</tt><tt class="descname">SetLayerPatternEllipse</tt><big>(</big><em>layer</em>, <em>material</em>, <em>center</em>, <em>angle</em>, <em>halfwidths</em><big>)</big><a class="headerlink" href="#S4.Simulation:SetLayerPatternEllipse" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Adds a (filled) ellipse of a specified material to an existing non-copy layer.
+The ellipse should not intersect any other patterning shapes, but may contain or be contained within other shapes.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:SetLayerPatternEllipse(layer, material, center, angle, halfwidths)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>layer</dt>
+<dd>(string) The name of the layer to pattern. This layer cannot be a copy of another layer.</dd>
+<dt>material</dt>
+<dd>(string) The name of the material which fills the interior of the ellipse.</dd>
+<dt>center</dt>
+<dd>(numeric table, length 2) x- and y-coordinates of the center of the ellipse relative to the center of the unit cell (the origin).</dd>
+<dt>angle</dt>
+<dd>(number) The angle (in degrees) by which the x-axis of the ellipse should be rotated (CCW).</dd>
+<dt>halfwidths</dt>
+<dd>(numeric table, length 2) The lengths of the semi-major axes of the ellipse. For an angle of 0, the first length is the semi-major axis in the x-direction, and the second length is the semi-major axis in the y-direction.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:SetLayerPatternRectangle">
+<tt class="descclassname">Simulation:</tt><tt class="descname">SetLayerPatternRectangle</tt><big>(</big><em>layer</em>, <em>material</em>, <em>center</em>, <em>angle</em>, <em>halfwidths</em><big>)</big><a class="headerlink" href="#S4.Simulation:SetLayerPatternRectangle" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Adds a (filled) rectangle of a specified material to an existing non-copy layer.
+The rectangle should not intersect any other patterning shapes, but may contain or be contained within other shapes.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:SetLayerPatternRectangle(layer, material, center, angle, halfwidths)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>layer</dt>
+<dd>(string) The name of the layer to pattern. This layer cannot be a copy of another layer.</dd>
+<dt>material</dt>
+<dd>(string) The name of the material which fills the interior of the rectangle.</dd>
+<dt>center</dt>
+<dd>(numeric table, length 2) x- and y-coordinates of the center of the rectangle relative to the center of the unit cell (the origin).</dd>
+<dt>angle</dt>
+<dd>(number) The angle (in degrees) by which the x-axis of the rectangle should be rotated (CCW).</dd>
+<dt>halfwidths</dt>
+<dd>(numeric table, length 2) The half-widths of the rectangle. For an angle of 0, the first length is half the width of the rectangle in the x-direction, and the second length is half the height in the y-direction.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:SetLayerPatternPolygon">
+<tt class="descclassname">Simulation:</tt><tt class="descname">SetLayerPatternPolygon</tt><big>(</big><em>layer</em>, <em>material</em>, <em>center</em>, <em>angle</em>, <em>vertices</em><big>)</big><a class="headerlink" href="#S4.Simulation:SetLayerPatternPolygon" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Adds a (filled) polygon of a specified material to an existing non-copy layer.
+The polygon should not self-intersect nor intersect any other patterning shapes, but may contain or be contained within other shapes. The polygon must also be specified with positive orientation (the vertices circle CCW about an interior point).</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:SetLayerPatternPolygon(layer, material, center, angle, vertices)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>layer</dt>
+<dd>(string) The name of the layer to pattern. This layer cannot be a copy of another layer.</dd>
+<dt>material</dt>
+<dd>(string) The name of the material which fills the interior of the polygon.</dd>
+<dt>center</dt>
+<dd>(numeric table, length 2) x- and y-coordinates of the center of the polygon relative to the center of the unit cell (the origin).</dd>
+<dt>angle</dt>
+<dd>(number) The angle (in degrees) by which the polygon should be rotated (CCW).</dd>
+<dt>vertices</dt>
+<dd>(numeric table, length 2*vertex_count) The x- and y-coordinates of the vertices of the (unrotated) polygon, one after another.
+Thus, <tt class="docutils literal"><span class="pre">vertices[1]</span></tt> is the x-coordinate of the first vertex and <tt class="docutils literal"><span class="pre">vertices[2]</span></tt> is its y-coordinate, and <tt class="docutils literal"><span class="pre">vertices[3]</span></tt> is the x-coordinate of the second vertex, etc.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:SetExcitationPlanewave">
+<tt class="descclassname">Simulation:</tt><tt class="descname">SetExcitationPlanewave</tt><big>(</big><em>{phi</em>, <em>theta}</em>, <em>{s_amp</em>, <em>s_phase}</em>, <em>{p_amp</em>, <em>p_phase}</em>, <em>order</em><big>)</big><a class="headerlink" href="#S4.Simulation:SetExcitationPlanewave" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Sets the excitation to be a planewave incident upon the front (first layer specified) of the structure.
+If both tilt angles are specified to be zero, then the planewave is normally incident with the electric field polarized along the x-axis for the p-polarization.
+The phase of each polarization is defined at the origin (z = 0).</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:SetExcitationPlanewave({phi,theta}, {s_amp, s_phase}, {p_amp, p_phase}, order)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>phi, theta</dt>
+<dd>(number) Angles in degrees. <tt class="docutils literal"><span class="pre">phi</span></tt> and <tt class="docutils literal"><span class="pre">theta</span></tt> give the spherical coordinate angles of the planewave k-vector.
+For zero angles, the k-vector is assumed to be (0, 0, kz), while the electric field is assumed to be (E0, 0, 0), and the magnetic field is in (0, H0, 0).
+The angle <tt class="docutils literal"><span class="pre">phi</span></tt> specifies first the angle by which the E,H,k frame should be rotated (CW) about the y-axis, and the angle <tt class="docutils literal"><span class="pre">theta</span></tt> specifies next the angle by which the E,H,k frame should be rotated (CCW) about the z-axis. Note the different directions of rotations for each angle.</dd>
+<dt>s_amp, p_amp</dt>
+<dd>(number) The electric field amplitude of the s- and p-polarizations of the planewave.</dd>
+<dt>s_phase, p_phase</dt>
+<dd>(number) The phase of the s- and p-polarizations of the planewave, relative to z = 0 (the beginning of the first layer).</dd>
+<dt>order</dt>
+<dd>(number) An optional positive integer specifying which order (mode index) to excite. Defaults to 1. This is the same index that GetDiffractionOrder returns.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:SetExcitationExterior">
+<tt class="descclassname">Simulation:</tt><tt class="descname">SetExcitationExterior</tt><big>(</big><em>table</em><big>)</big><a class="headerlink" href="#S4.Simulation:SetExcitationExterior" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Low level function to set excitations by a superposition of incident modes of the exterior layers. For unpatterned layers, the incident modes are forward propagating planewaves in the front, and backward propagating planewaves in the back.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:SetExcitationExterior{
+    { G-index, pol, { amp-re, amp-im } },
+    ...
+}</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>G-index</dt>
+<dd>(number) Index of the mode. This is the same index that GetDiffractionOrder returns.</dd>
+<dt>pol</dt>
+<dd>(string) Either &#8216;x&#8217; or &#8216;y&#8217; for the polarization of the electric field in unpatterned layers.</dd>
+<dt>amp-re, amp-im</dt>
+<dd>(number) Real and imaginary parts of the amplitude coefficient for the mode.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:SetFrequency">
+<tt class="descclassname">Simulation:</tt><tt class="descname">SetFrequency</tt><big>(</big><em>freqr</em>, <em>freqi = 0</em><big>)</big><a class="headerlink" href="#S4.Simulation:SetFrequency" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Sets the operating frequency of the system (and excitation).</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:SetFrequency(freqr, freqi)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>freqr</dt>
+<dd>(number) The (real) frequency of the excitation. This is not the angular frequency (the angular frequency is 2pi times of this).</dd>
+<dt>freqi</dt>
+<dd>(number) The imaginary frequency of the system. This parameter is typically not specified and assumed to be zero. When specified (typically for mode solving), this parameter should be negative for a physical (decaying in time) system.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None</div></blockquote>
+</dd></dl>
+
+</div>
+<div class="section" id="outputs-requiring-no-solutions">
+<h3>Outputs requiring no solutions<a class="headerlink" href="#outputs-requiring-no-solutions" title="Permalink to this headline">¶</a></h3>
+<dl class="method">
+<dt id="S4.Simulation:GetReciprocalLattice">
+<tt class="descclassname">Simulation:</tt><tt class="descname">GetReciprocalLattice</tt><big>(</big><big>)</big><a class="headerlink" href="#S4.Simulation:GetReciprocalLattice" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Retrieves the reciprocal lattice basis vectors.
+The vectors lack the scaling by 2pi (multiply them by 2pi to obtain the true reciprocal lattice basis vectors).</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>Gu,Gv = S:GetReciprocalLattice()</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div>None.</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Gu, Gv</dt>
+<dd>The first and second reciprocal lattice basis vectors.
+Their relative geometric orientation is the same as the lattice specified with <tt class="xref lua lua-func docutils literal"><span class="pre">SetLattice()</span></tt>.
+Each vector is a table of length 2, holding the x- and y-coordinates of the vector.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:GetEpsilon">
+<tt class="descclassname">Simulation:</tt><tt class="descname">GetEpsilon</tt><big>(</big><em>{x</em>, <em>y</em>, <em>z}</em><big>)</big><a class="headerlink" href="#S4.Simulation:GetEpsilon" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Retrieves the dielectric constant at a particular point in the system by reconstructing the Fourier series using the G-vectors of the system.</p>
+<p>Note that this reconstruction is not representative of the actual dielectric constant profile used in simulations (such a notion is not meaningful). The reconstruction is created using the closed-form Fourier series coefficients of the specified patterning, summed over the terms comprising the G-vector list obtained from lattice truncation. This function exists to provide an intuitive sense for the spatial resolution of a particular G-vector truncation order.</p>
+</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>eps_r, eps_i = S:GetEpsilon({x, y, z})</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>x, y, z</dt>
+<dd>(number) The coordinates of the point at which to retrieve the dielectric constant.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>eps_r, eps_i</dt>
+<dd>The real and imaginary parts of the dielectric constant.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:OutputLayerPatternDescription">
+<tt class="descclassname">Simulation:</tt><tt class="descname">OutputLayerPatternDescription</tt><big>(</big><em>name</em>, <em>filename</em><big>)</big><a class="headerlink" href="#S4.Simulation:OutputLayerPatternDescription" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Outputs a list of PostScript commands to render the exact layer pattern description from the specified patterning commands. Assumes letter-sized paper.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:OutputLayerPatternDescription(name, filename)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>name</dt>
+<dd>(string) Name of the layer whose pattern description should be output.</dd>
+<dt>filename</dt>
+<dd>(string, optional) Filename to which the description should be output. If this argument is not provided, standard output is used.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None.</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:OutputLayerPatternRealization">
+<tt class="descclassname">Simulation:</tt><tt class="descname">OutputLayerPatternRealization</tt><big>(</big><em>name</em>, <em>Nu</em>, <em>Nv</em>, <em>filename</em><big>)</big><a class="headerlink" href="#S4.Simulation:OutputLayerPatternRealization" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Outputs a Gnuplot format dump of the Fourier series reconstruction of the dielectric constant in the unit cell. Note that the output will appear distorted for non-orthogonal unit cells.</p>
+<p>Note that this reconstruction is not representative of the actual dielectric constant profile used in simulations (such a notion is not meaningful). The reconstruction is created using the closed-form Fourier series coefficients of the specified patterning, summed over the terms comprising the G-vector list obtained from lattice truncation. This function exists to provide an intuitive sense for the spatial resolution of a particular G-vector truncation order.</p>
+</div></blockquote>
+<p>Usage:</p>
+<blockquote>
+<div>S:OutputLayerPatternRealization(name, Nu, Nv, filename)</div></blockquote>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>name</dt>
+<dd>The name of the layer whose pattern should be output.</dd>
+<dt>Nu, Nv</dt>
+<dd>The number of discretization cells in the first and second lattice basis direction to use. The total number of output points is <tt class="docutils literal"><span class="pre">Nu*Nv</span></tt>.</dd>
+<dt>filename</dt>
+<dd>(string, optional) Filename to which the pattern should be output. If this argument is not provided, standard output is used.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None.</div></blockquote>
+</dd></dl>
+
+</div>
+<div class="section" id="outputs-requiring-solutions">
+<h3>Outputs requiring solutions<a class="headerlink" href="#outputs-requiring-solutions" title="Permalink to this headline">¶</a></h3>
+<dl class="method">
+<dt id="S4.Simulation:OutputStructurePOVRay">
+<tt class="descclassname">Simulation:</tt><tt class="descname">OutputStructurePOVRay</tt><big>(</big><span class="optional">[</span><em>filename</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#S4.Simulation:OutputStructurePOVRay" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Outputs a <a class="reference external" href="http://www.povray.org">POV-Ray</a> script that will render one unit cell of the structure in 3D. Materials named <tt class="docutils literal"><span class="pre">air</span></tt> or <tt class="docutils literal"><span class="pre">vacuum</span></tt> (case insensitive) will be completely transparent.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:OutputStructurePOVRay(filename)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>filename</dt>
+<dd>(string, optional) Filename to which the structure should be output. If this argument is not provided, standard output is used.</dd>
+</dl>
+</div></blockquote>
+<p>Return values</p>
+<blockquote>
+<div>None.</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:GetNumG">
+<tt class="descclassname">Simulation:</tt><tt class="descname">GetNumG</tt><big>(</big><big>)</big><a class="headerlink" href="#S4.Simulation:GetNumG" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the specified number of Fourier series orders to use (number of G-vectors), or, if a solution has been computed, the actual number of G-vectors used.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>n = S:GetNumG()</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div>None.</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>n</dt>
+<dd>If no solutions have been computed, the upper bound of G-vectors specified. If a solution has been computed, then <tt class="docutils literal"><span class="pre">n</span></tt> is the actual number of G-vectors used.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:GetGList">
+<tt class="descclassname">Simulation:</tt><tt class="descname">GetGList</tt><big>(</big><big>)</big><a class="headerlink" href="#S4.Simulation:GetGList" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns a table of reciprocal lattice coordinates of the Fourier series orders used.
+The coordinates are in the reciprocal lattice basis, and so they are integers.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>G = S:GetGList()</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div>None.</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>G</dt>
+<dd>A table of tables of length 2 holding the pairs of integer recprical lattice coordinates.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:GetDiffractionOrder">
+<tt class="descclassname">Simulation:</tt><tt class="descname">GetDiffractionOrder</tt><big>(</big><em>m</em>, <em>n</em><big>)</big><a class="headerlink" href="#S4.Simulation:GetDiffractionOrder" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the index (1-based) of a particular diffraction order.
+The index can be used directly in GetPowerFluxByOrder to obtain the diffracted power of a particular order.
+The coordinate arguments are in the reciprocal lattice basis, and so they are integers.
+A particular diffraction order is only a meaningful concept in a uniform (unpatterned) layer, otherwise the diffraction order corresponds to an arbitrary layer eigenfunction index.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>i = S:GetDiffractionOrder(m, n)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>m, n</dt>
+<dd>(integer) The diffracted order. These numbers are in the reciprocal lattice basis.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>i</dt>
+<dd>The index of the diffraction order.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:GetAmplitudes">
+<tt class="descclassname">Simulation:</tt><tt class="descname">GetAmplitudes</tt><big>(</big><em>layer</em>, <em>offset</em><big>)</big><a class="headerlink" href="#S4.Simulation:GetAmplitudes" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the raw mode amplitudes within a particular layer.
+For uniform (unpatterned) layers, the modes are simply the diffracted orders, and the indexing of the returned amplitudes corresponds to the value obtained from GetDiffractedOrder.
+The first value is guaranteed to be the straight transmitted or specularly reflected diffraction order.
+For patterned layers, there is typically no meaningful information in these amplitudes.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>forw,back = S:GetAmplitudes(layer, offset)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>layer</dt>
+<dd>(string) The name of the layer in which to obtain mode amplitudes.</dd>
+<dt>offset</dt>
+<dd>(number) The z-offset at which to obtain the mode amplitudes.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>forw,back</dt>
+<dd>Tables of length 2*NumG containing the complex amplitudes of each forward and backward mode. Each complex amplitude is a table of length 2 containing real and imaginary parts.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:GetPowerFlux">
+<tt class="descclassname">Simulation:</tt><tt class="descname">GetPowerFlux</tt><big>(</big><em>layer</em>, <em>offset=0</em><big>)</big><a class="headerlink" href="#S4.Simulation:GetPowerFlux" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the integral of the power (Poynting) flux density over a unit cell surface normal to the z-direction.
+In other words, the z-component of the power flux is returned.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>forw_r, back_r, forw_i, back_i = S:GetPowerFlux(layer, offset)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>layer</dt>
+<dd>(string) The name of the layer in which the integration surface lies.</dd>
+<dt>offset</dt>
+<dd>(number, optional) The z-offset of the integration surface from the beginning of the layer. This only matters for lossy layers.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>forw_r, forw_i</dt>
+<dd>The real and imaginary parts of the forward component of the complex Poynting vector. Note that the result is not time averaged (no factor of 0.5 multiplied in). The forward component is defined as (E_total^* x H_forw + H_total^* x E_forw) / 2, where E_forw and H_forw are the fields reconstructed from only the forward propagating waveguide modes of the layer.</dd>
+<dt>back_r, back_i</dt>
+<dd>The real and imaginary parts of the backward component of the complex Poynting vector. Note that the result is not time averaged (no factor of 0.5 multiplied in). An analogous definition of the backward component of the Poynting vector follows from above.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:GetPowerFluxByOrder">
+<tt class="descclassname">Simulation:</tt><tt class="descname">GetPowerFluxByOrder</tt><big>(</big><em>layer</em>, <em>offset</em><big>)</big><a class="headerlink" href="#S4.Simulation:GetPowerFluxByOrder" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the integral of the power (Poynting) flux density over a unit cell surface normal to the z-direction for each Fourier series order.
+In other words, the z-component of the Poynting flux for each order is returned.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>P = S:GetPowerFluxByOrder(layer, offset)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>layer</dt>
+<dd>(string) The name of the layer in which the integration surface lies.</dd>
+<dt>offset</dt>
+<dd>(number) The z-offset of the integration surface from the beginning of the layer. This only matters for lossy layers.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>P</dt>
+<dd>A table with length equal to the number of Fourier series orders used.
+Each entry of the table is a table of length 4, whose values are: forw_r, back_r, forw_i, back_i.
+These four quantities are described in the section for <tt class="xref lua lua-func docutils literal"><span class="pre">GetPowerFlux()</span></tt>.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:GetStressTensorIntegral">
+<tt class="descclassname">Simulation:</tt><tt class="descname">GetStressTensorIntegral</tt><big>(</big><em>layer</em>, <em>offset</em><big>)</big><a class="headerlink" href="#S4.Simulation:GetStressTensorIntegral" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the integral of the electromagnetic stress tensor over a unit cell surface normal to the z-direction.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>Txr, Tyr, Tzr, Txi, Tyi, Tzi = S:GetStressTensorIntegral(layer, offset)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>layer</dt>
+<dd>(string) The name of the layer in which the integration surface lies.</dd>
+<dt>offset</dt>
+<dd>(number) The z-offset of the integration surface from the beginning of the layer.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Txr, Txi</dt>
+<dd>The real and imaginary parts of the x-component of the stress tensor integrated over the specified surface, assuming a unit normal vector in the +z direction. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+<dt>Tyr, Tyi, Tzr, Tzi</dt>
+<dd>Analogous to above.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:GetLayerEnergyDensityIntegral">
+<tt class="descclassname">Simulation:</tt><tt class="descname">GetLayerEnergyDensityIntegral</tt><big>(</big><em>layer</em><big>)</big><a class="headerlink" href="#S4.Simulation:GetLayerEnergyDensityIntegral" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the volume integral of the electromagnetic energy density (epsilon*|E|^2 + |H|^2) over a unit cell throughout the entire thickness of a layer.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>Ur,Ui = S:GetLayerEnergyDensityIntegral(layer)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>layer</dt>
+<dd>(string) The name of the layer in which to integrate over.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Ur,Ui</dt>
+<dd>The real and imaginary parts of the integral of the energy density throughout the volume of the layer&#8217;s unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:GetLayerElectricEnergyDensityIntegral">
+<tt class="descclassname">Simulation:</tt><tt class="descname">GetLayerElectricEnergyDensityIntegral</tt><big>(</big><em>layer</em><big>)</big><a class="headerlink" href="#S4.Simulation:GetLayerElectricEnergyDensityIntegral" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the volume integral of the electric energy density (epsilon*|E|^2) over a unit cell throughout the entire thickness of a layer.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>Ur,Ui = S:GetLayerElectricEnergyDensityIntegral(layer)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>layer</dt>
+<dd>(string) The name of the layer in which to integrate over.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>U</dt>
+<dd>The real and imaginary parts of the integral of the electric energy density throughout the volume of the layer&#8217;s unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:GetLayerMagneticEnergyDensityIntegral">
+<tt class="descclassname">Simulation:</tt><tt class="descname">GetLayerMagneticEnergyDensityIntegral</tt><big>(</big><em>layer</em><big>)</big><a class="headerlink" href="#S4.Simulation:GetLayerMagneticEnergyDensityIntegral" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the volume integral of the magnetic energy density (|H|^2) over a unit cell throughout the entire thickness of a layer.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>Ur,Ui = S:GetLayerMagneticEnergyDensityIntegral(layer)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>layer</dt>
+<dd>(string) The name of the layer in which to integrate over.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Ur,Ui</dt>
+<dd>The real and imaginary parts of the integral of the magnetic energy density throughout the volume of the layer&#8217;s unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:GetLayerElectricFieldIntensityIntegral">
+<tt class="descclassname">Simulation:</tt><tt class="descname">GetLayerElectricFieldIntensityIntegral</tt><big>(</big><em>layer</em><big>)</big><a class="headerlink" href="#S4.Simulation:GetLayerElectricFieldIntensityIntegral" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the volume integral of the squared electric field intensity (|E|^2) over a unit cell throughout the entire thickness of a layer.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>Ur,Ui = S:GetLayerElectricFieldIntensityIntegral(layer)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>layer</dt>
+<dd>(string) The name of the layer in which to integrate over.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Ur,Ui</dt>
+<dd>The real and imaginary parts of the integral of the square electric field intensity throughout the volume of the layer&#8217;s unit cell. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:GetLayerZIntegral">
+<tt class="descclassname">Simulation:</tt><tt class="descname">GetLayerZIntegral</tt><big>(</big><em>layer</em>, <em>{x</em>, <em>y}</em><big>)</big><a class="headerlink" href="#S4.Simulation:GetLayerZIntegral" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the line integral along z (depth direction) of the squared magnitudes of electric and magnetic field components (|Ex|^2, |Ey|^2, etc.) throughout the entire thickness of a layer.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>IEx, IEy, IEz, IHx, IHy, IHz = S:GetLayerZIntegral(layer, {x, y})</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>layer</dt>
+<dd>(string) The name of the layer in which to integrate through.</dd>
+<dt>x,y</dt>
+<dd>(number) The in-plane coordinates at which to integrate.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>IEx,IEy,IEz,IHx,IHy,IHz</dt>
+<dd>The integral of the squared magnitudes of electric and magnetic field components throughout the thickness of the layer. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:GetEField">
+<tt class="descclassname">Simulation:</tt><tt class="descname">GetEField</tt><big>(</big><em>{x</em>, <em>y</em>, <em>z}</em><big>)</big><a class="headerlink" href="#S4.Simulation:GetEField" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the electric field at a particular point within the structure.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>Exr, Eyr, Ezr, Exi, Eyi, Ezi = S:GetEField({x, y, z})</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>x, y, z</dt>
+<dd>(number) The coordinates of the point at which to obtain the field.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Exr, Exi</dt>
+<dd>The real and imaginary parts of the complex electric field at the specified point. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+<dt>Eyr, Eyi, Ezr, Ezi</dt>
+<dd>Analogous to above.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:GetHField">
+<tt class="descclassname">Simulation:</tt><tt class="descname">GetHField</tt><big>(</big><em>{x</em>, <em>y</em>, <em>z}</em><big>)</big><a class="headerlink" href="#S4.Simulation:GetHField" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the magnetic field at a particular point within the structure.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>Hxr, Hyr, Hzr, Hxi, Hyi, Hzi = S:GetHField({x, y, z})</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>x, y, z</dt>
+<dd>(number) The coordinates of the point at which to obtain the field.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Hxr, Hxi</dt>
+<dd>The real and imaginary parts of the complex magnetic field at the specified point. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+<dt>Hyr, Hyi, Hzr, Hzi</dt>
+<dd>Analogous to above.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:GetFields">
+<tt class="descclassname">Simulation:</tt><tt class="descname">GetFields</tt><big>(</big><em>{x</em>, <em>y</em>, <em>z}</em><big>)</big><a class="headerlink" href="#S4.Simulation:GetFields" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the electric and magnetic field at a particular point within the structure.
+Note that it is more efficient to call this function when both fields are needed.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>Exr, Eyr, Ezr, Hxr, Hyr, Hzr, Exi, Eyi, Ezi, Hxi, Hyi, Hzi = S:GetFields({x, y, z})</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>x, y, z</dt>
+<dd>(number) The coordinates of the point at which to obtain the field.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Exr, Exi</dt>
+<dd>The real and imaginary parts of the complex electric field at the specified point. Note that the result is not time averaged (no factor of 0.5 multiplied in).</dd>
+<dt>Eyr, Eyi, Ezr, Ezi, Hxr, Hxi, Hyr, Hyi, Hzr, Hzi</dt>
+<dd>Analogous to above.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:GetFieldPlane">
+<tt class="descclassname">Simulation:</tt><tt class="descname">GetFieldPlane</tt><big>(</big><em>z</em>, <em>{nu</em>, <em>nv}</em>, <em>format</em>, <em>basefilename</em><big>)</big><a class="headerlink" href="#S4.Simulation:GetFieldPlane" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the electric and magnetic fields on a regular grid over the unit cell (fundamental parallelogram) at a particular z coordinate.
+It is more efficient to use this function than <tt class="xref lua lua-func docutils literal"><span class="pre">GetFields()</span></tt>.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>E,H = S:GetFieldPlane(z, {nu, nv}, 'Array')
+S:GetFieldPlane(z, {nu, nv}, 'FileWrite', basename)
+S:GetFieldPlane(z, {nu, nv}, 'FileAppend', basename)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>z</dt>
+<dd>(number) The z-coordinate of the plane on which to obtain the field.</dd>
+<dt>nu,nv</dt>
+<dd>(integer) The number of sample points to use in each lattice vector direction.</dd>
+<dt>format</dt>
+<dd><p class="first">(string) Specifies the format of the output. Current choices are:</p>
+<dl class="last docutils">
+<dt>Array</dt>
+<dd>Returns a pair of arrays of dimension <cite>nu</cite> by <cite>nv</cite>, each element is a table of length 3, containing tables of length 2 with the real and imaginary parts of the E or H field components.</dd>
+<dt>FileWrite</dt>
+<dd>Outputs the field data to files, overwriting the files.</dd>
+<dt>FileAppend</dt>
+<dd>Outputs the field data to files, appending to the files. This is useful of volume fields are needed.</dd>
+</dl>
+</dd>
+<dt>basefilename</dt>
+<dd>(string) The base filename for file output. The outputs are named <tt class="docutils literal"><span class="pre">basefilename</span> <span class="pre">..</span> <span class="pre">'.E'</span></tt> and <tt class="docutils literal"><span class="pre">basefilename</span> <span class="pre">..</span> <span class="pre">'.H'</span></tt>.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>E,H</dt>
+<dd>Only returned if format is &#8216;Array&#8217;.
+Arrays of dimension <cite>nu</cite> by <cite>nv</cite>, each element is a table of length 3, containing tables of length 2 with the real and imaginary parts of the E or H field.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:GetSMatrixDeterminant">
+<tt class="descclassname">Simulation:</tt><tt class="descname">GetSMatrixDeterminant</tt><big>(</big><big>)</big><a class="headerlink" href="#S4.Simulation:GetSMatrixDeterminant" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Returns the determinant of the S-matrix (scattering matrix) of the entire structure.
+The determinant is an analytic function in the complex frequency plane and has poles at the complex modal frequencies of the system.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>mantr, manti, base, expo = S:GetSMatrixDeterminant()</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div>None.</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>mantr, manti</dt>
+<dd>The determinant typically causes overflow or underflow, so it is returned as a mantissa multiplying a base raised to an exponent. These values are the real and imaginary parts of the mantissa. The value of the determinant is (mantr+i*manti)*base^expo.</dd>
+<dt>base</dt>
+<dd>The base of the determinant representation (see above).</dd>
+<dt>expo</dt>
+<dd>The exponent of the determinant representation (see above).</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+</div>
+<div class="section" id="options">
+<h3>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h3>
+<dl class="method">
+<dt id="S4.Simulation:UseLanczosSmoothing">
+<tt class="descclassname">Simulation:</tt><tt class="descname">UseLanczosSmoothing</tt><big>(</big><em>use</em><big>)</big><a class="headerlink" href="#S4.Simulation:UseLanczosSmoothing" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Enables or disables smoothing of the Fourier series representations of the layer dielectric constants using the Lanczos sigma factor (box filtering). This reduces the Gibbs phenomenon ringing in the real space reconstruction.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:UseLanczosSmoothing(use)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>use</dt>
+<dd>(boolean, optional) Indicates whether to enable smoothing. If this argument is not provided, smoothing is enabled.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None.</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:UseDiscretizedEpsilon">
+<tt class="descclassname">Simulation:</tt><tt class="descname">UseDiscretizedEpsilon</tt><big>(</big><em>use</em><big>)</big><a class="headerlink" href="#S4.Simulation:UseDiscretizedEpsilon" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Enables or disables the use of discretization in generating the Fourier coefficients of the in-plane epsilon profiles, instead of using values from closed-form equations. When enabled, the coefficients are obtained by FFT.</p>
+<p>See the <a class="reference internal" href="tutorial.html#fmm-formulations-label"><em>Fourier Modal Method formulations</em></a> for details.</p>
+</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:UseDiscretizedEpsilon(use)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>use</dt>
+<dd>(boolean, optional) Indicates whether to use a discretized epsilon. If this argument is not provided, use of a discretized epsilon is enabled.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None.</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:UsePolarizationDecomposition">
+<tt class="descclassname">Simulation:</tt><tt class="descname">UsePolarizationDecomposition</tt><big>(</big><em>use</em><big>)</big><a class="headerlink" href="#S4.Simulation:UsePolarizationDecomposition" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Enables or disables the use of proper in-plane Fourier factorization rules by decomposing fields into a polarization basis which conforms to the material boundaries.
+The polarization basis field is generated automatically by computing a quasi-harmonic vector field everywhere tangent to the layer pattern boundaries.
+This option is not guaranteed to work in the presence of tensor dielectric constants.</p>
+<p>Enabling this feature typically improves convergence with respect to the number of G-vectors.
+See the <a class="reference internal" href="tutorial.html#fmm-formulations-label"><em>Fourier Modal Method formulations</em></a> for details.</p>
+</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:UsePolarizationDecomposition(use)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>use</dt>
+<dd>(boolean, optional) Indicates whether to enable polarization decomposition. If this argument is not provided, polarization decomposition is enabled.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None.</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:UseSubpixelSmoothing">
+<tt class="descclassname">Simulation:</tt><tt class="descname">UseSubpixelSmoothing</tt><big>(</big><em>use</em><big>)</big><a class="headerlink" href="#S4.Simulation:UseSubpixelSmoothing" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Enables or disables the use of second-order accurate epsilon averaging rules within a pixel.
+The average epsilon within a pixel is computed using the fill factor of each material and the interface direction.</p>
+<p>Enabling this feature may improve convergence with respect to the number of G-vectors.
+See the <a class="reference internal" href="tutorial.html#fmm-formulations-label"><em>Fourier Modal Method formulations</em></a> for details.</p>
+</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:UseSubpixelSmoothing(use)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>use</dt>
+<dd>(boolean, optional) Indicates whether to enable subpixel smoothing. If this argument is not provided, subpixel smoothing is enabled.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None.</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:UseJonesVectorBasis">
+<tt class="descclassname">Simulation:</tt><tt class="descname">UseJonesVectorBasis</tt><big>(</big><em>use</em><big>)</big><a class="headerlink" href="#S4.Simulation:UseJonesVectorBasis" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>This option only has an effect with <tt class="xref lua lua-func docutils literal"><span class="pre">UsePolarizationDecomposition()</span></tt>.
+When enabled, a Jones vector basis field is used instead of a conformal harmonic field.</p>
+<p>Enabling this feature may improve convergence with respect to the number of G-vectors.
+See the <a class="reference internal" href="tutorial.html#fmm-formulations-label"><em>Fourier Modal Method formulations</em></a> for details.</p>
+</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:UseJonesVectorBasis(use)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>use</dt>
+<dd>(boolean, optional) Indicates whether to use a Jones vector basis. If this argument is not provided, use of a Jones vector basis is enabled.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None.</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:UseNormalVectorBasis">
+<tt class="descclassname">Simulation:</tt><tt class="descname">UseNormalVectorBasis</tt><big>(</big><em>use</em><big>)</big><a class="headerlink" href="#S4.Simulation:UseNormalVectorBasis" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>This option only has an effect with <tt class="xref lua lua-func docutils literal"><span class="pre">UsePolarizationDecomposition()</span></tt>.
+When enabled, the resulting vector field is normalized. Where the vector field is zero, the unit vector in the x-direction is used.</p>
+<p>Enabling this feature may improve convergence with respect to the number of G-vectors.
+See the <a class="reference internal" href="tutorial.html#fmm-formulations-label"><em>Fourier Modal Method formulations</em></a> for details.</p>
+</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:UseNormalVectorBasis(use)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>use</dt>
+<dd>(boolean, optional) Indicates whether to use a normalized vector basis. If this argument is not provided, use of a normalized vector basis is enabled.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None.</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:SetResolution">
+<tt class="descclassname">Simulation:</tt><tt class="descname">SetResolution</tt><big>(</big><em>use</em><big>)</big><a class="headerlink" href="#S4.Simulation:SetResolution" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>This option only has an effect with <tt class="xref lua lua-func docutils literal"><span class="pre">UseDiscretizedEpsilon()</span></tt> or <tt class="xref lua lua-func docutils literal"><span class="pre">UseSubpixelSmoothing()</span></tt>.
+This function sets the resolution of the FFT grid and vector field generated by <tt class="xref lua lua-func docutils literal"><span class="pre">EnablePolarizationDecomposition()</span></tt>.
+The resolution is multiplied by the largest G-vector extent (integer lattice coordinate), and should be at least 2 to satisfy the Nyquist limit. It is best to use a number with small integer factors in order for the FFT to be computed efficiently. The size of each dimension of the FFT is obviously proportional to this value. The default is 8.</p>
+<p>See the <a class="reference internal" href="tutorial.html#fmm-formulations-label"><em>Fourier Modal Method formulations</em></a> for details.</p>
+</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:SetResolution(n)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>n</dt>
+<dd>The oversampling factor. Must be at least 2.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None.</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:SetBasisFieldDumpPrefix">
+<tt class="descclassname">Simulation:</tt><tt class="descname">SetBasisFieldDumpPrefix</tt><big>(</big><em>prefix</em><big>)</big><a class="headerlink" href="#S4.Simulation:SetBasisFieldDumpPrefix" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Setting this option to a filename prefix causes the vector field used by the polarization decomposition to be dumped to files (one for each layer) in Gnuplot format.
+The files are named by concatenating the provided prefix string with each layer&#8217;s name.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:SetBasisFieldDumpPrefix(prefix)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>prefix</dt>
+<dd>(string, optional) When provided, the filename prefix is set to the given string. This can be an empty string. If this argument is not provided, the basis field dump is disabled.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None.</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:SetLatticeTruncation">
+<tt class="descclassname">Simulation:</tt><tt class="descname">SetLatticeTruncation</tt><big>(</big><em>trunc</em><big>)</big><a class="headerlink" href="#S4.Simulation:SetLatticeTruncation" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Sets the type of lattice truncation to use when selecting G-vectors.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:SetLatticeTruncation(trunc)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>trunc</dt>
+<dd><p class="first">(string) Can be one of the following values:</p>
+<dl class="last docutils">
+<dt>Circular</dt>
+<dd>This is the default. The G-vectors are selected to have shortest length (by l2 norm).</dd>
+<dt>Parallelogramic</dt>
+<dd>Chooses the G-vectors within a parallelogram aligned with the reciprocal lattice basis. The number chosen will always be a perfect square of an odd number.</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None.</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:SetVerbosity">
+<tt class="descclassname">Simulation:</tt><tt class="descname">SetVerbosity</tt><big>(</big><em>level</em><big>)</big><a class="headerlink" href="#S4.Simulation:SetVerbosity" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Sets the level of diagnostic output generated by the program.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S:SetVerbosity(level)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>level</dt>
+<dd>(integer, optional) The larger this value, the more status output is generated. Valid values are in the range of 0-9, inclusive. A value of 0 disables all status output.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None.</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Simulation:UseLessMemory">
+<tt class="descclassname">Simulation:</tt><tt class="descname">UseLessMemory</tt><big>(</big><em>use</em><big>)</big><a class="headerlink" href="#S4.Simulation:UseLessMemory" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Setting this option will prevent storage of certain intermediate results. This will save approximately 30% memory for non-trivial layers.
+The drawback is slower computation of any output quantities that require solutions.</div></blockquote>
+<p>Usage:</p>
+<blockquote>
+<div>S:UseLessMemory(use)</div></blockquote>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>use</dt>
+<dd>(boolean, optional) Indicates whether to use less memory. If this argument is not provided, lower memory usage is enabled.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>None.</div></blockquote>
+</dd></dl>
+
+</div>
+<div class="section" id="miscellaneous">
+<h3>Miscellaneous<a class="headerlink" href="#miscellaneous" title="Permalink to this headline">¶</a></h3>
+<dl class="method">
+<dt id="S4.Simulation:Clone">
+<tt class="descclassname">Simulation:</tt><tt class="descname">Clone</tt><big>(</big><big>)</big><a class="headerlink" href="#S4.Simulation:Clone" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Duplicates an existing Simulation object, copying all materials, layers, and excitation information.
+No partial solution information is copied.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>S2 = S:Clone()</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div>None.</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>A copy of the <a class="reference internal" href="#simulation-object">Simulation object</a>.</div></blockquote>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="spectrumsampler-object">
+<h2>SpectrumSampler object<a class="headerlink" href="#spectrumsampler-object" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="S4.SpectrumSampler">
+<em class="property">class </em><tt class="descclassname">S4.</tt><tt class="descname">SpectrumSampler</tt><a class="headerlink" href="#S4.SpectrumSampler" title="Permalink to this definition">¶</a></dt>
+<dd><p>The SpectrumSampler object provides a convenient way to sample spectral information of a system.
+For example, it is used to resolve sharp peaks in transmission spectra.
+Interaction with a SpectrumSampler object is by contract; a new frequency is retrieved from it by which simulation results at that frequency are computed, and then the results are submitted.</p>
+<p>The frequencies given out by a SpectrumSampler object aim to produce a visually pleasing plot of the resulting spectrum by limiting the maximum normalized bend angles between adjacent line segments of the plot.</p>
+<p>A typical usage is shown below:</p>
+<div class="highlight-python"><pre>function f(x) -- example function
+    return math.sin(x)
+end
+sampler = S4.NewSpectrumSampler(0.1, 0.9, -- start and end frequencies
+    { -- table of options
+    InitialNumPoints = 33,
+    RangeThreshold = 0.001,
+    MaxBend = math.cos(math.rad(10)),
+    MinimumSpacing = 1e-6
+    })
+while not sampler:IsDone() do
+    x = sampler:GetFrequency()
+    y = f(x) -- compute the desired result
+    sampler:SubmitResult(y)
+end
+
+spectrum = sampler:GetSpectrum()
+for i,xy in ipairs(spectrum) do
+    print(xy[1],xy[2])
+end</pre>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.SpectrumSampler:IsDone">
+<tt class="descclassname">SpectrumSampler:</tt><tt class="descname">IsDone</tt><big>(</big><big>)</big><a class="headerlink" href="#S4.SpectrumSampler:IsDone" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Queries whether the SpectrumSampler has completed sampling.
+When sampling has been completed, no further frequencies should be requested from the SpectrumSampler object, and no further results should be submitted.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>done = sampler:IsDone()</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div>None.</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>A boolean value indicating whether sampling has completed.</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.SpectrumSampler:GetFrequency">
+<tt class="descclassname">SpectrumSampler:</tt><tt class="descname">GetFrequency</tt><big>(</big><big>)</big><a class="headerlink" href="#S4.SpectrumSampler:GetFrequency" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Retrieves the next frequency at which to sample the spectrum. This function should only be used if the SpectrumSampler object was created with <cite>Parallize</cite> set to false (the default).</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>freq = sampler:GetFrequency()</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div>None.</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>The (numeric) frequency at which the next result should be computed and submitted.</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.SpectrumSampler:GetFrequencies">
+<tt class="descclassname">SpectrumSampler:</tt><tt class="descname">GetFrequencies</tt><big>(</big><big>)</big><a class="headerlink" href="#S4.SpectrumSampler:GetFrequencies" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Retrieves the next set of frequencies at which to sample the spectrum. This function should only be used if the SpectrumSampler object was created with <cite>Parallize</cite> set to true.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>freqlist = sampler:GetFrequency()</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div>None.</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>A list of (numeric) frequencies at which the next results should be computed and submitted.</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.SpectrumSampler:SubmitResult">
+<tt class="descclassname">SpectrumSampler:</tt><tt class="descname">SubmitResult</tt><big>(</big><em>result</em><big>)</big><a class="headerlink" href="#S4.SpectrumSampler:SubmitResult" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Submits a result to the SpectrumSampler object. The result is assumed to be at the frequency of the last requested frequency.  This function should only be used if the SpectrumSampler object was created with <cite>Parallize</cite> set to false (the default).</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>done = sampler:SubmitResult(result)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>result</dt>
+<dd>(number) The result to submit. The result may be any value (for example, the transmission through a structure).</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>A boolean value indicating whether sampling has completed.</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.SpectrumSampler:SubmitResults">
+<tt class="descclassname">SpectrumSampler:</tt><tt class="descname">SubmitResults</tt><big>(</big><em>result_list</em><big>)</big><a class="headerlink" href="#S4.SpectrumSampler:SubmitResults" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Submits a set of results to the SpectrumSampler object. The results are assumed to be at the frequencies of the last requested frequencies. This function should only be used if the SpectrumSampler object was created with <cite>Parallize</cite> set to true.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>done = sampler:SubmitResults(result_list)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>result_list</dt>
+<dd>(table) The list of results to submit. The length of this table must match the number of frequencies obtained from the previous call to <cite>GetFrequencies</cite>.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>A boolean value indicating whether sampling has completed.</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.SpectrumSampler:GetSpectrum">
+<tt class="descclassname">SpectrumSampler:</tt><tt class="descname">GetSpectrum</tt><big>(</big><big>)</big><a class="headerlink" href="#S4.SpectrumSampler:GetSpectrum" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Retrieves a list of all sampled frequencies and submitted results.
+This function should only be used when the SpectrumSampler object indicates that sampling is complete.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>valarray = sampler:GetSpectrum()</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div>None.</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>An array (with length equal to the number of samples) of pairs (arrays of length 2) containing the sampled frequency and corresponding submitted result.</div></blockquote>
+</dd></dl>
+
+</div>
+<div class="section" id="interpolator-object">
+<h2>Interpolator object<a class="headerlink" href="#interpolator-object" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="S4.Interpolator">
+<em class="property">class </em><tt class="descclassname">S4.</tt><tt class="descname">Interpolator</tt><a class="headerlink" href="#S4.Interpolator" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Interpolator object provides a tool to perform various types of interpolation on data.
+The most common use is to interpolate between experimentally determined values for dieletric constants.
+A typical usage is shown below:</p>
+<div class="highlight-python"><pre>interpolator = S4.NewInterpolator('linear', {
+    {3.0, {14.2, 32}}, -- x, and list of y values
+    {5.4, {4.6, 10}},
+    {5.7, {42.7, 20}},
+    {8.0, {35.2, 40}}
+    })
+
+for x = 0, 10, 0.1 do
+    y1, y2 = interpolator:Get(x)
+    print(x, y1, y2)
+end</pre>
+</div>
+<p>At each x (abscissa) value, any number of y (ordinate) values can be specified for interpolation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="S4.Interpolator:Get">
+<tt class="descclassname">Interpolator:</tt><tt class="descname">Get</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#S4.Interpolator:Get" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Retrieves the interpolated ordinates for a given abscissa value.</div></blockquote>
+<p>Usage:</p>
+<div class="highlight-python"><pre>y1, y2, ... = interpolator:Get(x)</pre>
+</div>
+<p>Arguments:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>x</dt>
+<dd>(number) The abscissa value at which to interpolate.</dd>
+</dl>
+</div></blockquote>
+<p>Return values:</p>
+<blockquote>
+<div>A list of interpolated ordinate values.</div></blockquote>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/s4.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Download &amp; Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Lua API reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-S4">S4 library</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#simulation-object">Simulation object</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#parameter-specification">Parameter specification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#outputs-requiring-no-solutions">Outputs requiring no solutions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#outputs-requiring-solutions">Outputs requiring solutions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#options">Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#miscellaneous">Miscellaneous</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#spectrumsampler-object">SpectrumSampler object</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#interpolator-object">Interpolator object</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="python_api.html">Python API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="units.html">Units &amp; Coordinates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev_info.html">Developer Info</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License and Copyright</a></li>
+<li class="toctree-l1"><a class="reference internal" href="citing.html">How to cite</a></li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="tutorial.html"
+                        title="previous chapter">Tutorial</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="python_api.html"
+                        title="next chapter">Python API reference</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/lua_api.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="lua-modindex.html" title="Lua Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="python_api.html" title="Python API reference"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="Tutorial"
+             >previous</a> |</li>
+        <li><a href="index.html">S4 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Victor Liu.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.
+    </div>
+  </body>
+</html>

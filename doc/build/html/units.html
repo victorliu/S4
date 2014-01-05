@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Units &amp; Coordinates &mdash; S4 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="S4 1.1 documentation" href="index.html" />
+    <link rel="next" title="Frequently Asked Questions" href="faq.html" />
+    <link rel="prev" title="Python API reference" href="python_api.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="lua-modindex.html" title="Lua Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="faq.html" title="Frequently Asked Questions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="python_api.html" title="Python API reference"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">S4 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="units-coordinates">
+<h1>Units &amp; Coordinates<a class="headerlink" href="#units-coordinates" title="Permalink to this headline">¶</a></h1>
+<p>S<sup>4</sup> solves the linear Maxwell&#8217;s equations, which are scale-invariant.
+Therefore, S<sup>4</sup> uses normalized units, so the conversion between the numbers in S<sup>4</sup> and physically relevant numbers can sometimes be confusing.
+Here we show how to perform these conversions and provide some examples.</p>
+<div class="section" id="length-time-and-frequency">
+<h2>Length, time, and frequency<a class="headerlink" href="#length-time-and-frequency" title="Permalink to this headline">¶</a></h2>
+<p>The speed of light and the vacuum permittivity and vacuum permeability are all normalized to unity in S<sup>4</sup>.
+Because of this, time is measured in units of length and frequency is measured in units of inverse length.
+Due to the scale invariant nature of the linear Maxwell&#8217;s equations, there is no intrinsic length unit.
+Instead, one can imagine that all lengths specified in S<sup>4</sup> are multiples of a common reference length unit.</p>
+<p>When the lattice vectors are set, this determines a length scale.
+Suppose we have a square lattice with a periodicity of 680nm. It might be logical then to choose 1 micron as the base length unit, and to specify all lengths in microns. The lattice would then be set to the vectors (0.68, 0) and (0, 0.68).
+Since frequency is in units of inverse length, then <tt class="docutils literal"><span class="pre">SetFrequency(1)</span></tt> corresponds to a wavelength of 680nm or a physical frequency of (c/680nm) = 441 THz, and <tt class="docutils literal"><span class="pre">SetFrequency(1.1)</span></tt> corresponds to a wavelength of (680/1.1) = 618nm, etc.</p>
+</div>
+<div class="section" id="amplitudes-and-powers">
+<h2>Amplitudes and powers<a class="headerlink" href="#amplitudes-and-powers" title="Permalink to this headline">¶</a></h2>
+<p>Typically S<sup>4</sup> is used to compute transmission or reflection spectra, so the absolute units of incident power or amplitude are irrelevant. However, sometimes, it is necessary to be able to translate these figures into physical units.</p>
+<p>Under a normally-incident planewave excitation, the incident power is 1 if the amplitude is 1, regardless of unit cell size.
+At off-normal incidence, the incident power is reduced by a factor of cos(phi), where phi is the polar angle (angle from normal incidence).</p>
+<p>The specified amplitudes are for the electric field.
+If the incident power is considered to have units of Watts per unit-cell-area, then the electric field has units of Volts per square-root-of-unit-cell-area.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/s4.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Download &amp; Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lua_api.html">Lua API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python_api.html">Python API reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Units &amp; Coordinates</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#length-time-and-frequency">Length, time, and frequency</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#amplitudes-and-powers">Amplitudes and powers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev_info.html">Developer Info</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License and Copyright</a></li>
+<li class="toctree-l1"><a class="reference internal" href="citing.html">How to cite</a></li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="python_api.html"
+                        title="previous chapter">Python API reference</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="faq.html"
+                        title="next chapter">Frequently Asked Questions</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/units.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="lua-modindex.html" title="Lua Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="faq.html" title="Frequently Asked Questions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="python_api.html" title="Python API reference"
+             >previous</a> |</li>
+        <li><a href="index.html">S4 1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Victor Liu.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.
+    </div>
+  </body>
+</html>
