@@ -142,8 +142,8 @@ static void shape_get_interior_point(const shape *s, REAL x[2]){
 		x[0] = s->center[0]; x[1] = s->center[1];
 		return;
 	case POLYGON:
-		x[0] = s->center[0] + s->vtab.polygon.vertex[0];
-		x[1] = s->center[1] + s->vtab.polygon.vertex[1];
+		x[0] = s->center[0] + (1./3.) * (s->vtab.polygon.vertex[0] + s->vtab.polygon.vertex[2] + s->vtab.polygon.vertex[4]);
+		x[1] = s->center[1] + (1./3.) * (s->vtab.polygon.vertex[1] + s->vtab.polygon.vertex[3] + s->vtab.polygon.vertex[5]);
 		return;
 	default:
 		x[0] = s->center[0]; x[1] = s->center[1];
