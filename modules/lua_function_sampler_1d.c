@@ -191,6 +191,9 @@ static int sampler_get_samples(lua_State *L){
 	return 1;
 }
 
+#ifdef WIN32
+__declspec(dllexport)
+#endif
 int luaopen_FunctionSampler1D(lua_State *L){
 	static const luaL_Reg sampler_lib[] = {
 		{ "Add", &sampler_add },
