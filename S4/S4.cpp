@@ -1760,7 +1760,7 @@ int Simulation_OutputStructurePOVRay(Simulation *S, FILE *fp){
 	if(NULL == S->solution){
 		ret = Simulation_InitSolution(S);
 		if(0 != ret){
-			S4_TRACE("< Simulation_OutputStructurePOVRay (failed; Simulation_InitSolution returned %d)\n", error);
+			S4_TRACE("< Simulation_OutputStructurePOVRay (failed; Simulation_InitSolution returned %d)\n", ret);
 			return ret;
 		}
 	}
@@ -2258,7 +2258,7 @@ int Simulation_GetField(Simulation *S, const double r[3], double fE[6], double f
 }
 int Simulation_GetFieldPlane(Simulation *S, int nxy[2], double zz, double *E, double *H){
 	S4_TRACE("> Simulation_GetFieldPlane(S=%p, nxy=%p (%d,%d), z=%f, E=%p, H=%p)\n",
-		S, (NULL == nxy ? 0 : nxy[0]), (NULL == nxy ? 0 : nxy[1]), z, E, H);
+		S, (NULL == nxy ? 0 : nxy[0]), (NULL == nxy ? 0 : nxy[1]), zz, E, H);
 	if(NULL == S){
 		S4_TRACE("< Simulation_GetFieldPlane (failed; S == NULL)\n");
 		return -1;
@@ -2399,6 +2399,7 @@ int Simulation_GetEpsilon(Simulation *S, const double r[3], double eps[2]){
 			ft[0] *= sigma;
 			ft[1] *= sigma;
 		}
+		printf("g = %d, ft = %g, %g\n", g, ft[0], ft[1]);
 
 		//double theta = (S->k[0] + f[0])*r[0] + (S->k[1] + f[1])*r[1];
 		double theta = (f[0])*r[0] + (f[1])*r[1];
@@ -2426,10 +2427,8 @@ int Simulation_GetSMatrixDeterminant(Simulation *S, double rmant[2], double *rba
 	std::complex<double> *M = (std::complex<double>*)S4_malloc(sizeof(std::complex<double>)*n4*n4);
 	int ret = Simulation_GetSMatrix(S, 0, -1, M);
 	if(0 != ret){
-		if(0 != ret){
-			S4_TRACE("< Simulation_GetSMatrixDeterminant (failed; Simulation_GetSMatrix returned %d)\n", error);
-			return ret;
-		}
+		S4_TRACE("< Simulation_GetSMatrixDeterminant (failed; Simulation_GetSMatrix returned %d)\n", ret);
+		return ret;
 	}
 	std::complex<double> mant;
 	double base;
@@ -2554,7 +2553,7 @@ int Simulation_GetLayerVolumeIntegral(Simulation *S, Layer *layer, char which, d
 
 // Returns a solution error code
 int Simulation_GetLayerZIntegral(Simulation *S, Layer *layer, const double r[2], double integral[6]){
-	S4_TRACE("> Simulation_GetLayerZIntegral(S=%p, layer=%p, which=%c, integral=%p)\n", S, layer, which, integral);
+	S4_TRACE("> Simulation_GetLayerZIntegral(S=%p, layer=%p, r=%g,%g, integral=%p)\n", S, layer, r[0], r[1], integral);
 	
 	int ret = 0;
 	if(NULL == S){ ret = -1; }
