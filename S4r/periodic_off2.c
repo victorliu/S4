@@ -9,6 +9,31 @@
 
 static void skip(FILE *fp);
 
+static int read_double(FILE *fp, double *val, const char *msg){
+	skip(fp);
+	if(1 != fscanf(fp, "%lf", val)){
+		if(NULL != msg){
+			fprintf(stderr, "Expected real number: %s\n", msg);
+		}else{
+			fprintf(stderr, "Expected real number\n");
+		}
+		return 1;
+	}
+	return 0;
+}
+static int read_int(FILE *fp, int *val, const char *msg){
+	skip(fp);
+	if(1 != fscanf(fp, "%d", val)){
+		if(NULL != msg){
+			fprintf(stderr, "Expected integer: %s\n", msg);
+		}else{
+			fprintf(stderr, "Expected integer\n");
+		}
+		return 1;
+	}
+	return 0;
+}
+
 int POFF2_LoadFromFile(POFF2 *off, const char *filename){
 	FILE *fp;
 	size_t i;
@@ -23,39 +48,39 @@ int POFF2_LoadFromFile(POFF2 *off, const char *filename){
 	fscanf(fp, "%12s", line); line[12] = '\0';
 	if(0 != strcmp("PeriodicOFF2", line)){ return -2; }
 	
-	skip(fp); fscanf(fp, "%lf", &(off->L[0]));
-	skip(fp); fscanf(fp, "%lf", &(off->L[1]));
-	skip(fp); fscanf(fp, "%lf", &(off->L[2]));
-	skip(fp); fscanf(fp, "%lf", &(off->L[3]));
-	skip(fp); fscanf(fp, "%d", &(off->n_verts));
-	skip(fp); fscanf(fp, "%d", &(off->n_faces));
-	skip(fp); fscanf(fp, "%d", &(off->n_matchings));
+	if(!read_double(fp, &(off->L[0]), "lattice ux")){ return -10; }
+	if(!read_double(fp, &(off->L[1]), "lattice uy")){ return -10; }
+	if(!read_double(fp, &(off->L[2]), "lattice vx")){ return -10; }
+	if(!read_double(fp, &(off->L[3]), "lattice vy")){ return -10; }
+	if(!read_int(fp, &(off->n_verts), "num vertices")){ return -10; }
+	if(!read_int(fp, &(off->n_faces), "num faces")){ return -10; }
+	if(!read_int(fp, &(off->n_matchings), "num matchings")){ return -10; }
 	POFF2_Initialize(off, off->n_verts, off->n_faces, off->n_matchings);
 	
 	for(i = 0; i < off->n_verts; ++i){
-		skip(fp); fscanf(fp, "%lf", &(off->vert[i].x));
-		skip(fp); fscanf(fp, "%lf", &(off->vert[i].y));
-		skip(fp); fscanf(fp, "%d" , &(off->vert[i].flags));
+		if(!read_double(fp, &(off->vert[i].x), "vertex x")){ return -11; }
+		if(!read_double(fp, &(off->vert[i].y), "vertex x")){ return -11; }
+		if(!read_int(fp, &(off->vert[i].flags), "vertex flags")){ return -11; }
 	}
 	
 	for(i = 0; i < off->n_faces; ++i){
 		size_t j;
-		skip(fp); fscanf(fp, "%d", &(off->face[i].n_verts));
+		if(!read_int(fp, &(off->face[i].n_verts), "face num vertices")){ return -12; }
 		POFF2_InitializeFace(&(off->face[i]), off->face[i].n_verts);
 		for(j = 0; j < off->face[i].n_verts; ++j){
-			skip(fp); fscanf(fp, "%d", &(off->face[i].vert[j]));
+			if(!read_int(fp, &(off->face[i].vert[j]), "face vertex index")){ return -12; }
 		}
-		skip(fp); fscanf(fp, "%d", &(off->face[i].flags));
+		if(!read_int(fp, &(off->face[i].flags), "face flags")){ return -12; }
 	}
 	
 	for(i = 0; i < off->n_matchings; ++i){
-		skip(fp); fscanf(fp, "%d", &(off->matching[i].face[0]));
-		skip(fp); fscanf(fp, "%d", &(off->matching[i].vert1[0]));
-		skip(fp); fscanf(fp, "%d", &(off->matching[i].vert2[0]));
-		skip(fp); fscanf(fp, "%d", &(off->matching[i].face[1]));
-		skip(fp); fscanf(fp, "%d", &(off->matching[i].vert1[1]));
-		skip(fp); fscanf(fp, "%d", &(off->matching[i].vert2[1]));
-		skip(fp); fscanf(fp, "%d", &(off->matching[i].flags));
+		if(!read_int(fp, &(off->matching[i].face[0]), "matching face0 index")){ return -13; }
+		if(!read_int(fp, &(off->matching[i].vert1[0]), "matching face0 vert0 offset")){ return -13; }
+		if(!read_int(fp, &(off->matching[i].vert2[0]), "matching face0 vert1 offset")){ return -13; }
+		if(!read_int(fp, &(off->matching[i].face[1]), "matching face1 index")){ return -13; }
+		if(!read_int(fp, &(off->matching[i].vert1[1]), "matching face1 vert0 offset")){ return -13; }
+		if(!read_int(fp, &(off->matching[i].vert2[1]), "matching face1 vert1 offset")){ return -13; }
+		if(!read_int(fp, &(off->matching[i].flags), "matching flags")){ return -13; }
 	}
 	
 	if(ferror(fp)){
