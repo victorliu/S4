@@ -481,9 +481,11 @@ void S4r::Layer::DumpDescription(
 	fprintf(f, "%f setlinewidth\n", 1./scale[0]);
 	fprintf(f, "%f %f translate\n", 8.5*0.5*72/scale[0], 11*0.5*72/scale[1]);
 	// Draw the origin cross
+	fprintf(f, "%% origin cross\n0.5 setgray\n");
 	fprintf(f, "newpath %f %f moveto %f %f lineto stroke\n", -0.05, 0.00, 0.05, 0.00);
 	fprintf(f, "newpath %f %f moveto %f %f lineto stroke\n", 0.00, -0.05, 0.00, 0.05);
 	
+	fprintf(f, "%% mesh polygons\n0.5 setgray\n");
 	for(size_t i = 0; i < mesh->NumFaces(); ++i){
 		ConvexPolygon poly;
 		mesh->FaceControlPolygon(i, &poly);
@@ -522,6 +524,8 @@ void S4r::Layer::DumpDescription(
 		0.50*L(0,0)-0.50*L(0,1), 0.50*L(1,0)-0.50*L(1,1),
 		0.55*L(0,0)-0.50*L(0,1), 0.55*L(1,0)-0.50*L(1,1));
 	*/
+	
+	fprintf(f, "%% pattern\n0 setgray\n");
 	description.pattern.OutputPostscript(f);
 	
 	fprintf(f, "showpage\n");
