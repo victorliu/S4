@@ -10,11 +10,11 @@ Binary packages
 The binary packages do not contain the examples and documentation, and are compiled with the bare minimum of features.
 You need to download that separately.
 
-* Version 1.1
+* Version 1.1.1
 
-  * `Windows (32-bit) EXE <files/S4-1.1.0-win32.7z>`_ (Lua frontend)
-  * `Mac OS X (compiled on 10.8.5) <files/S4-1.1.0-osx.gz>`_ (Lua frontend)
-  * `Examples and documentation <files/S4-1.1.0-doc.tar.gz>`_
+  * `Windows (32-bit) EXE <files/S4-1.1.1-win32.7z>`_ (Lua frontend)
+  * `Mac OS X (compiled on 10.8.5) <files/S4-1.1.1-osx.gz>`_ (Lua frontend)
+  * `Examples and documentation <files/S4-1.1.1-doc.tar.gz>`_
 
 * Version 1.0 (not recommended)
 
