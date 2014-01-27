@@ -14,6 +14,7 @@ S4r::Layer::Layer(const std::string &name){
 	description.num_modes = 0;
 	matrices.valid = false;
 	modes.valid = false;
+	solution.flags = 0;
 }
 S4r::Layer::~Layer(){
 }
@@ -126,7 +127,11 @@ int S4r::Layer::BuildMatrices(
 	const std::map<std::string, size_t> &matmap,
 	const std::vector<Material*> &mat
 ){
-	if(matrices.valid){ return 0; }
+	S4R_TRACE("> Layer::BuildMatrices(mesh = %p, ...) name = %s\n", mesh, description.name.c_str());
+	if(matrices.valid){
+		S4R_TRACE("< Layer::BuildMatrices (early exit)\n");
+		return 0;
+	}
 	const size_t Nv = mesh->NumVertices();
 	const size_t Nf = mesh->NumFaces();
 	const size_t Ne = mesh->NumEdges();
@@ -290,6 +295,7 @@ int S4r::Layer::BuildMatrices(
 		matrices.mu.setFromTriplets(triplstmu.begin(), triplstmu.end());
 	}
 	matrices.valid = true;
+	S4R_TRACE("< Layer::BuildMatrices\n");
 	return 0;
 }
 
@@ -307,7 +313,11 @@ int S4r::Layer::ComputeModes(
 	const doublecomplex &omega,
 	const PeriodicMesh *mesh
 ){
-	if(modes.valid){ return 0; }
+	S4R_TRACE("> Layer::ComputeModes(omega = %g + I %g, mesh = %p) name = %s\n", omega.real(), omega.imag(), mesh, description.name.c_str());
+	if(modes.valid){
+		S4R_TRACE("< Layer::ComputeModes (early exit)\n");
+		return 0;
+	}
 	const doublecomplex w2 = omega*omega;
 	
 	const size_t m = matrices.eps.rows();
@@ -395,6 +405,8 @@ int S4r::Layer::ComputeModes(
 	//std::cout << "q:\n" << modes.q << "\n";
 	//std::cout << "phi:\n" << modes.phi << "\n";
 	
+	//std::cerr << "q[0]: " << modes.q[0] << "\n";
+	
 	// Take the right branch cut
 	for(size_t i = 0; i < n; ++i){
 		// Set the \hat{q} vector (diagonal matrix) while we're at it
@@ -422,6 +434,7 @@ int S4r::Layer::ComputeModes(
 	}
 	*/
 	modes.valid = true;
+	S4R_TRACE("< Layer::ComputeModes\n");
 	return 0;
 }
 
@@ -445,7 +458,7 @@ void S4r::Layer::GetPowerFlux(
 	const double &z,
 	doublecomplex &forward, doublecomplex &backward
 ) const{
-	//std::cout << description.name << "\n";
+	S4R_TRACE("> Layer::GetPowerFlux(omega = %g + I %g, mesh = %p, z = %g) name = %s\n", omega.real(), omega.imag(), mesh, z, description.name.c_str());
 	//std::cout << "  flags = " << solution.flags << "\n";
 	//std::cout << "  a = " << solution.a << "\n";
 	//std::cout << "  b = " << solution.b << "\n";
@@ -467,6 +480,7 @@ void S4r::Layer::GetPowerFlux(
 	backward = eb.adjoint() * hb;
 	forward /= omega;
 	backward /= omega;
+	S4R_TRACE("< Layer::GetPowerFlux\n");
 }
 
 void S4r::Layer::DumpDescription(
