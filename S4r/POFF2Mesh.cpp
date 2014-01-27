@@ -240,6 +240,7 @@ PeriodicMesh::PeriodicIndex S4r::POFF2Mesh::VertexInterpolation(const Vec2 &r, V
 	int maxnvert = POFF2Mesh_MaxDualValence(M);
 	double *v = new double[2*maxnvert];
 	double *c = new double[maxnvert];
+	const double *L = POFF2Mesh_Lattice(M);
 	
 	POFF2Mesh_Index *ivert = new POFF2Mesh_Index[maxnvert];
 	int nvert = POFF2Mesh_GetFaceVertices(M, iface.idx, ivert);
@@ -251,10 +252,10 @@ PeriodicMesh::PeriodicIndex S4r::POFF2Mesh::VertexInterpolation(const Vec2 &r, V
 		POFF2Mesh_GetVertex(M, ivert[i].idx, &v[2*i+0]);
 	}
 	const double p[2] = {
-		r[0] - (L[0] * iface[0].off[0] + L[2] * iface[0].off[1]),
-		r[1] - (L[1] * iface[0].off[0] + L[3] * iface[0].off[1])
+		r[0] - (L[0] * iface.off[0] + L[2] * iface.off[1]),
+		r[1] - (L[1] * iface.off[0] + L[3] * iface.off[1])
 	};
-	geom_interpolate_polygon(nvert, v, p, c, NULL);
+//	geom_interpolate_polygon(nvert, v, p, c, NULL);
 	for(int i = 0; i < nvert; ++i){
 		pi.idx = ivert[i].idx;
 		pi.off[0] = ivert[i].off[0] + iface.off[0];

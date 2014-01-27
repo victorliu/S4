@@ -927,7 +927,7 @@ void TranslateAmplitudes(
 		if(0. != ab[i]){
 			ab[i]    *= std::exp(iq*dz);
 		}
-		if(0. != ab[i]){
+		if(0. != ab[i+n2]){
 			ab[i+n2] *= std::exp(iq*(thickness-dz));
 		}
 	}

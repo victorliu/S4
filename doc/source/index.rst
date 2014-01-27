@@ -45,7 +45,7 @@ Documentation Contents
 Releases
 --------
 
-* Version 1.1
+* Version 1.1.1
   
   Latest version using Lua 5.2.x and supports Python.
 
