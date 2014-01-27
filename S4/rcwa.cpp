@@ -1183,6 +1183,7 @@ void GetFieldOnGrid(
 	const size_t N = nxy[0]*nxy[1];
 	const int nxyoff[2] = { (int)(nxy[0]/2), (int)(nxy[1]/2) };
 	int inxy[2] = { (int)nxy[0], (int)nxy[1] };
+	int inxy_rev[2] = { (int)nxy[1], (int)nxy[0] };
 	
 	std::complex<double> *eh = (std::complex<double>*)rcwa_malloc(sizeof(std::complex<double>) * 8*n2);
 	
@@ -1199,7 +1200,7 @@ void GetFieldOnGrid(
 		from[i] = fft_alloc_complex(N);
 		to[i] = fft_alloc_complex(N);
 		memset(from[i], 0, sizeof(std::complex<double>) * N);
-		plan[i] = fft_plan_dft_2d(inxy, from[i], to[i], 1);
+		plan[i] = fft_plan_dft_2d(inxy_rev, from[i], to[i], 1);
 	}
 	
 	for(size_t i = 0; i < n; ++i){
