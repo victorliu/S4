@@ -100,7 +100,7 @@ double Jinc(double x){
 		return 2.0*cu*(p1*cos(t2)-q1*sin(t2))/x;
 	}
 }
-double j0(double x){ /* spherical bessel of first kind, order 0 */
+static double my_j0(double x){ /* spherical bessel of first kind, order 0 */
 	if(fabs(x) < 1e-9){
 		x = 1.-x*x/6.;
 	}else{
@@ -109,7 +109,7 @@ double j0(double x){ /* spherical bessel of first kind, order 0 */
 	return x;
 }
 double Sinc(double x){
-	return j0(M_PI*x);
+	return my_j0(M_PI*x);
 }
 static REAL shape_area(const shape *s){
 	switch(s->type){
