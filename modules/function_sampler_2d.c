@@ -208,6 +208,18 @@ function_sampler_2d function_sampler_2d_new(
 	if(xy[4] > T->maxxy[0]){ T->maxxy[0] = xy[4]; }
 	if(xy[5] > T->maxxy[1]){ T->maxxy[1] = xy[5]; }
 
+	/* Swap vertices if negative orientation */
+	if(orient2d(T->v[0].r, T->v[1].r, T->v[2].r) < 0){
+		T->v[1].r[0] = xy[4];
+		T->v[1].r[1] = xy[5];
+		T->v[1].r[2] = z[2];
+		T->v[1].id = id[2];
+		T->v[2].r[0] = xy[2];
+		T->v[2].r[1] = xy[3];
+		T->v[2].r[2] = z[1];
+		T->v[2].id = id[1];
+	}
+
 	/* Create the new halfedges */
 	SETHALF(0, 1, -1, 0, 0);
 	SETHALF(1, 2, -1, 1, 0);
