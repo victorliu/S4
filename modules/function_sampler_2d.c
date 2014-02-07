@@ -676,12 +676,12 @@ int DT_locate(const function_sampler_2d T, const double r[2], int *ih){
 		}
 		if(orient2d(T->v[FROM(h1)].r, T->v[FROM(h2)].r, r) < 0){
 			nih[nf] = FLIP(h1);
-			if(-1 == nih[nf]){ return 1; }
+			if(-1 == nih[nf]){ *ih = h1; return 1; }
 			nf++;
 		}
 		if(orient2d(T->v[FROM(h2)].r, T->v[FROM(h0)].r, r) < 0){
 			nih[nf] = FLIP(h2);
-			if(-1 == nih[nf]){ return 1; }
+			if(-1 == nih[nf]){ *ih = h2; return 1; }
 			nf++;
 		}
 		if(0 == nf){
