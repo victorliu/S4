@@ -1161,7 +1161,7 @@ static PyObject *S4Sim_SetOptions(S4Sim *self, PyObject *args, PyObject *kwds){
 	const char *polarization_basis = NULL;
 	
 	if(!PyArg_ParseTupleAndKeywords(
-		args, kwds, "|dsO&dO&sO&O&O&:SetOptions", kwlist,
+		args, kwds, "|isO&iO&sO&O&O&:SetOptions", kwlist,
 		&verbosity,
 		&lattice_truncation,
 		&bool_converter, &discretized_epsilon,
