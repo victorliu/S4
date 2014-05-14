@@ -83,7 +83,7 @@ function Sample2D(xrange, yrange, func, npar, num_edge_samples, num_int_samples,
 		zlist = func(xylist)
 		for i = 1,#xylist do
 			sampler1:Add(tlist[i], zlist[i])
-			local xx,yy = fnormalize(xylist[i])
+			local xx,yy = unpack(xylist[i])
 			sampler:Add(xx, yy, zlist[i])
 		end
 		-- Adaptively sample edge
@@ -99,7 +99,7 @@ function Sample2D(xrange, yrange, func, npar, num_edge_samples, num_int_samples,
 			zlist = func(xylist)
 			for i = 1,#xylist do
 				sampler1:Add(tlist[i], zlist[i])
-				local xx, yy = fnormalize(xylist[i])
+				local xx, yy = unpack(xylist[i])
 				sampler:Add(xx, yy, zlist[i])
 			end
 		end
@@ -116,23 +116,19 @@ function Sample2D(xrange, yrange, func, npar, num_edge_samples, num_int_samples,
 	end
 	local zlist = func(xylist)
 	for i = 1,#xylist do
-		local xx, yy = fnormalize(xylist[i])
+		local xx, yy = unpack(xylist[i])
 		sampler:Add(xx, yy, zlist[i])
 	end
 
 	-- Adaptively sample interior
 	while not sampler:IsDone() do
-		local uvlist = sampler:GetNext(npar)
-		xylist = {}
-		for i = 1,#uvlist do
-			xylist[i] = { funnormalize(uvlist[i]) }
-		end
+		local xylist = sampler:GetNext(npar)
 		zlist = func(xylist)
 		for i = 1,#xylist do
-			local xx, yy = unpack(uvlist[i])
+			local xx, yy = unpack(xylist[i])
 			sampler:Add(xx, yy, zlist[i])
 		end
 	end
 end
 
-Sample2D({0,10}, {0,10}, flist)
+Sample2D({0,5}, {0,5}, flist)
