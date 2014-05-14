@@ -120,7 +120,7 @@ void function_sampler_2d_options_defaults(function_sampler_2d_options *opts){
 
 function_sampler_2d function_sampler_2d_new(
 	const function_sampler_2d_options *options,
-	int ninit, const double *xy, double *z, int *id
+	int ninit, const double *xy, const double *z, const int *id
 ){
 	int i;
 	function_sampler_2d T;
@@ -207,6 +207,18 @@ function_sampler_2d function_sampler_2d_new(
 	if(xy[5] < T->minxy[1]){ T->minxy[1] = xy[5]; }
 	if(xy[4] > T->maxxy[0]){ T->maxxy[0] = xy[4]; }
 	if(xy[5] > T->maxxy[1]){ T->maxxy[1] = xy[5]; }
+
+	/* Swap vertices if negative orientation */
+	if(orient2d(T->v[0].r, T->v[1].r, T->v[2].r) < 0){
+		T->v[1].r[0] = xy[4];
+		T->v[1].r[1] = xy[5];
+		T->v[1].r[2] = z[2];
+		T->v[1].id = id[2];
+		T->v[2].r[0] = xy[2];
+		T->v[2].r[1] = xy[3];
+		T->v[2].r[2] = z[1];
+		T->v[2].id = id[1];
+	}
 
 	/* Create the new halfedges */
 	SETHALF(0, 1, -1, 0, 0);
@@ -655,23 +667,31 @@ int DT_locate(const function_sampler_2d T, const double r[2], int *ih){
 		const int h0 = *ih;
 		const int h1 = NEXT(h0);
 		const int h2 = NEXT(h1);
-		int nih;
+		int nih[3];
+		int nf = 0;
 		if(orient2d(T->v[FROM(h0)].r, T->v[FROM(h1)].r, r) < 0){
-			nih = FLIP(*ih);
-			if(-1 == nih){ return 1; }else{ *ih = nih; }
-		}else if(orient2d(T->v[FROM(h1)].r, T->v[FROM(h2)].r, r) < 0){
-			*ih = NEXT(*ih);
-			nih = FLIP(*ih);
-			if(-1 == nih){ return 1; }else{ *ih = nih; }
-		}else if(orient2d(T->v[FROM(h2)].r, T->v[FROM(h0)].r, r) < 0){
-			*ih = NEXT(*ih);
-			*ih = NEXT(*ih);
-			nih = FLIP(*ih);
-			if(-1 == nih){ return 1; }else{ *ih = nih; }
-		}else{
+			nih[nf] = FLIP(*ih);
+			if(-1 == nih[nf]){ return 1; }
+			nf++;
+		}
+		if(orient2d(T->v[FROM(h1)].r, T->v[FROM(h2)].r, r) < 0){
+			nih[nf] = FLIP(h1);
+			if(-1 == nih[nf]){ *ih = h1; return 1; }
+			nf++;
+		}
+		if(orient2d(T->v[FROM(h2)].r, T->v[FROM(h0)].r, r) < 0){
+			nih[nf] = FLIP(h2);
+			if(-1 == nih[nf]){ *ih = h2; return 1; }
+			nf++;
+		}
+		if(0 == nf){
 			if(h1 < *ih){ *ih = h1; }
 			if(h2 < *ih){ *ih = h2; }
 			return 0;
+		}else if(1 == nf){
+			*ih = nih[0];
+		}else{
+			*ih = nih[rand()%nf];
 		}
 	}
 }

@@ -18,7 +18,7 @@ typedef struct{
 void function_sampler_2d_options_defaults(function_sampler_2d_options *options);
 function_sampler_2d function_sampler_2d_new(
 	const function_sampler_2d_options *options,
-	int ninit, const double *xy, const double *z, int *id
+	int ninit, const double *xy, const double *z, const int *id
 );
 
 function_sampler_2d_options *function_sampler_2d_get_options(

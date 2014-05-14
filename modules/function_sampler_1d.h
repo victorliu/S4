@@ -39,6 +39,8 @@ function_sampler_1d_options *function_sampler_1d_get_options(
 	const function_sampler_1d sampler
 );
 void function_sampler_1d_destroy(function_sampler_1d sampler);
+/* Clears all added points */
+void function_sampler_1d_clear(const function_sampler_1d sampler);
 /* Returns nonzero if no further refinement is needed. */
 int  function_sampler_1d_is_done(const function_sampler_1d sampler);
 /* Returns the current number of refinement positions. */

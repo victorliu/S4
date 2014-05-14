@@ -2399,7 +2399,7 @@ int Simulation_GetEpsilon(Simulation *S, const double r[3], double eps[2]){
 			ft[0] *= sigma;
 			ft[1] *= sigma;
 		}
-		printf("g = %d, ft = %g, %g\n", g, ft[0], ft[1]);
+		//printf("g = %d, ft = %g, %g\n", g, ft[0], ft[1]);
 
 		//double theta = (S->k[0] + f[0])*r[0] + (S->k[1] + f[1])*r[1];
 		double theta = (f[0])*r[0] + (f[1])*r[1];
