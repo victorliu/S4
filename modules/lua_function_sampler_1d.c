@@ -50,11 +50,11 @@ static sampler_obj* getobj(lua_State *L, int i){
 static int FunctionSampler1D_new(lua_State *L){
 	function_sampler_1d_options options;
 	sampler_obj* obj;
-	
+
 	function_sampler_1d_options_defaults(&options);
 	obj = (sampler_obj*)lua_newuserdata(L, sizeof(sampler_obj));
 	luaL_setmetatable(L, sampler_typename);
-	
+
 	obj->sampler = function_sampler_1d_new(&options);
 	obj->nx = 0;
 	obj->x = NULL;
@@ -70,16 +70,20 @@ static int sampler_add(lua_State *L){
 	double x, y;
 	int id;
 	sampler_obj *obj = getobj(L, 1);
-	
+
 	x = luaL_checknumber(L, 2);
 	y = luaL_checknumber(L, 3);
 	id = luaL_optinteger(L, 4, 0);
-	
+
 	function_sampler_1d_add(obj->sampler, x, y, id);
-	
+
 	return 0;
 }
-
+static int sampler_clear(lua_State *L){
+	sampler_obj *obj = getobj(L, 1);
+	function_sampler_1d_clear(obj->sampler);
+	return 0;
+}
 static int sampler_is_done(lua_State *L){
 	sampler_obj *obj = getobj(L, 1);
 	lua_pushboolean(L, function_sampler_1d_is_done(obj->sampler));
@@ -88,7 +92,7 @@ static int sampler_is_done(lua_State *L){
 static int sampler_get_next(lua_State *L){
 	int num_req, i;
 	sampler_obj *obj = getobj(L, 1);
-	
+
 	num_req = luaL_optinteger(L, 2, 0);
 	if(0 == num_req){
 		num_req = function_sampler_1d_num_refine(obj->sampler);
@@ -103,7 +107,7 @@ static int sampler_get_next(lua_State *L){
 		lua_pushnumber(L, obj->x[i]);
 		lua_rawseti(L, -2, i+1);
 	}
-	
+
 	return 1;
 }
 
@@ -123,9 +127,9 @@ static int sampler_set_params(lua_State *L){
 	function_sampler_1d_options *opts;
 	sampler_obj *obj = getobj(L, 1);
 	luaL_argcheck(L, lua_istable(L, 2), 2, "Expected table of parameters");
-	
+
 	opts = function_sampler_1d_get_options(obj->sampler);
-	
+
 	lua_pushnil(L);
 	while(lua_next(L, 2)){
 		const char *key;
@@ -169,9 +173,9 @@ static int sampler_set_params(lua_State *L){
 static int sampler_get_samples(lua_State *L){
 	int i, n;
 	sampler_obj *obj = getobj(L, 1);
-	
+
 	n = function_sampler_1d_num_samples(obj->sampler);
-	
+
 	lua_createtable(L, n, 0);
 	for(i = 0; i < n; ++i){
 		double x, y;
@@ -184,10 +188,10 @@ static int sampler_get_samples(lua_State *L){
 		lua_rawseti(L, -2, 2);
 		lua_pushinteger(L, id);
 		lua_rawseti(L, -2, 3);
-		
+
 		lua_rawseti(L, -2, i+1);
 	}
-	
+
 	return 1;
 }
 
@@ -197,30 +201,31 @@ __declspec(dllexport)
 int luaopen_FunctionSampler1D(lua_State *L){
 	static const luaL_Reg sampler_lib[] = {
 		{ "Add", &sampler_add },
+		{ "Clear", &sampler_clear },
 		{ "IsDone", &sampler_is_done },
 		{ "GetNext", &sampler_get_next },
 		{ "SetParameters", &sampler_set_params },
 		{ "GetSamples", &sampler_get_samples },
 		{ NULL, NULL }
 	};
-	
+
 	static const luaL_Reg FunctionSampler1D_lib[] = {
 		{ "New", &FunctionSampler1D_new },
 		{ NULL, NULL }
 	};
-	
+
 	luaL_newlib(L, FunctionSampler1D_lib);
 
 	// Stack: MyLib
 	luaL_newmetatable(L, sampler_typename); // Stack: MyLib meta
 	luaL_newlib(L, sampler_lib);
 	lua_setfield(L, -2, "__index"); // Stack: MyLib meta
-	
+
 	lua_pushstring(L, "__gc");
 	lua_pushcfunction(L, sampler__gc); // Stack: MyLib meta "__gc" fptr
 	lua_settable(L, -3); // Stack: MyLib meta
 	lua_pop(L, 1); // Stack: MyLib
-	
+
 	return 1;
 }
 

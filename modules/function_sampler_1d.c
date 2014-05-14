@@ -101,10 +101,10 @@ function_sampler_1d function_sampler_1d_new(
 		function_sampler_1d_options_defaults(opts);
 	}
 	
-	sampler->x0 = 0;
-	sampler->x1 = 0;
-	sampler->y0 = 0;
-	sampler->y1 = 0;
+	sampler->x0 = DBL_MAX;
+	sampler->x1 = -DBL_MAX;
+	sampler->y0 = DBL_MAX;
+	sampler->y1 = -DBL_MAX;
 	sampler->ns = 0;
 	sampler->ns_alloc = 0;
 	sampler->s = NULL;
@@ -126,6 +126,16 @@ void function_sampler_1d_destroy(function_sampler_1d sampler){
 	free(sampler->s);
 	free(sampler->tmp);
 	free(sampler);
+}
+
+void function_sampler_1d_clear(const function_sampler_1d sampler){
+	if(NULL == sampler){ return; }
+	sampler->ns = 0;
+	sampler->nbad = 0;
+	sampler->x0 = DBL_MAX;
+	sampler->x1 = -DBL_MAX;
+	sampler->y0 = DBL_MAX;
+	sampler->y1 = -DBL_MAX;
 }
 
 int function_sampler_1d_is_done(const function_sampler_1d sampler){
