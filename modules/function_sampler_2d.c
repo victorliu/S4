@@ -120,7 +120,7 @@ void function_sampler_2d_options_defaults(function_sampler_2d_options *opts){
 
 function_sampler_2d function_sampler_2d_new(
 	const function_sampler_2d_options *options,
-	int ninit, double *xy, double *z, int *id
+	int ninit, const double *xy, double *z, int *id
 ){
 	int i;
 	function_sampler_2d T;
