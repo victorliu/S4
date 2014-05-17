@@ -254,6 +254,13 @@ static int sampler_get_samples(lua_State *L){
 	
 	return 1;
 }
+static int sampler__len(lua_State *L){
+	sampler_obj *obj = getobj(L, 1);
+	
+	lua_pushinteger(L, function_sampler_2d_num_samples(obj->sampler));
+	
+	return 1;
+}
 
 #ifdef WIN32
 __declspec(dllexport)
@@ -283,6 +290,11 @@ int luaopen_FunctionSampler2D(lua_State *L){
 	lua_pushstring(L, "__gc");
 	lua_pushcfunction(L, sampler__gc); // Stack: MyLib meta "__gc" fptr
 	lua_settable(L, -3); // Stack: MyLib meta
+	
+	lua_pushstring(L, "__len");
+	lua_pushcfunction(L, sampler__len); // Stack: MyLib meta "__gc" fptr
+	lua_settable(L, -3); // Stack: MyLib meta
+	
 	lua_pop(L, 1); // Stack: MyLib
 	
 	return 1;
