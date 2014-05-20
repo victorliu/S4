@@ -166,7 +166,7 @@ function Sample2DBox(argtable)
 		end
 	end
 	-- Compute at the uv locations in chunks of size Ncores
-	for i = 1,Ncores,#xylist do
+	for i = 1,#xylist,Ncores do
 		local xybatch = {}
 		local uvbatch = {}
 		local Sbatch = {}
