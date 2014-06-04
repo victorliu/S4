@@ -784,10 +784,10 @@ int Simulation_InitSolution(Simulation *S){
 		int remaining = (S->n_G-1)/2;
 		S->n_G = 1+2*remaining;
 		for(i = 0; i < remaining; ++i){
-			sol->G[2+4*i+0] = i+1;
-			sol->G[2+4*i+1] = 0;
-			sol->G[2+4*i+2] = -i-1;
-			sol->G[2+4*i+3] = 0;
+			sol->G[2+4*i+0] = (i+1) * S->Lk[0];
+			sol->G[2+4*i+1] = (i+1) * S->Lk[1];
+			sol->G[2+4*i+2] = -(i-1) * S->Lk[0];
+			sol->G[2+4*i+3] = -(i-1) * S->Lk[1];
 		}
 	}
 	S4_VERB(1, "Using %d G-vectors\n", S->n_G);
