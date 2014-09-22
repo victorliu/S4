@@ -7,7 +7,7 @@ Python API reference
 
 |S4| can be built as a `Python <http://python.org>`_ extension, in addition to the original `Lua <http://www.lua.org>`_ interface.
 The current Python interface is not as fully featured as the Lua interface, but it should ultimately achieve feature parity.
-Much auxilliary functionality, such as numerical integration, is not included here since `Numpy <http://www.numpy.org/>`_ and `Scipy <http://www.scipy.org/>`_ can easily be used instead.
+Much auxiliary functionality, such as numerical integration, is not included here since `Numpy <http://www.numpy.org/>`_ and `Scipy <http://www.scipy.org/>`_ can easily be used instead.
 
 S4 module
 ---------
@@ -22,7 +22,7 @@ All top level functions of |S4| are located in the ``S4`` library.
    
    Usage::
    
-	S = S4.NewSimulation(Lattice=((1,0),(0,1)), NumBasis=100)
+	S = S4.New(Lattice=((1,0),(0,1)), NumBasis=100)
    
    Arguments:
    
