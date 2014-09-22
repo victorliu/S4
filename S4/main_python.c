@@ -642,7 +642,6 @@ static PyObject *S4Sim_SetFrequency(S4Sim *self, PyObject *args){
 	Py_RETURN_NONE;
 }
 static PyObject *S4Sim_GetReciprocalLattice(S4Sim *self, PyObject *args){
-	if(!PyArg_ParseTuple(args, ":GetReciprocalLattice")){ return NULL; }
 	return PyTuple_Pack(2,
 		PyTuple_Pack(2,
 			PyFloat_FromDouble(self->S.Lk[0]), PyFloat_FromDouble(self->S.Lk[1])
@@ -725,7 +724,6 @@ static PyObject *S4Sim_GetBasisSet(S4Sim *self, PyObject *args){
 	int *G;
 	int n, i, ret;
 	PyObject *rv;
-	if(!PyArg_ParseTuple(args, ":GetBasisSet")){ return NULL; }
 		
 	ret = Simulation_InitSolution(&(self->S));
 	if(0 != ret){
@@ -1121,7 +1119,6 @@ static PyObject *S4Sim_GetSMatrixDeterminant(S4Sim *self, PyObject *args){
 	int ret;
 	double mant[2], base;
 	int expo;
-	if(!PyArg_ParseTuple(args, ":GetSMatrixDeterminant")){ return NULL; }
 	
 	ret = Simulation_GetSMatrixDeterminant(&(self->S), mant, &base, &expo);
 	if(0 != ret){
