@@ -468,6 +468,8 @@ Outputs requiring solutions
 
     forw,back
         Tuples of length 2*NumBasis containing the complex amplitudes of each forward and backward mode.
+        In each tuple, the first NumBasis entries are for one of the polarizations, and the second
+        NumBasis entries are for the other polarization.
 
 .. method:: Simulation.GetPowerFlux(Layer, zOffset=0)
 
