@@ -80,7 +80,7 @@ double* Interpolator_Get(const Interpolator I, double x, int *ny){
 			for(im1 = 0, i = 1; i < I->n; im1 = i++){
 				if((x < I->xy[i*ld]) || (i == I->n-1)){// x coordinate lies between i-1 and i
 					int im2 = (im1 > 0 ? im1-1 : 0);
-					int ip1 = (i < I->n-1 ? i-1 : i);
+					int ip1 = (i < I->n-1 ? i+1 : i);
 					int j;
 					const double t = (x - I->xy[ld*im1+0]) / (I->xy[ld*i+0] - I->xy[ld*im1+0]);
 					const double h00 = (2*t - 3)*t*t + 1;
