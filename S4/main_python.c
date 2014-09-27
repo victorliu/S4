@@ -755,7 +755,7 @@ static PyObject *S4Sim_GetAmplitudes(S4Sim *self, PyObject *args, PyObject *kwds
 	double offset = 0;
 	double *amp;
 	Layer *layer;
-	PyObject *rv;
+	PyObject *rv, *rventry;
 	
 	if(!PyArg_ParseTupleAndKeywords(args, kwds, "s|d:GetAmplitudes", kwlist, &layername, &offset)){ return NULL; }
 	
@@ -774,9 +774,10 @@ static PyObject *S4Sim_GetAmplitudes(S4Sim *self, PyObject *args, PyObject *kwds
 	
 	rv = PyTuple_New(2);
 	for(j = 0; j < 2; ++j){
-		PyTuple_SetItem(rv, j, PyTuple_New(n));
+		rventry = PyTuple_New(2*n);
+		PyTuple_SetItem(rv, j, rventry);
 		for(i = 0; i < 2*n; ++i){
-			PyTuple_SetItem(rv, i,
+			PyTuple_SetItem(rventry, i,
 				PyComplex_FromDoubles(amp[4*n*j+2*i+0], amp[4*n*j+2*i+1])
 			);
 		}
