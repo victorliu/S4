@@ -41,13 +41,18 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+lua_State *new_S4_lua_state();
+
 void fft_init();
 void fft_destroy();
 
+#ifdef HAVE_LIBPTHREAD
+#include <pthread.h>
+pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
 #ifdef S4_DEBUG
 # include "debug.h"
 # ifdef HAVE_LIBPTHREAD
-pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 int count = 0;
 pthread_cond_t g_cond = PTHREAD_COND_INITIALIZER;
 # endif
@@ -100,10 +105,12 @@ unsigned int get_max_threads(){
 
 void S4_threads_init(lua_State *L, unsigned int nthreads){
 #ifdef WIN32
+/*
 	if(!pthread_win32_process_attach_np()){
 		fprintf(stderr, "Pthread initialization failed.\n");
 		return;
 	}
+*/
 #endif
 	pthread_t *thread;
 	lua_pushlightuserdata(L, (void *)&thread_count_key);
@@ -128,12 +135,13 @@ void S4_threads_destroy(lua_State *L){
 	lua_pop(L, 1);
 	free(thread);
 #ifdef WIN32
-	pthread_win32_process_detach_np();
+//	pthread_win32_process_detach_np();
 #endif
 }
 void S4_threads_join(lua_State *L, int n){
-	int i, nthreads;
+	int i, nthreads = n;
 	pthread_t *thread;
+pthread_mutex_lock(&g_mutex);
 	lua_pushlightuserdata(L, (void *)&thread_count_key);
 	lua_gettable(L, LUA_REGISTRYINDEX);
 	nthreads = lua_tointeger(L, -1);
@@ -143,13 +151,16 @@ void S4_threads_join(lua_State *L, int n){
 	thread = (pthread_t*)lua_topointer(L, -1);
 	lua_pop(L, 1);
 	if(n < nthreads){ nthreads = n; }
+pthread_mutex_unlock(&g_mutex);
 	for(i = 0; i < nthreads; ++i){
+//printf("In S4_threads_join, joining %d\n", i);
 		pthread_join(thread[i], NULL);
 	}
 }
 void S4_threads_run(lua_State *L, int i, void* (*func)(void*), void *data){
 	int nthreads;
 	pthread_t *thread;
+pthread_mutex_lock(&g_mutex);
 	lua_pushlightuserdata(L, (void *)&thread_count_key);
 	lua_gettable(L, LUA_REGISTRYINDEX);
 	nthreads = lua_tointeger(L, -1);
@@ -158,7 +169,8 @@ void S4_threads_run(lua_State *L, int i, void* (*func)(void*), void *data){
 	lua_gettable(L, LUA_REGISTRYINDEX);
 	thread = (pthread_t*)lua_topointer(L, -1);
 	lua_pop(L, 1);
-	
+pthread_mutex_unlock(&g_mutex);
+//printf("In S4_threads_run, running on thread %d/%d\n", i, nthreads);
 	if(i >= nthreads){
 		i = i%nthreads;
 		pthread_join(thread[i], NULL);
@@ -233,6 +245,15 @@ void HandleSolutionErrorCode(lua_State *L, const char *fname, int code){
 	}
 }
 
+const char S4_simulation_typename[] = "S4.Simulation";
+Simulation *S4L_get_simulation(lua_State *L, int index){
+	Simulation **pS = (Simulation **)luaL_checkudata(L, index, S4_simulation_typename);
+	if(NULL == pS){ return NULL; }
+	return *pS;
+}
+
+
+
 typedef struct S4_solve_in_parallel_data_{
 	Simulation *S;
 	Layer *layer;
@@ -257,7 +278,7 @@ static int S4L_SolveInParallel(lua_State *L){
 	data = (S4_solve_in_parallel_data*)malloc(sizeof(S4_solve_in_parallel_data)*(n-1));
 	for(i = 2; i <= n; ++i){
 		Layer *layer;
-		Simulation *S = (Simulation *)luaL_checkudata(L, i, "S4.Simulation");
+		Simulation *S = S4L_get_simulation(L, i);
 		luaL_argcheck(L, S != NULL, i, "SolveInParallel: 'Simulation' object expected.");
 		layer = Simulation_GetLayerByName(S, layer_name, NULL);
 		if(NULL == layer){
@@ -273,6 +294,301 @@ static int S4L_SolveInParallel(lua_State *L){
 	
 	return 0;
 }
+
+
+static void deep_copy_1(lua_State *Lfrom, int index, lua_State *Lto, int level){
+	if(level > 8){
+		luaL_error(Lfrom, "Too many levels of recursion in deep copy");
+	}
+	switch(lua_type(Lfrom, index)){
+	case LUA_TNUMBER:
+		lua_pushnumber(Lto, lua_tonumber(Lfrom, index));
+		break;
+	case LUA_TBOOLEAN:
+		lua_pushboolean(Lto, lua_toboolean(Lfrom, index));
+		break;
+	case LUA_TSTRING: {
+		size_t length;
+		const char *string = lua_tolstring(Lfrom, index, &length);
+		lua_pushlstring(Lto, string, length);
+		break;
+	}
+	case LUA_TLIGHTUSERDATA: {
+		lua_pushlightuserdata(Lto, lua_touserdata(Lfrom, index));
+		break;
+	}
+	case LUA_TNIL:
+		lua_pushnil(Lto);
+		break;
+	case LUA_TTABLE:
+		/* make sure there is room on the new state for 3 values
+		 * (table,key,value) */
+		if (!lua_checkstack(Lto, 3)) {
+			luaL_error(Lfrom, "To stack overflow");
+		}
+		/* make room on from stack for key/value pairs */
+		luaL_checkstack(Lfrom, 2, "From stack overflow");
+		lua_newtable(Lto);
+		lua_pushnil(Lfrom);
+		while(lua_next(Lfrom, index) != 0){
+			/* key is at (top - 1), value at (top), but we need to normalize
+			 * these to positive indices */
+			int kv_pos = lua_gettop(Lfrom);
+			deep_copy_1(Lfrom, kv_pos - 1, Lto, level+1);
+			deep_copy_1(Lfrom, kv_pos    , Lto, level+1);
+			/* Copied key and value are now at -2 and -1 in dest */
+			lua_settable(Lto, -3);
+			/* Pop value for next iteration */
+			lua_pop(Lfrom, 1);
+		}
+		break;
+	case LUA_TFUNCTION:
+	case LUA_TUSERDATA:
+	case LUA_TTHREAD:
+	default:
+		lua_pushfstring(Lto, "Unsupported value: %s: %p",
+			lua_typename(Lfrom, lua_type(Lfrom, index)),
+			lua_topointer(Lfrom, index)
+		);
+	}
+}
+static void deep_copy(int unpack, lua_State *Lfrom, int index, lua_State *Lto){
+	if(unpack){
+		int i, n;
+		lua_len(Lfrom, index);
+		n = lua_tointeger(Lfrom, -1);
+		lua_pop(Lfrom, 1);
+		for(i = 0; i < n; ++i){
+			lua_pushinteger(Lfrom, i+1);
+			lua_gettable(Lfrom, index);
+			deep_copy_1(Lfrom, lua_gettop(Lfrom), Lto, 0);
+			lua_pop(Lfrom, 1);
+		}
+	}else{
+		deep_copy_1(Lfrom, index, Lto, 0);
+	}
+}
+
+/* ParallelInvoke(S_list, func_name, params_list)
+ *   S_list:      List of Simulation objects
+ *   func_name:   String of function to invoke
+ *   params_list: List of parameter lists to each Simulation object
+ * If len(params_list) < len(S_list), then
+ *    S_list[i] is called with param_list[i%len(S_list)] (for 0 based indexing)
+ *
+ * Second attempt: Spin up a new lua_State for each thread!
+ */
+ 
+typedef struct{
+	int i; // index of S in S_list, 0 based
+	int iargs; // index of arguments
+	lua_State *L; // master state
+	Simulation *S;
+	const char *func_name;
+} ParallelInvokeData;
+static void stackDump (lua_State *L) {
+      int i;
+      int top = lua_gettop(L);
+      for (i = 1; i <= top; i++) {  /* repeat for each level */
+        int t = lua_type(L, i);
+        switch (t) {
+    
+          case LUA_TSTRING:  /* strings */
+            printf("`%s'", lua_tostring(L, i));
+            break;
+    
+          case LUA_TBOOLEAN:  /* booleans */
+            printf(lua_toboolean(L, i) ? "true" : "false");
+            break;
+    
+          case LUA_TNUMBER:  /* numbers */
+            printf("%g", lua_tonumber(L, i));
+            break;
+    
+          default:  /* other values */
+            printf("%s", lua_typename(L, t));
+            break;
+    
+        }
+        printf("  ");  /* put a separator */
+      }
+      printf("\n");  /* end the listing */
+    }
+void* ParallelInvoke_func(void *data){
+	int j;
+	ParallelInvokeData *pid = (ParallelInvokeData*)data;
+	lua_State *Lm = pid->L;
+	int iS, nargs = 0;
+
+//printf("thread %d enter, master Lua stack top = %d\n", pid->i, lua_gettop(Lm));
+	
+	lua_State *L = new_S4_lua_state();
+	// Add the existing simulation object to the new state
+	Simulation **pS = (Simulation **)lua_newuserdata(L, sizeof(Simulation*));
+	luaL_getmetatable(L, "S4.Simulation");
+	lua_setmetatable(L, -2);
+	*pS = pid->S;
+	Simulation *S = *pS;
+
+	// This is where things are tricky...
+	{ // First set up the function call; each thread needs exclusive access to the Lua state
+		pthread_mutex_lock(&g_mutex);
+
+		// Current stack: ... S
+		iS = lua_gettop(L);
+		
+		// First get the function
+		lua_getmetatable(L, -1);
+		lua_pushstring(L, "__index");
+		lua_gettable(L, -2);
+		/*{
+			lua_pushnil(L);
+			 while (lua_next(L, -2) != 0) {
+				printf("%s - %s\n",
+				lua_typename(L, lua_type(L, -2)),
+				lua_typename(L, lua_type(L, -1)));
+				printf("  key = %s\n", lua_tostring(L, -2));
+				// removes 'value'; keeps 'key' for next iteration
+				lua_pop(L, 1);
+			}
+		}*/
+		
+		lua_pushstring(L, pid->func_name);
+		lua_gettable(L, -2);
+		if(lua_isnil(L, -1)){
+			S4L_error(Lm, "ParallelInvoke: function '%s' not found.", pid->func_name);
+			lua_pop(L, 2);
+			pthread_mutex_unlock(&g_mutex);
+			return;
+		}
+		// Current stack: ... S meta __index func
+		lua_insert(L, -4);
+		lua_pop(L, 2);
+		// Current stack: ... func S
+		
+		// Now pull the args, assumed to be in a table at stack index 3
+		if(pid->iargs >= 0){
+			if(lua_istable(Lm, 3)){
+				lua_pushinteger(Lm, pid->iargs + 1);
+				lua_gettable(Lm, 3);
+				
+				// Current stack: ... func S [table of args]
+				if(lua_istable(Lm, -1)){
+					lua_len(Lm, -1);
+					nargs = lua_tointeger(Lm, -1);
+					lua_pop(Lm, 1);
+				
+					deep_copy(1, Lm, lua_gettop(Lm), L);
+				}else{
+					nargs = 1;
+					deep_copy(0, Lm, lua_gettop(Lm), L);
+				}
+				lua_pop(Lm, 1);
+			}else{
+				nargs = 1;
+				deep_copy(0, Lm, 3, L);
+			}
+		}
+		// Current stack: ... func S arg1 arg2 ...
+		pthread_mutex_unlock(&g_mutex);
+	}
+	int ret = lua_pcall(L, nargs+1, LUA_MULTRET, 0);
+	if(LUA_OK != ret){
+		pthread_mutex_lock(&g_mutex);
+		S4L_error(Lm, "ParallelInvoke: error in function: %s.", lua_tostring(L, -1));
+		lua_pop(L, 1);
+		pthread_mutex_unlock(&g_mutex);
+	}
+	
+	{ // Now copy all results back
+		pthread_mutex_lock(&g_mutex);
+		
+		int nret = lua_gettop(L) - iS;
+		lua_createtable(Lm, nret, 0);
+		for(j = 0; j < nret; ++j){
+			deep_copy(0, L, j+1, Lm);
+			lua_rawseti(Lm, -2, j+1);
+		}
+		lua_rawseti(Lm, 4, pid->i+1);
+		
+		pthread_mutex_unlock(&g_mutex);
+	}
+	
+//printf("thread %d exit, master Lua stack top = %d\n", pid->i, lua_gettop(Lm));
+	return NULL;
+}
+int S4L_ParallelInvoke(lua_State *L){
+	int i;
+	ParallelInvokeData *data = NULL;
+	
+//printf("Entering ParallelInvoke\n"); fflush(stdout);
+	//// See if we have arguments
+	int nargs = 0;
+	{
+		if(lua_gettop(L) < 3){
+			lua_pushnil(L);
+			nargs = 0;
+		}else if(lua_istable(L, 3)){
+			lua_len(L, 3); // pushes length onto stack
+			nargs = lua_tointeger(L, -1); lua_pop(L, 1);
+		}else{
+			nargs = 1;
+		}
+	}
+	
+	//// Get vector of Simulation pointers
+	int nS = 0; // number of S objects
+	{
+		luaL_checktype(L, 1, LUA_TTABLE);
+		lua_len(L, 1); // pushes length onto stack
+		nS = lua_tointeger(L, -1); lua_pop(L, 1);
+		if(0 == nS){ return 0; }
+		data = (ParallelInvokeData*)malloc(sizeof(ParallelInvokeData) * nS);
+		for(i = 0; i < nS; ++i){
+			lua_pushinteger(L, i+1);
+			lua_gettable(L, 1);
+			data[i].i = i;
+			data[i].L = L;
+			data[i].S = S4L_get_simulation(L, -1);
+			if(nargs > 0){
+				data[i].iargs = i % nargs;
+			}else{
+				data[i].iargs = -1;
+			}
+			luaL_argcheck(L, data[i].S != NULL, 1, "ParallelInvoke: 'Simulation' object expected.");
+			lua_pop(L, 1);
+		}
+	}
+	
+	//// Pull in the function name
+	char *func_name = strdup(luaL_checkstring(L, 2));
+	for(i = 0; i < nS; ++i){
+		data[i].func_name = func_name;
+	}
+	
+	// also need to init the mutex
+	
+	// Create the return table
+	lua_createtable(L, nS, 0);
+	
+	//// Spawn threads (this section is just an outline)
+	for(i = 0; i < nS; ++i){
+		S4_threads_run(L, i, &ParallelInvoke_func, &data[i]);
+	}
+//printf("called S4_threads_run\n"); fflush(stdout);
+	S4_threads_join(L, nS);
+//printf("called S4_threads_join\n"); fflush(stdout);
+	
+	free(func_name);
+	free(data);
+
+//printf("Exiting ParallelInvoke\n"); fflush(stdout);
+	return 1;
+}
+
+
+
+
 
 static int S4L_ConvertUnits(lua_State *L){
 	double value;
@@ -732,36 +1048,41 @@ static int S4L_SpectrumSampler_GetSpectrum(lua_State *L){
 	}
 	return 1;
 }
+
+
 static int S4L_NewSimulation(lua_State *L){
-	Simulation *S;
+	Simulation **pS;
 	lua_gc(L, LUA_GCCOLLECT, 0);
-	S = (Simulation *)lua_newuserdata(L, sizeof(Simulation));
-	luaL_getmetatable(L, "S4.Simulation");
+	pS = (Simulation**)lua_newuserdata(L, sizeof(Simulation*));
+	luaL_getmetatable(L, S4_simulation_typename);
 	lua_setmetatable(L, -2);
-	Simulation_Init(S);
+	*pS = (Simulation*)malloc(sizeof(Simulation));
+	Simulation_Init(*pS);
 	return 1;
 }
 static int S4L_Simulation__gc(lua_State *L){
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	Simulation_Destroy(S);
+	free(S);
 	return 0;
 }
 static int S4L_Simulation_Clone(lua_State *L){
-	Simulation *T;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation **pT;
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "Clone: 'Simulation' object expected.");
 	
-	T = (Simulation *)lua_newuserdata(L, sizeof(Simulation));
-	luaL_getmetatable(L, "S4.Simulation");
+	pT = (Simulation **)lua_newuserdata(L, sizeof(Simulation*));
+	*pT = (Simulation*)malloc(sizeof(Simulation));
+	luaL_getmetatable(L, S4_simulation_typename);
 	lua_setmetatable(L, -2);
 	
-	Simulation_Clone(S, T);
+	Simulation_Clone(S, *pT);
 	return 1;
 }
 
 static int S4L_Simulation_SetLattice(lua_State *L){
 	int i,j;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetLattice: 'Simulation' object expected.");
 	
 	if(lua_isnumber(L, 2)){
@@ -805,7 +1126,7 @@ static int S4L_Simulation_SetLattice(lua_State *L){
 	return 0;
 }
 static int S4L_Simulation_GetReciprocalLattice(lua_State *L){
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetReciprocalLattice: 'Simulation' object expected.");
 	
 	lua_createtable(L, 2, 0);    /* {}                   */
@@ -827,7 +1148,7 @@ static int S4L_Simulation_GetReciprocalLattice(lua_State *L){
 
 static int S4L_Simulation_SetNumG(lua_State *L){
 	int n;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetNumG: 'Simulation' object expected.");
 	n = luaL_checkint(L, 2);
 	if(n < 1){
@@ -837,13 +1158,13 @@ static int S4L_Simulation_SetNumG(lua_State *L){
 	return 0;
 }
 static int S4L_Simulation_GetNumG(lua_State *L){
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetNumG: 'Simulation' object expected.");
 	lua_pushinteger(L, Simulation_GetNumG(S, NULL));
 	return 1;
 }
 static int S4L_Simulation_SetResolution(lua_State *L){
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetResolution: 'Simulation' object expected.");
 	S->options.resolution = luaL_checkint(L, 2);
 	if(S->options.resolution < 2){
@@ -856,7 +1177,7 @@ static int S4L_Simulation_AddMaterial(lua_State *L){
 	double eps[18];
 	Material *M;
 	const char *name;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "AddMaterial: 'Simulation' object expected.");
 	
 	M = Simulation_AddMaterial(S);
@@ -918,7 +1239,7 @@ static int S4L_Simulation_SetMaterial(lua_State *L){
 	const char *name;
 	Material *M;
 	int existed = 1;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetMaterial: 'Simulation' object expected.");
 	
 	name = luaL_checklstring(L, 2, NULL);
@@ -988,7 +1309,7 @@ static int S4L_Simulation_SetMaterial(lua_State *L){
 static int S4L_Simulation_AddLayer(lua_State *L){
 	Layer *layer;
 	const char *name;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "AddLayer: 'Simulation' object expected.");
 	
 	layer = Simulation_AddLayer(S);
@@ -1008,7 +1329,7 @@ static int S4L_Simulation_AddLayer(lua_State *L){
 static int S4L_Simulation_SetLayer(lua_State *L){
 	Layer *layer;
 	const char *name;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetLayer: 'Simulation' object expected.");
 	
 	name = luaL_checklstring(L, 2, NULL);
@@ -1033,7 +1354,7 @@ static int S4L_Simulation_SetLayer(lua_State *L){
 static int S4L_Simulation_SetLayerThickness(lua_State *L){
 	Layer *layer;
 	const char *name;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetLayerThickness: 'Simulation' object expected.");
 	
 	name = luaL_checklstring(L, 2, NULL);
@@ -1053,7 +1374,7 @@ static int S4L_Simulation_SetLayerThickness(lua_State *L){
 static int S4L_Simulation_AddLayerCopy(lua_State *L){
 	Layer *layer;
 	const char *name;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "AddLayerCopy: 'Simulation' object expected.");
 	
 	layer = Simulation_AddLayer(S);
@@ -1086,7 +1407,7 @@ static int S4L_Simulation_SetLayerPatternCircle(lua_State *L){
 	Layer *layer;
 	Material *M;
 	double center[2];
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetLayerPatternCircle: 'Simulation' object expected.");
 	
 	layer_name = luaL_checklstring(L, 2, NULL);
@@ -1140,7 +1461,7 @@ static int S4L_Simulation_SetLayerPatternEllipse(lua_State *L){
 	Layer *layer;
 	Material *M;
 	double center[2], halfwidths[2];
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetLayerPatternEllipse: 'Simulation' object expected");
 	
 	layer_name = luaL_checklstring(L, 2, NULL);
@@ -1208,7 +1529,7 @@ static int S4L_Simulation_SetLayerPatternRectangle(lua_State *L){
 	Layer *layer;
 	Material *M;
 	double center[2], halfwidths[2];
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetLayerPatternRectangle: 'Simulation' object expected.");
 	
 	layer_name = luaL_checklstring(L, 2, NULL);
@@ -1279,7 +1600,7 @@ static int S4L_Simulation_SetLayerPatternPolygon(lua_State *L){
 	int material_index;
 	Layer *layer;
 	Material *M;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetLayerPatternPolygon: 'Simulation' object expected.");
 	
 	layer_name = luaL_checklstring(L, 2, NULL);
@@ -1347,7 +1668,7 @@ static int S4L_Simulation_SetLayerPatternPolygon(lua_State *L){
  *   If integer is negative, indicates a backward propagating mode.
  */
 static int S4L_Simulation_SetExcitationExterior(lua_State *L){
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	double *ex;
 	int *exg;
 	const char *pol;
@@ -1412,7 +1733,7 @@ static int S4L_Simulation_SetExcitationExterior(lua_State *L){
 }
 
 static int S4L_Simulation_SetExcitationInterior(lua_State *L){
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	S4L_error(L, "SetExcitationInterior: Not implemented.");
 	return 0;
 }
@@ -1426,7 +1747,7 @@ static int S4L_Simulation_SetExcitationInterior(lua_State *L){
  *   6 amplitude and phase (numeric table of length 2; phase in degrees)
  */
 static int S4L_Simulation_SetExcitationDipole(lua_State *L){
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	const char *layer;
 	int j, ret;
 	double k[2], pos[2], moment[6], ampphase[2];
@@ -1517,7 +1838,7 @@ static int S4L_Simulation_SetExcitationPlanewave(lua_State *L){
 	double angle[2];
 	double pol_s[2]; /* s polarization; E out of plane */
 	double pol_p[2]; /* p polarization; E in plane */
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetExcitationPlanewave: 'Simulation' object expected.");
 
 	Simulation_DestroySolution(S);
@@ -1569,7 +1890,7 @@ static int S4L_Simulation_SetExcitationPlanewave(lua_State *L){
 	return 0;
 }
 static int S4L_Simulation_SetFrequency(lua_State *L){
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetFrequency: 'Simulation' object expected");
 
 	Simulation_DestroySolution(S);
@@ -1594,7 +1915,7 @@ static int S4L_Simulation_SetFrequency(lua_State *L){
 static int S4L_Simulation_GetGList(lua_State *L){
 	int *G;
 	int n, i, j, ret;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetGList: 'Simulation' object expected.");
 	
 	ret = Simulation_InitSolution(S);
@@ -1627,7 +1948,7 @@ static int S4L_Simulation_GetGList(lua_State *L){
 static int S4L_Simulation_GetDiffractionOrder(lua_State *L){
 	int *G;
 	int u, v = 0, n, i;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetDiffractionOrder: 'Simulation' object expected.");
 	
 	u = luaL_checkint(L, 2);
@@ -1667,7 +1988,7 @@ static int S4L_Simulation_GetPoyntingFlux(lua_State *L){
 	int ret;
 	const char *layer_name;
 	Layer *layer;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetPoyntingFlux: 'Simulation' object expected.");
 
 	layer_name = luaL_checklstring(L, 2, NULL);
@@ -1697,7 +2018,7 @@ static int S4L_Simulation_GetPoyntingFluxByOrder(lua_State *L){
 	int n, i, j, ret;
 	const char *layer_name;
 	Layer *layer;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetPoyntingFluxByOrder: 'Simulation' object expected.");
 
 	layer_name = luaL_checklstring(L, 2, NULL);
@@ -1746,7 +2067,7 @@ static int S4L_Simulation_GetAmplitudes(lua_State *L){
 	int n, i, k, ret;
 	const char *layer_name;
 	Layer *layer;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetAmplitudes: 'Simulation' object expected.");
 
 	layer_name = luaL_checklstring(L, 2, NULL);
@@ -1806,7 +2127,7 @@ static int S4L_Simulation_GetAmplitudes(lua_State *L){
 
 /*
 static int S4L_Simulation_EnableBasisFieldDump(lua_State *L){
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "EnableBasisFieldDump: 'Simulation' object expected.");
 	
 	S->options.do_vector_field_dump = 1;
@@ -1814,7 +2135,7 @@ static int S4L_Simulation_EnableBasisFieldDump(lua_State *L){
 }
 */
 static int S4L_Simulation_UseDiscretizedEpsilon(lua_State *L){
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "UseDiscretizedEpsilon: 'Simulation' object expected.");
 	
 	if(lua_gettop(L) > 1){
@@ -1825,7 +2146,7 @@ static int S4L_Simulation_UseDiscretizedEpsilon(lua_State *L){
 	return 0;
 }
 static int S4L_Simulation_UseSubpixelSmoothing(lua_State *L){
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "UseSubpixelSmoothing: 'Simulation' object expected.");
 	
 	if(lua_gettop(L) > 1){
@@ -1836,7 +2157,7 @@ static int S4L_Simulation_UseSubpixelSmoothing(lua_State *L){
 	return 0;
 }
 static int S4L_Simulation_UseLanczosSmoothing(lua_State *L){
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "UseLanczosSmoothing: 'Simulation' object expected.");
 	
 	if(lua_gettop(L) > 1){
@@ -1849,7 +2170,7 @@ static int S4L_Simulation_UseLanczosSmoothing(lua_State *L){
 static int S4L_Simulation_SetLanczosSmoothingWidth(lua_State *L){
 	double prevwidth, width;
 	int prevpower, power = 1;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "S4L_Simulation_SetLanczosSmoothingWidth: 'Simulation' object expected.");
 	width = luaL_checknumber(L, 2);
 	if(lua_gettop(L) > 2){
@@ -1872,7 +2193,7 @@ static int S4L_Simulation_SetLanczosSmoothingWidth(lua_State *L){
 	}
 }
 static int S4L_Simulation_UsePolarizationDecomposition(lua_State *L){
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "UsePolarizationDecomposition: 'Simulation' object expected.");
 	
 	if(lua_gettop(L) > 1){
@@ -1883,7 +2204,7 @@ static int S4L_Simulation_UsePolarizationDecomposition(lua_State *L){
 	return 0;
 }
 static int S4L_Simulation_UseJonesVectorBasis(lua_State *L){
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "UseJonesVectorBasis: 'Simulation' object expected.");
 	
 	if(lua_gettop(L) > 1){
@@ -1894,7 +2215,7 @@ static int S4L_Simulation_UseJonesVectorBasis(lua_State *L){
 	return 0;
 }
 static int S4L_Simulation_UseNormalVectorBasis(lua_State *L){
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "UseNormalVectorBasis: 'Simulation' object expected.");
 	
 	if(lua_gettop(L) > 1){
@@ -1905,7 +2226,7 @@ static int S4L_Simulation_UseNormalVectorBasis(lua_State *L){
 	return 0;
 }
 static int S4L_Simulation_UseExperimentalFMM(lua_State *L){
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "UseExperimentalFMM: 'Simulation' object expected.");
 	
 	if(lua_gettop(L) > 1){
@@ -1918,7 +2239,7 @@ static int S4L_Simulation_UseExperimentalFMM(lua_State *L){
 
 static int S4L_Simulation_SetBasisFieldDumpPrefix(lua_State *L){
 	const char *prefix = NULL;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetBasisFieldDumpPrefix: 'Simulation' object expected.");
 	
 	if(lua_gettop(L) < 2 || LUA_TBOOLEAN == lua_type(L, 2)){
@@ -1939,7 +2260,7 @@ static int S4L_Simulation_SetBasisFieldDumpPrefix(lua_State *L){
 
 static int S4L_Simulation_SetLatticeTruncation(lua_State *L){
 	const char *truncation_type;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetLatticeTruncation: 'Simulation' object expected.");
 	truncation_type = luaL_checklstring(L, 2, NULL);
 	
@@ -1956,7 +2277,7 @@ static int S4L_Simulation_SetLatticeTruncation(lua_State *L){
 
 static int S4L_Simulation_SetVerbosity(lua_State *L){
 	int verbosity;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetVerbosity: 'Simulation' object expected.");
 	verbosity = luaL_checkint(L, 2);
 	
@@ -1968,7 +2289,7 @@ static int S4L_Simulation_SetVerbosity(lua_State *L){
 }
 
 static int S4L_Simulation_UseLessMemory(lua_State *L){
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "UseLessMemory: 'Simulation' object expected.");
 	
 	if(lua_gettop(L) > 1){
@@ -1982,7 +2303,7 @@ static int S4L_Simulation_UseLessMemory(lua_State *L){
 static int S4L_Simulation_OutputStructurePOVRay(lua_State *L){
 	int ret;
 	const char *filename;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "OutputStructurePOVRay: 'Simulation' object expected.");
 	filename = luaL_optstring(L, 2, NULL);
 	
@@ -2008,7 +2329,7 @@ static int S4L_Simulation_OutputLayerPatternDescription(lua_State *L){
 	int ret;
 	const char *layer_name, *filename;
 	Layer *layer;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "OutputLayerPatternDescription: 'Simulation' object expected.");
 	
 	layer_name = luaL_checklstring(L, 2, NULL);
@@ -2040,7 +2361,7 @@ static int S4L_Simulation_OutputLayerPatternRealization(lua_State *L){
 	int ret;
 	const char *layer_name, *filename;
 	Layer *layer;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "OutputLayerPatternRealization: 'Simulation' object expected.");
 	
 	layer_name = luaL_checklstring(L, 2, NULL);
@@ -2075,7 +2396,7 @@ static int S4L_Simulation_OutputLayerPatternRealization(lua_State *L){
 static int S4L_Simulation_GetEField(lua_State *L){
 	int j, ret;
 	double r[3], fE[6];
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetEField: 'Simulation' object expected.");
 	
 	for(j = 0; j < 3; ++j){
@@ -2102,7 +2423,7 @@ static int S4L_Simulation_GetEField(lua_State *L){
 static int S4L_Simulation_GetHField(lua_State *L){
 	int j, ret;
 	double r[3], fH[6];
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetHField: 'Simulation' object expected.");
 	
 	for(j = 0; j < 3; ++j){
@@ -2129,7 +2450,7 @@ static int S4L_Simulation_GetHField(lua_State *L){
 static int S4L_Simulation_GetFields(lua_State *L){
 	int j, ret;
 	double r[3], fE[6],fH[6];
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetFields: 'Simulation' object expected.");
 	
 	for(j = 0; j < 3; ++j){
@@ -2179,7 +2500,7 @@ static int S4L_Simulation_GetFieldPlane(lua_State *L){
 	const char *fbasename; size_t len;
 	char *filename;
 	FILE *fp;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetFieldPlane: 'Simulation' object expected.");
 	
 	z = luaL_checknumber(L, 2);
@@ -2325,7 +2646,7 @@ static int S4L_Simulation_GetSMatrixDeterminant(lua_State *L){
 	int ret;
 	double mant[2], base;
 	int expo;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetSMatrixDeterminant: 'Simulation' object expected.");
 	
 	ret = Simulation_GetSMatrixDeterminant(S, mant, &base, &expo);
@@ -2343,7 +2664,7 @@ static int S4L_Simulation_GetSMatrixDeterminant(lua_State *L){
 static int S4L_Simulation_GetEpsilon(lua_State *L){
 	int j, ret;
 	double r[3], feps[2];
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetEpsilon: 'Simulation' object expected.");
 	
 	for(j = 0; j < 3; ++j){
@@ -2378,7 +2699,7 @@ static int S4L_Simulation_GetStressTensorIntegral(lua_State *L){
 	double Tint[6];
 	const char *layer_name;
 	Layer *layer;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetStressTensorIntegral: 'Simulation' object expected.");
 	
 	layer_name = luaL_checklstring(L, 2, NULL);
@@ -2411,7 +2732,7 @@ static int S4L_Simulation_GetLayerVolumeIntegral(lua_State *L, char which, const
 	double integral[2];
 	const char *layer_name;
 	Layer *layer;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "Get*LayerIntegral: 'Simulation' object expected.");
 	
 	layer_name = luaL_checklstring(L, 2, NULL);
@@ -2448,7 +2769,7 @@ static int S4L_Simulation_GetLayerZIntegral(lua_State *L){
 	double integral[6], r[2];
 	const char *layer_name;
 	Layer *layer;
-	Simulation *S = (Simulation *)luaL_checkudata(L, 1, "S4.Simulation");
+	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetLayerZIntegral: 'Simulation' object expected.");
 	
 	layer_name = luaL_checklstring(L, 2, NULL);
@@ -2492,6 +2813,7 @@ static int S4_openlib(lua_State *L){
 		{"SolveInParallel", S4L_SolveInParallel},
 		{"ConvertUnits", S4L_ConvertUnits},
 		{"Integrate", S4L_Integrate},
+		{"ParallelInvoke", S4L_ParallelInvoke},
 		{NULL, NULL}
 	};
 	static const struct luaL_Reg SpectrumSamplerObj[] = {
@@ -2571,7 +2893,7 @@ static int S4_openlib(lua_State *L){
 	
 	luaL_newlib(L, S4_lib);
 
-	luaL_newmetatable(L, "S4.Simulation");
+	luaL_newmetatable(L, S4_simulation_typename);
 	luaL_newlib(L, SimulationObj);
 	lua_setfield(L, -2, "__index");
 	lua_pushstring(L, "__gc");
@@ -2632,6 +2954,17 @@ extern int    optind, opterr, optopt;
 int getopt(int argc, char * const argv[], const char *optstring);
 #include <ctype.h>
 
+
+lua_State *new_S4_lua_state(){
+	lua_State *L = luaL_newstate(); /* opens Lua */
+	
+	luaL_requiref(L, "S4", &S4_openlib, 1);
+	lua_pop(L, 1);
+	
+	luaL_openlibs(L); /* opens the standard libraries */
+	return L;
+}
+
 int main(int argc, char *argv[]){
 	char buff[256];
 	int c;
@@ -2677,15 +3010,9 @@ int main(int argc, char *argv[]){
 		}
 	}
 	
-	L = luaL_newstate(); /* opens Lua */
+	L = new_S4_lua_state(); /* opens Lua */
 	
 	threadsafe_init();
-	
-	luaL_requiref(L, "S4", &S4_openlib, 1);
-	lua_pop(L, 1);
-	
-	luaL_openlibs(L); /* opens the standard libraries */
-
 	S4_threads_init(L, max_threads);
 	
 	/* Set the argument if there is one */
