@@ -124,7 +124,7 @@ static int Gsel_circular(unsigned int *NG, const double Lk[4], int *G){
 	const double v2 = Lk[2]*Lk[2] + Lk[3]*Lk[3];
 	const double uv = Lk[0]*Lk[2] + Lk[1]*Lk[3];
 	double Lkprod[3] = { u2, 2*uv, v2 };
-	const double uxv = fabs(Lk[0]*Lk[3] + Lk[1]*Lk[2]);
+	const double uxv = fabs(Lk[0]*Lk[3] - Lk[1]*Lk[2]);
 	
 	const double circ_area = (double)(*NG) * uxv;
 	const double circ_radius = sqrt(circ_area/M_PI) + u+v;
