@@ -30,8 +30,8 @@ FFTW3_LIB =
 # Typically,
 #  PTHREAD_INC = -DHAVE_UNISTD_H -lpthread
 #  PTHREAD_LIB = -lpthread
-PTHREAD_INC = 
-PTHREAD_LIB = 
+PTHREAD_INC =  -DHAVE_UNISTD_H -lpthread
+PTHREAD_LIB = -lpthread
 
 # Typically if installed,
 #  CHOLMOD_INC = -I/usr/include/suitesparse

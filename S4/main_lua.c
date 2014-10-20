@@ -459,7 +459,7 @@ void* ParallelInvoke_func(void *data){
 			S4L_error(Lm, "ParallelInvoke: function '%s' not found.", pid->func_name);
 			lua_pop(L, 2);
 			pthread_mutex_unlock(&g_mutex);
-			return;
+			return NULL;
 		}
 		// Current stack: ... S meta __index func
 		lua_insert(L, -4);
