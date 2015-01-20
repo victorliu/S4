@@ -62,7 +62,7 @@ S4r_LIBNAME = $(OBJDIR)/libS4r.a
 
 #### Set the compilation flags
 
-CPPFLAGS = -I. -IS4 -IS4/RNP -IS4/kiss_fft #-static
+CPPFLAGS = -I. -IS4 -IS4/RNP -IS4/kiss_fft 
 
 ifdef BLAS_LIB
 CPPFLAGS += -DHAVE_BLAS
