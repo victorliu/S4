@@ -8,3 +8,5 @@
 #define PACKAGE_URL ""
 #define PACKAGE_VERSION "1.1.1"
 #define VERSION "1.1.1"
+
+#define HAVE_LIBPTHREAD 1
