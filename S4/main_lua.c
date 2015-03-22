@@ -607,19 +607,36 @@ static int S4L_ConvertUnits(lua_State *L){
 	}
 }
 
+struct IntegrateFunction_data{
+	lua_State *L;
+	int VectorArgument;
+};
 static void IntegrateFunction(
 	unsigned ndim, const double *x, void *fdata,
 	unsigned fdim, double *fval
 ){
 	unsigned i;
-	lua_State *L = (lua_State*)fdata;
+	struct IntegrateFunction_data *ifd = (struct IntegrateFunction_data*)fdata;
+	lua_State *L = ifd->L;
 	
 	fval[0] = 0;
 	
 	lua_pushvalue(L, -1); /* push a copy of the function */
 	
-	for(i = 0; i < ndim; ++i){
-		lua_pushnumber(L, x[i]);
+	if(ifd->VectorArgument){
+		lua_createtable(L, 1, 0);
+		lua_pushinteger(L, 1);
+		lua_createtable(L, ndim, 0);
+		for(j = 0; j < ndim; ++j){
+			lua_pushinteger(L, j+1);
+			lua_pushnumber(L, x[j]);
+			lua_settable(L, -3);
+		}
+		lua_settable(L, -3);
+	}else{
+		for(i = 0; i < ndim; ++i){
+			lua_pushnumber(L, x[i]);
+		}
 	}
 	if(0 != lua_pcall(L, ndim, fdim, 0)){
 		S4L_error(L, "Error running Integrate function: %s", lua_tostring(L, -1));
@@ -704,6 +721,7 @@ static int S4L_Integrate(lua_State *L){
 	double AbsoluteError = 0;
 	double RelativeError = 1e-6;
 	int Parallelize = 0;
+	int VectorArg = 0;
 	
 	double val[1], err[1];
 	
@@ -753,6 +771,8 @@ static int S4L_Integrate(lua_State *L){
 						RelativeError = lua_tonumber(L, -1);
 					}else if(0 == strcmp(key, "Parallelize")){
 						Parallelize = lua_toboolean(L, -1);
+					}else if(0 == strcmp(key, "VectorArgument")){
+						VectorArg = lua_toboolean(L, -1);
 					}else{
 						S4L_error(L, "Unrecognized option to Integrate: %s", key);
 						return 0;
@@ -793,8 +813,11 @@ static int S4L_Integrate(lua_State *L){
 			MaxEval, AbsoluteError, RelativeError,
 			val, err);
 	}else{
+		struct IntegrateFunction_data data;
+		data.L = L;
+		data.VectorArgument = VectorArg;
 		adapt_integrate(
-			1, &IntegrateFunction, (void*)L,
+			1, &IntegrateFunction, (void*)&data,
 			ndim, xmin, xmax,
 			MaxEval, AbsoluteError, RelativeError,
 			val, err);
