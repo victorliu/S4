@@ -433,8 +433,9 @@ void* ParallelInvoke_func(void *data){
 
 	// This is where things are tricky...
 	{ // First set up the function call; each thread needs exclusive access to the Lua state
+#ifdef HAVE_LIBPTHREAD
 		pthread_mutex_lock(&g_mutex);
-
+#endif
 		// Current stack: ... S
 		iS = lua_gettop(L);
 		
@@ -459,7 +460,9 @@ void* ParallelInvoke_func(void *data){
 		if(lua_isnil(L, -1)){
 			S4L_error(Lm, "ParallelInvoke: function '%s' not found.", pid->func_name);
 			lua_pop(L, 2);
+#ifdef HAVE_LIBPTHREAD
 			pthread_mutex_unlock(&g_mutex);
+#endif
 			return NULL;
 		}
 		// Current stack: ... S meta __index func
@@ -491,19 +494,26 @@ void* ParallelInvoke_func(void *data){
 			}
 		}
 		// Current stack: ... func S arg1 arg2 ...
+#ifdef HAVE_LIBPTHREAD
 		pthread_mutex_unlock(&g_mutex);
+#endif
 	}
 	int ret = lua_pcall(L, nargs+1, LUA_MULTRET, 0);
 	if(LUA_OK != ret){
+#ifdef HAVE_LIBPTHREAD
 		pthread_mutex_lock(&g_mutex);
+#endif
 		S4L_error(Lm, "ParallelInvoke: error in function: %s.", lua_tostring(L, -1));
 		lua_pop(L, 1);
+#ifdef HAVE_LIBPTHREAD
 		pthread_mutex_unlock(&g_mutex);
+#endif
 	}
 	
 	{ // Now copy all results back
+#ifdef HAVE_LIBPTHREAD
 		pthread_mutex_lock(&g_mutex);
-		
+#endif
 		int nret = lua_gettop(L) - iS;
 		lua_createtable(Lm, nret, 0);
 		for(j = 0; j < nret; ++j){
@@ -512,7 +522,9 @@ void* ParallelInvoke_func(void *data){
 		}
 		lua_rawseti(Lm, 4, pid->i+1);
 		
+#ifdef HAVE_LIBPTHREAD
 		pthread_mutex_unlock(&g_mutex);
+#endif
 	}
 	
 //printf("thread %d exit, master Lua stack top = %d\n", pid->i, lua_gettop(Lm));
@@ -608,19 +620,37 @@ static int S4L_ConvertUnits(lua_State *L){
 	}
 }
 
+struct IntegrateFunction_data{
+	lua_State *L;
+	int VectorArgument;
+};
 static void IntegrateFunction(
 	unsigned ndim, const double *x, void *fdata,
 	unsigned fdim, double *fval
 ){
 	unsigned i;
-	lua_State *L = (lua_State*)fdata;
+	struct IntegrateFunction_data *ifd = (struct IntegrateFunction_data*)fdata;
+	lua_State *L = ifd->L;
 	
 	fval[0] = 0;
 	
 	lua_pushvalue(L, -1); /* push a copy of the function */
 	
-	for(i = 0; i < ndim; ++i){
-		lua_pushnumber(L, x[i]);
+	if(ifd->VectorArgument){
+		unsigned j;
+		lua_createtable(L, 1, 0);
+		lua_pushinteger(L, 1);
+		lua_createtable(L, ndim, 0);
+		for(j = 0; j < ndim; ++j){
+			lua_pushinteger(L, j+1);
+			lua_pushnumber(L, x[j]);
+			lua_settable(L, -3);
+		}
+		lua_settable(L, -3);
+	}else{
+		for(i = 0; i < ndim; ++i){
+			lua_pushnumber(L, x[i]);
+		}
 	}
 	if(0 != lua_pcall(L, ndim, fdim, 0)){
 		S4L_error(L, "Error running Integrate function: %s", lua_tostring(L, -1));
@@ -628,13 +658,35 @@ static void IntegrateFunction(
         return;
 	}
 	
-	if(!lua_isnumber(L, -1)){
+	if(lua_isnumber(L, -1)){
+		fval[0] = lua_tonumber(L, -1);
+	}else if(lua_istable(L, -1)){
+		lua_pushinteger(L, 1);
+		lua_gettable(L, -2);
+		if(lua_isnumber(L, -1)){
+			fval[0] = lua_tonumber(L, -1);
+		}else if(lua_istable(L, -1)){
+			lua_pushinteger(L, 1);
+			lua_gettable(L, -2);
+			if(lua_isnumber(L, -1)){
+				fval[0] = lua_tonumber(L, -1);
+			}else{
+				lua_pop(L, 1);
+				S4L_error(L, "Integrate function must return a number or a nested table containing numbers");
+				return;
+			}
+			lua_pop(L, 1);
+		}else{
+			lua_pop(L, 1);
+			S4L_error(L, "Integrate function must return a number or a nested table containing numbers");
+			return;
+		}
 		lua_pop(L, 1);
-		S4L_error(L, "Integrate function must return a number");
+	}else{
+		lua_pop(L, 1);
+		S4L_error(L, "Integrate function must return a number or a nested table containing numbers");
 		return;
 	}
-	
-	fval[0] = lua_tonumber(L, -1);
 	lua_pop(L, 1);
 }
 static void IntegrateFunctionVectorized(
@@ -705,6 +757,7 @@ static int S4L_Integrate(lua_State *L){
 	double AbsoluteError = 0;
 	double RelativeError = 1e-6;
 	int Parallelize = 0;
+	int VectorArg = 0;
 	
 	double val[1], err[1];
 	
@@ -754,6 +807,8 @@ static int S4L_Integrate(lua_State *L){
 						RelativeError = lua_tonumber(L, -1);
 					}else if(0 == strcmp(key, "Parallelize")){
 						Parallelize = lua_toboolean(L, -1);
+					}else if(0 == strcmp(key, "VectorArgument")){
+						VectorArg = lua_toboolean(L, -1);
 					}else{
 						S4L_error(L, "Unrecognized option to Integrate: %s", key);
 						return 0;
@@ -794,8 +849,11 @@ static int S4L_Integrate(lua_State *L){
 			MaxEval, AbsoluteError, RelativeError,
 			val, err);
 	}else{
+		struct IntegrateFunction_data data;
+		data.L = L;
+		data.VectorArgument = VectorArg;
 		adapt_integrate(
-			1, &IntegrateFunction, (void*)L,
+			1, &IntegrateFunction, (void*)&data,
 			ndim, xmin, xmax,
 			MaxEval, AbsoluteError, RelativeError,
 			val, err);
