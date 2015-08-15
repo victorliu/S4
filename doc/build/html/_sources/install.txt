@@ -10,11 +10,11 @@ Binary packages
 The binary packages do not contain the examples and documentation, and are compiled with the bare minimum of features.
 You need to download that separately.
 
-* Version 1.1
+* Version 1.1.1
 
-  * `Windows (32-bit) EXE <files/S4-1.1.0-win32.7z>`_ (Lua frontend)
-  * `Mac OS X (compiled on 10.8.5) <files/S4-1.1.0-osx.gz>`_ (Lua frontend)
-  * `Examples and documentation <files/S4-1.1.0-doc.tar.gz>`_
+  * `Windows (32-bit) EXE <files/S4-1.1.1-win32.7z>`_ (Lua frontend)
+  * `Mac OS X (compiled on 10.8.5) <files/S4-1.1.1-osx.gz>`_ (Lua frontend)
+  * `Examples and documentation <files/S4-1.1.1-doc.tar.gz>`_
 
 * Version 1.0 (not recommended)
 
@@ -41,7 +41,8 @@ None of these is required except for either Lua or Python.
 
 * `Lua <http://www.lua.org>`_ 5.2.x - This is required for the Lua frontend.
   Either this or Python is required.
-  On Ubuntu or Debian, the repository package is called ``liblua5.2-dev``.
+  On Ubuntu or Debian, the repository packages are called ``liblua5.2``
+  and ``liblua5.2-dev``.
 * `Python <http://python.org>`_ 2.x or 3.x - This is required to build |S4| as a Python extension.
   Either this or Lua is required.
   On Ubuntu or Debian, the repository package is called ``python-dev`` or ``python3-dev``.
@@ -59,7 +60,7 @@ Compilation
 # Edit Makefile.custom and set the library flags for all the dependencies that can be provided.
 # Run::
 
-	make lib
+	make
 
 # Next, build either the Lua frontend::
 
@@ -69,6 +70,13 @@ Compilation
 
 	make S4_pyext
 
-# The resulting Lua binary is just called ``S4``, and the Python shared object is ``build/lib.*/S4.so``.
+# The resulting Lua binary is just called ``S4``. The Python shared
+  object is ``build/lib.*/S4.so``. To use the Python API, run
+  ``python setup.py install``, and now you can ``import S4`` in any
+  python script.
+
+# If you change any aspect of the compilation, run ``make clean`` before
+  re-running ``make``.
+
 
 .. |S4| replace:: S\ :sup:`4`

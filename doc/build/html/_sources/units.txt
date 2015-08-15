@@ -15,7 +15,9 @@ Instead, one can imagine that all lengths specified in |S4| are multiples of a c
 
 When the lattice vectors are set, this determines a length scale.
 Suppose we have a square lattice with a periodicity of 680nm. It might be logical then to choose 1 micron as the base length unit, and to specify all lengths in microns. The lattice would then be set to the vectors (0.68, 0) and (0, 0.68).
-Since frequency is in units of inverse length, then ``SetFrequency(1)`` corresponds to a wavelength of 680nm or a physical frequency of (c/680nm) = 441 THz, and ``SetFrequency(1.1)`` corresponds to a wavelength of (680/1.1) = 618nm, etc.
+Since frequency is in units of inverse length, then ``SetFrequency(1)`` corresponds to a wavelength of 1um or a physical frequency of (c/1um) = 300 THz, and ``SetFrequency(1.1)`` corresponds to a wavelength of (1/1.1) = 909nm, etc.
+
+For numerical stability, it is best to choose a length scale in which most dimensions are close to unity. For typical nanophotonic structures, using (implicit) microns is preferable to using (implicit) nanometers.
 
 Amplitudes and powers
 ---------------------

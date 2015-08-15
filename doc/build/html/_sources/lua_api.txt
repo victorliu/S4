@@ -9,6 +9,83 @@ Lua API reference
 Usage of |S4| involves writing a Lua script to call into various parts of |S4|.
 Here we describe all of the |S4| specific functions that can be called within the Lua environment.
 
+* `S4 library`_
+
+  * :func:`~S4.NewSimulation`
+  * :func:`~S4.NewSpectrumSampler`
+  * :func:`~S4.NewInterpolator`
+  * :func:`~S4.SolveInParallel`
+  * :func:`~S4.ConvertUnits`
+  * :func:`~S4.Integrate`
+  * :data:`~S4.arg`
+  * :data:`~S4.MPIRank`
+  * :data:`~S4.MPISize`
+
+* `Simulation object`_
+
+  * `Parameter specification`_
+  
+    * :func:`~S4.Simulation:SetLattice`
+    * :func:`~S4.Simulation:SetNumG`
+    * :func:`~S4.Simulation:AddMaterial`
+    * :func:`~S4.Simulation:SetMaterial`
+    * :func:`~S4.Simulation:AddLayer`
+    * :func:`~S4.Simulation:SetLayer`
+    * :func:`~S4.Simulation:SetLayerThickness`
+    * :func:`~S4.Simulation:AddLayerCopy`
+    * :func:`~S4.Simulation:SetLayerPatternCircle`
+    * :func:`~S4.Simulation:SetLayerPatternEllipse`
+    * :func:`~S4.Simulation:SetLayerPatternPolygon`
+    * :func:`~S4.Simulation:SetExcitationPlanewave`
+    * :func:`~S4.Simulation:SetExcitationExterior`
+    * :func:`~S4.Simulation:SetFrequency`
+  
+  * `Outputs requiring no solutions`_
+  
+    * :func:`~S4.Simulation:GetReciprocalLattice`
+    * :func:`~S4.Simulation:GetEpsilon`
+    * :func:`~S4.Simulation:OutputLayerPatternDescription`
+    * :func:`~S4.Simulation:OutputLayerPatternRealization`
+	
+  * `Outputs requiring solutions`_
+	
+    * :func:`~S4.Simulation:OutputStructurePOVRay`
+    * :func:`~S4.Simulation:GetNumG`
+    * :func:`~S4.Simulation:GetGList`
+    * :func:`~S4.Simulation:GetDiffractionOrder`
+    * :func:`~S4.Simulation:GetAmplitudes`
+    * :func:`~S4.Simulation:GetPowerFlux`
+    * :func:`~S4.Simulation:GetPowerFluxByOrder`
+    * :func:`~S4.Simulation:GetStressTensorIntegral`
+    * :func:`~S4.Simulation:GetLayerEnergyDensityIntegral`
+    * :func:`~S4.Simulation:GetLayerElectricEnergyDensityIntegral`
+    * :func:`~S4.Simulation:GetLayerMagneticEnergyDensityIntegral`
+    * :func:`~S4.Simulation:GetLayerElectricFieldIntensityIntegral`
+    * :func:`~S4.Simulation:GetLayerZIntegral`
+    * :func:`~S4.Simulation:GetEField`
+    * :func:`~S4.Simulation:GetHField`
+    * :func:`~S4.Simulation:GetFields`
+    * :func:`~S4.Simulation:GetFieldPlane`
+    * :func:`~S4.Simulation:GetSMatrixDeterminant`
+	
+  * `Options`_
+	
+    * :func:`~S4.Simulation:UseLanczosSmoothing`
+    * :func:`~S4.Simulation:UseDiscretizedEpsilon`
+    * :func:`~S4.Simulation:UsePolarizationDecomposition`
+    * :func:`~S4.Simulation:UseSubpixelSmoothing`
+    * :func:`~S4.Simulation:UseJonesVectorBasis`
+    * :func:`~S4.Simulation:UseNormalVectorBasis`
+    * :func:`~S4.Simulation:SetResolution`
+    * :func:`~S4.Simulation:SetBasisFieldDumpPrefix`
+    * :func:`~S4.Simulation:SetLatticeTruncation`
+    * :func:`~S4.Simulation:SetVerbosity`
+    * :func:`~S4.Simulation:UseLessMemory`
+	
+  * `Miscellaneous`_
+	
+    * :func:`~S4.Simulation:Clone`
+   
 S4 library
 ----------
 
@@ -509,7 +586,7 @@ Parameter specification
 
     phi, theta
         (number) Angles in degrees. ``phi`` and ``theta`` give the spherical coordinate angles of the planewave k-vector.
-        For zero angles, the k-vector is assumed to be (0, 0, kz), while the electric field is assumed to be (E0, 0, 0), and the magnetic field is in (0, H0, 0).
+        For zero angles, the k-vector is assumed to be (0, 0, kz), while the electric field is assumed to be (0, -E0, 0), and the magnetic field is in (H0, 0, 0).
         The angle ``phi`` specifies first the angle by which the E,H,k frame should be rotated (CW) about the y-axis, and the angle ``theta`` specifies next the angle by which the E,H,k frame should be rotated (CCW) about the z-axis. Note the different directions of rotations for each angle.
     s_amp, p_amp
         (number) The electric field amplitude of the s- and p-polarizations of the planewave.

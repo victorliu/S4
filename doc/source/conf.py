@@ -30,6 +30,7 @@ import os
 # ones.
 extensions = [
 	'sphinx.ext.autodoc',
+	'sphinx.ext.autosummary',
 	'sphinx.ext.todo',
 	'sphinx.ext.pngmath',
 	'sphinxcontrib.fulltoc',

@@ -1,7 +1,7 @@
 Tutorial
 ========
 
-Basic Usage
+Basic usage
 -----------
 
 This section assumes that the Lua frontend is used.
@@ -67,6 +67,22 @@ To find more information about these functions and for a full listing, see the :
 
    This obtains the forward power flux in the bottom layer, which is also the transmitted power.
 
+Typical usage
+-------------
+
+The only fully supported front end is the :doc:`Lua API <lua_api>`. The :doc:`Python API <python_api>` is largely supported by the user community.
+Most users are interested in computing frequency (or wavelength) spectra, in which case :lua:func:`~S4.Simulation:SetFrequency` is called in a loop over frequency.
+Putting :lua:func:`~S4.Simulation:GetPowerFlux` afterwards in the same loop allows obtaining reflection/transmission/absorption power spectra.
+If the materials used are dispersive, then :lua:func:`~S4.Simulation:SetMaterial` must also be called within the loop before the call to :lua:func:`~S4.Simulation:GetPowerFlux` to update material constants for each new frequency.
+
+When running parameter sweeps for optimizing structures, a number of structural parameters are typically varied, such as lattice constants, layer thicknesses, and patterning dimensions.
+Due to the way in which |S4| performs lazy computation (things are not computed or recomputed until they are required), the order of nested loops matters greatly.
+In general, all output quantities for a given structure should be computed at once before modifying the structure, since structure modification changes the solution completely.
+Next, layer thicknesses can be changed without requiring recomputation of layer eigenmodes.
+A slightly more computationally expensive modification is changing a layer's patterning, which requires recomputing the layer's eigenmodes.
+Changing material properties invalidates eigenmodes of any layer using the material.
+Finally, changes in lattice constant, frequency, and incidence angles require a complete recomputation of the solution.
+
 .. _fmm-formulations-label:
 
 Fourier Modal Method formulations 
@@ -109,6 +125,8 @@ To simplify the choice for users, the table below summarizes the recommended set
 | Disc+Pol+Jones  | no [#f1]_               | 4                      | slow   | medium   |
 +-----------------+-------------------------+------------------------+--------+----------+
 
+It is recommended that users use the default (no options) despite the poor accuracy, since the polarization basis settings can introduce spurious regions of gain into the material patterning. This may or may not be a problem for some users using extremely lossy metals, but for low loss metals, typically energy conservation is violated.
+
 .. rubric:: Footnotes
 
 .. [#f1] The formulation does not strictly work correctly for anisotropic media however it may still work. Proper support for anisotropic materials is in principle possible. There are currently no plans for implementing generation of the proper basis fields for this feature.
@@ -116,7 +134,7 @@ To simplify the choice for users, the table below summarizes the recommended set
 Examples
 --------
 
-The source distribution of S4 includes numerous fully working didactic examples as well as examples replicating published results.
+The source distribution of |S4| includes numerous fully working didactic examples as well as examples replicating published results.
 You can find these examples in the ``examples/`` directory of the source distribution.
 
 .. |S4| replace:: S\ :sup:`4`

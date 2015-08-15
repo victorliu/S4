@@ -59,7 +59,7 @@
 <span id="python-api-label"></span><h1>Python API reference<a class="headerlink" href="#python-api-reference" title="Permalink to this headline">¶</a></h1>
 <p>S<sup>4</sup> can be built as a <a class="reference external" href="http://python.org">Python</a> extension, in addition to the original <a class="reference external" href="http://www.lua.org">Lua</a> interface.
 The current Python interface is not as fully featured as the Lua interface, but it should ultimately achieve feature parity.
-Much auxilliary functionality, such as numerical integration, is not included here since <a class="reference external" href="http://www.numpy.org/">Numpy</a> and <a class="reference external" href="http://www.scipy.org/">Scipy</a> can easily be used instead.</p>
+Much auxiliary functionality, such as numerical integration, is not included here since <a class="reference external" href="http://www.numpy.org/">Numpy</a> and <a class="reference external" href="http://www.scipy.org/">Scipy</a> can easily be used instead.</p>
 <div class="section" id="module-S4">
 <span id="s4-module"></span><h2>S4 module<a class="headerlink" href="#module-S4" title="Permalink to this headline">¶</a></h2>
 <p>All top level functions of S<sup>4</sup> are located in the <tt class="docutils literal"><span class="pre">S4</span></tt> library.</p>
@@ -68,7 +68,7 @@ Much auxilliary functionality, such as numerical integration, is not included he
 <tt class="descclassname">S4.</tt><tt class="descname">New</tt><big>(</big><em>Lattice</em>, <em>NumBasis</em><big>)</big><a class="headerlink" href="#S4.New" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a new <a class="reference internal" href="#simulation-object">Simulation object</a>.</p>
 <p>Usage:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">S</span> <span class="o">=</span> <span class="n">S4</span><span class="o">.</span><span class="n">NewSimulation</span><span class="p">(</span><span class="n">Lattice</span><span class="o">=</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)),</span> <span class="n">NumBasis</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">S</span> <span class="o">=</span> <span class="n">S4</span><span class="o">.</span><span class="n">New</span><span class="p">(</span><span class="n">Lattice</span><span class="o">=</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)),</span> <span class="n">NumBasis</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Arguments:</p>
@@ -111,12 +111,13 @@ When solutions are requested, only a minimal set of internal computations are pe
 <dd><blockquote>
 <div>Updates an existing material with a new dielectric constant or adds a material if none exists.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S.SetMaterial(Name = 'Silicon, Epsilon = 12+0.01j)
-S.SetMaterial(Name = 'Silicon', Epsilon = (
+<div class="highlight-python"><div class="highlight"><pre>S.SetMaterial(Name = &#39;Silicon, Epsilon = 12+0.01j)
+S.SetMaterial(Name = &#39;Silicon&#39;, Epsilon = (
         (12+0.01j, 0, 0),
         (0, 12+0.01j, 0),
         (0, 0, 12+0.01j)
-        ))</pre>
+        ))
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -587,7 +588,9 @@ For patterned layers, there is typically no meaningful information in these ampl
 <blockquote>
 <div><dl class="docutils">
 <dt>forw,back</dt>
-<dd>Tuples of length 2*NumBasis containing the complex amplitudes of each forward and backward mode.</dd>
+<dd>Tuples of length 2*NumBasis containing the complex amplitudes of each forward and backward mode.
+In each tuple, the first NumBasis entries are for one of the polarizations, and the second
+NumBasis entries are for the other polarization.</dd>
 </dl>
 </div></blockquote>
 </dd></dl>
@@ -1030,7 +1033,7 @@ No partial solution information is copied.</div></blockquote>
     </div>
     <div class="footer">
         &copy; Copyright 2013, Victor Liu.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

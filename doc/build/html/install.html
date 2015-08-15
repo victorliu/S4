@@ -64,10 +64,10 @@ The latter is the preferred method for obtaining the latest features and bug fix
 <p>The binary packages do not contain the examples and documentation, and are compiled with the bare minimum of features.
 You need to download that separately.</p>
 <ul class="simple">
-<li>Version 1.1<ul>
-<li><a class="reference external" href="files/S4-1.1.0-win32.7z">Windows (32-bit) EXE</a> (Lua frontend)</li>
-<li><a class="reference external" href="files/S4-1.1.0-osx.gz">Mac OS X (compiled on 10.8.5)</a> (Lua frontend)</li>
-<li><a class="reference external" href="files/S4-1.1.0-doc.tar.gz">Examples and documentation</a></li>
+<li>Version 1.1.1<ul>
+<li><a class="reference external" href="files/S4-1.1.1-win32.7z">Windows (32-bit) EXE</a> (Lua frontend)</li>
+<li><a class="reference external" href="files/S4-1.1.1-osx.gz">Mac OS X (compiled on 10.8.5)</a> (Lua frontend)</li>
+<li><a class="reference external" href="files/S4-1.1.1-doc.tar.gz">Examples and documentation</a></li>
 </ul>
 </li>
 <li>Version 1.0 (not recommended)<ul>
@@ -82,7 +82,8 @@ You need to download that separately.</p>
 <h2>GitHub repository<a class="headerlink" href="#github-repository" title="Permalink to this headline">¶</a></h2>
 <p>The source code is located at this <a class="reference external" href="https://github.com/victorliu/S4">GitHub repository</a>.
 You can clone it with the command:</p>
-<div class="highlight-python"><pre>git clone https://github.com/victorliu/S4.git</pre>
+<div class="highlight-python"><div class="highlight"><pre>git clone https://github.com/victorliu/S4.git
+</pre></div>
 </div>
 </div>
 <div class="section" id="compiling-from-source">
@@ -94,7 +95,8 @@ None of these is required except for either Lua or Python.</p>
 <ul class="simple">
 <li><a class="reference external" href="http://www.lua.org">Lua</a> 5.2.x - This is required for the Lua frontend.
 Either this or Python is required.
-On Ubuntu or Debian, the repository package is called <tt class="docutils literal"><span class="pre">liblua5.2-dev</span></tt>.</li>
+On Ubuntu or Debian, the repository packages are called <tt class="docutils literal"><span class="pre">liblua5.2</span></tt>
+and <tt class="docutils literal"><span class="pre">liblua5.2-dev</span></tt>.</li>
 <li><a class="reference external" href="http://python.org">Python</a> 2.x or 3.x - This is required to build S<sup>4</sup> as a Python extension.
 Either this or Lua is required.
 On Ubuntu or Debian, the repository package is called <tt class="docutils literal"><span class="pre">python-dev</span></tt> or <tt class="docutils literal"><span class="pre">python3-dev</span></tt>.</li>
@@ -111,16 +113,25 @@ On Ubuntu or Debian, install the repository package is called <tt class="docutil
 <h3>Compilation<a class="headerlink" href="#compilation" title="Permalink to this headline">¶</a></h3>
 <p># Edit Makefile.custom and set the library flags for all the dependencies that can be provided.
 # Run:</p>
-<div class="highlight-python"><pre>make lib</pre>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">make</span>
+</pre></div>
 </div>
 <p># Next, build either the Lua frontend:</p>
-<div class="highlight-python"><pre>      make S4lua
+<div class="highlight-python"><div class="highlight"><pre>      make S4lua
 
 or the Python extension::
 
-      make S4_pyext</pre>
+      make S4_pyext
+</pre></div>
 </div>
-<p># The resulting Lua binary is just called <tt class="docutils literal"><span class="pre">S4</span></tt>, and the Python shared object is <tt class="docutils literal"><span class="pre">build/lib.*/S4.so</span></tt>.</p>
+<dl class="docutils">
+<dt># The resulting Lua binary is just called <tt class="docutils literal"><span class="pre">S4</span></tt>. The Python shared</dt>
+<dd>object is <tt class="docutils literal"><span class="pre">build/lib.*/S4.so</span></tt>. To use the Python API, run
+<tt class="docutils literal"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">install</span></tt>, and now you can <tt class="docutils literal"><span class="pre">import</span> <span class="pre">S4</span></tt> in any
+python script.</dd>
+<dt># If you change any aspect of the compilation, run <tt class="docutils literal"><span class="pre">make</span> <span class="pre">clean</span></tt> before</dt>
+<dd>re-running <tt class="docutils literal"><span class="pre">make</span></tt>.</dd>
+</dl>
 </div>
 </div>
 </div>
@@ -208,7 +219,7 @@ or the Python extension::
     </div>
     <div class="footer">
         &copy; Copyright 2013, Victor Liu.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

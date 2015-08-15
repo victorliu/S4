@@ -60,6 +60,86 @@
 <p>S<sup>4</sup> is built as a set of extensions to the <a class="reference external" href="http://www.lua.org">Lua scripting language</a>.
 Usage of S<sup>4</sup> involves writing a Lua script to call into various parts of S<sup>4</sup>.
 Here we describe all of the S<sup>4</sup> specific functions that can be called within the Lua environment.</p>
+<ul class="simple">
+<li><a class="reference internal" href="#s4-library">S4 library</a><ul>
+<li><a class="reference internal" href="#S4.NewSimulation" title="S4.NewSimulation"><tt class="xref lua lua-func docutils literal"><span class="pre">NewSimulation()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.NewSpectrumSampler" title="S4.NewSpectrumSampler"><tt class="xref lua lua-func docutils literal"><span class="pre">NewSpectrumSampler()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.NewInterpolator" title="S4.NewInterpolator"><tt class="xref lua lua-func docutils literal"><span class="pre">NewInterpolator()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.SolveInParallel" title="S4.SolveInParallel"><tt class="xref lua lua-func docutils literal"><span class="pre">SolveInParallel()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.ConvertUnits" title="S4.ConvertUnits"><tt class="xref lua lua-func docutils literal"><span class="pre">ConvertUnits()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Integrate" title="S4.Integrate"><tt class="xref lua lua-func docutils literal"><span class="pre">Integrate()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.arg" title="S4.arg"><tt class="xref lua lua-data docutils literal"><span class="pre">arg</span></tt></a></li>
+<li><a class="reference internal" href="#S4.MPIRank" title="S4.MPIRank"><tt class="xref lua lua-data docutils literal"><span class="pre">MPIRank</span></tt></a></li>
+<li><a class="reference internal" href="#S4.MPISize" title="S4.MPISize"><tt class="xref lua lua-data docutils literal"><span class="pre">MPISize</span></tt></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#simulation-object">Simulation object</a><ul>
+<li><a class="reference internal" href="#parameter-specification">Parameter specification</a><ul>
+<li><a class="reference internal" href="#S4.Simulation:SetLattice" title="S4.Simulation:SetLattice"><tt class="xref lua lua-func docutils literal"><span class="pre">SetLattice()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:SetNumG" title="S4.Simulation:SetNumG"><tt class="xref lua lua-func docutils literal"><span class="pre">SetNumG()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:AddMaterial" title="S4.Simulation:AddMaterial"><tt class="xref lua lua-func docutils literal"><span class="pre">AddMaterial()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:SetMaterial" title="S4.Simulation:SetMaterial"><tt class="xref lua lua-func docutils literal"><span class="pre">SetMaterial()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:AddLayer" title="S4.Simulation:AddLayer"><tt class="xref lua lua-func docutils literal"><span class="pre">AddLayer()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:SetLayer" title="S4.Simulation:SetLayer"><tt class="xref lua lua-func docutils literal"><span class="pre">SetLayer()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:SetLayerThickness" title="S4.Simulation:SetLayerThickness"><tt class="xref lua lua-func docutils literal"><span class="pre">SetLayerThickness()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:AddLayerCopy" title="S4.Simulation:AddLayerCopy"><tt class="xref lua lua-func docutils literal"><span class="pre">AddLayerCopy()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:SetLayerPatternCircle" title="S4.Simulation:SetLayerPatternCircle"><tt class="xref lua lua-func docutils literal"><span class="pre">SetLayerPatternCircle()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:SetLayerPatternEllipse" title="S4.Simulation:SetLayerPatternEllipse"><tt class="xref lua lua-func docutils literal"><span class="pre">SetLayerPatternEllipse()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:SetLayerPatternPolygon" title="S4.Simulation:SetLayerPatternPolygon"><tt class="xref lua lua-func docutils literal"><span class="pre">SetLayerPatternPolygon()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:SetExcitationPlanewave" title="S4.Simulation:SetExcitationPlanewave"><tt class="xref lua lua-func docutils literal"><span class="pre">SetExcitationPlanewave()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:SetExcitationExterior" title="S4.Simulation:SetExcitationExterior"><tt class="xref lua lua-func docutils literal"><span class="pre">SetExcitationExterior()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:SetFrequency" title="S4.Simulation:SetFrequency"><tt class="xref lua lua-func docutils literal"><span class="pre">SetFrequency()</span></tt></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#outputs-requiring-no-solutions">Outputs requiring no solutions</a><ul>
+<li><a class="reference internal" href="#S4.Simulation:GetReciprocalLattice" title="S4.Simulation:GetReciprocalLattice"><tt class="xref lua lua-func docutils literal"><span class="pre">GetReciprocalLattice()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:GetEpsilon" title="S4.Simulation:GetEpsilon"><tt class="xref lua lua-func docutils literal"><span class="pre">GetEpsilon()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:OutputLayerPatternDescription" title="S4.Simulation:OutputLayerPatternDescription"><tt class="xref lua lua-func docutils literal"><span class="pre">OutputLayerPatternDescription()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:OutputLayerPatternRealization" title="S4.Simulation:OutputLayerPatternRealization"><tt class="xref lua lua-func docutils literal"><span class="pre">OutputLayerPatternRealization()</span></tt></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#outputs-requiring-solutions">Outputs requiring solutions</a><ul>
+<li><a class="reference internal" href="#S4.Simulation:OutputStructurePOVRay" title="S4.Simulation:OutputStructurePOVRay"><tt class="xref lua lua-func docutils literal"><span class="pre">OutputStructurePOVRay()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:GetNumG" title="S4.Simulation:GetNumG"><tt class="xref lua lua-func docutils literal"><span class="pre">GetNumG()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:GetGList" title="S4.Simulation:GetGList"><tt class="xref lua lua-func docutils literal"><span class="pre">GetGList()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:GetDiffractionOrder" title="S4.Simulation:GetDiffractionOrder"><tt class="xref lua lua-func docutils literal"><span class="pre">GetDiffractionOrder()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:GetAmplitudes" title="S4.Simulation:GetAmplitudes"><tt class="xref lua lua-func docutils literal"><span class="pre">GetAmplitudes()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:GetPowerFlux" title="S4.Simulation:GetPowerFlux"><tt class="xref lua lua-func docutils literal"><span class="pre">GetPowerFlux()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:GetPowerFluxByOrder" title="S4.Simulation:GetPowerFluxByOrder"><tt class="xref lua lua-func docutils literal"><span class="pre">GetPowerFluxByOrder()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:GetStressTensorIntegral" title="S4.Simulation:GetStressTensorIntegral"><tt class="xref lua lua-func docutils literal"><span class="pre">GetStressTensorIntegral()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:GetLayerEnergyDensityIntegral" title="S4.Simulation:GetLayerEnergyDensityIntegral"><tt class="xref lua lua-func docutils literal"><span class="pre">GetLayerEnergyDensityIntegral()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:GetLayerElectricEnergyDensityIntegral" title="S4.Simulation:GetLayerElectricEnergyDensityIntegral"><tt class="xref lua lua-func docutils literal"><span class="pre">GetLayerElectricEnergyDensityIntegral()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:GetLayerMagneticEnergyDensityIntegral" title="S4.Simulation:GetLayerMagneticEnergyDensityIntegral"><tt class="xref lua lua-func docutils literal"><span class="pre">GetLayerMagneticEnergyDensityIntegral()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:GetLayerElectricFieldIntensityIntegral" title="S4.Simulation:GetLayerElectricFieldIntensityIntegral"><tt class="xref lua lua-func docutils literal"><span class="pre">GetLayerElectricFieldIntensityIntegral()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:GetLayerZIntegral" title="S4.Simulation:GetLayerZIntegral"><tt class="xref lua lua-func docutils literal"><span class="pre">GetLayerZIntegral()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:GetEField" title="S4.Simulation:GetEField"><tt class="xref lua lua-func docutils literal"><span class="pre">GetEField()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:GetHField" title="S4.Simulation:GetHField"><tt class="xref lua lua-func docutils literal"><span class="pre">GetHField()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:GetFields" title="S4.Simulation:GetFields"><tt class="xref lua lua-func docutils literal"><span class="pre">GetFields()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:GetFieldPlane" title="S4.Simulation:GetFieldPlane"><tt class="xref lua lua-func docutils literal"><span class="pre">GetFieldPlane()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:GetSMatrixDeterminant" title="S4.Simulation:GetSMatrixDeterminant"><tt class="xref lua lua-func docutils literal"><span class="pre">GetSMatrixDeterminant()</span></tt></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#options">Options</a><ul>
+<li><a class="reference internal" href="#S4.Simulation:UseLanczosSmoothing" title="S4.Simulation:UseLanczosSmoothing"><tt class="xref lua lua-func docutils literal"><span class="pre">UseLanczosSmoothing()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:UseDiscretizedEpsilon" title="S4.Simulation:UseDiscretizedEpsilon"><tt class="xref lua lua-func docutils literal"><span class="pre">UseDiscretizedEpsilon()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:UsePolarizationDecomposition" title="S4.Simulation:UsePolarizationDecomposition"><tt class="xref lua lua-func docutils literal"><span class="pre">UsePolarizationDecomposition()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:UseSubpixelSmoothing" title="S4.Simulation:UseSubpixelSmoothing"><tt class="xref lua lua-func docutils literal"><span class="pre">UseSubpixelSmoothing()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:UseJonesVectorBasis" title="S4.Simulation:UseJonesVectorBasis"><tt class="xref lua lua-func docutils literal"><span class="pre">UseJonesVectorBasis()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:UseNormalVectorBasis" title="S4.Simulation:UseNormalVectorBasis"><tt class="xref lua lua-func docutils literal"><span class="pre">UseNormalVectorBasis()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:SetResolution" title="S4.Simulation:SetResolution"><tt class="xref lua lua-func docutils literal"><span class="pre">SetResolution()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:SetBasisFieldDumpPrefix" title="S4.Simulation:SetBasisFieldDumpPrefix"><tt class="xref lua lua-func docutils literal"><span class="pre">SetBasisFieldDumpPrefix()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:SetLatticeTruncation" title="S4.Simulation:SetLatticeTruncation"><tt class="xref lua lua-func docutils literal"><span class="pre">SetLatticeTruncation()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:SetVerbosity" title="S4.Simulation:SetVerbosity"><tt class="xref lua lua-func docutils literal"><span class="pre">SetVerbosity()</span></tt></a></li>
+<li><a class="reference internal" href="#S4.Simulation:UseLessMemory" title="S4.Simulation:UseLessMemory"><tt class="xref lua lua-func docutils literal"><span class="pre">UseLessMemory()</span></tt></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#miscellaneous">Miscellaneous</a><ul>
+<li><a class="reference internal" href="#S4.Simulation:Clone" title="S4.Simulation:Clone"><tt class="xref lua lua-func docutils literal"><span class="pre">Clone()</span></tt></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
 <div class="section" id="module-S4">
 <span id="s4-library"></span><h2>S4 library<a class="headerlink" href="#module-S4" title="Permalink to this headline">¶</a></h2>
 <p>All top level functions of S<sup>4</sup> are located in the <tt class="docutils literal"><span class="pre">S4</span></tt> library.
@@ -254,7 +334,8 @@ Frequencies: &#8220;THz&#8221;, &#8220;GHz&#8221;, &#8220;Hz&#8221;, &#8220;rad/
 This is a convenient way of passing command line arguments to S4 scripts, or in parallel environments for specifying machine IDs.</p>
 <p>When no command line switch is specified, <tt class="docutils literal"><span class="pre">S4.arg</span></tt> is nil.</p>
 <p>Multiple variables may be passed in by passing in multiple Lua statements:</p>
-<div class="highlight-python"><pre>./S4 -a "a=1;b=2;c=3" input.lua</pre>
+<div class="highlight-python"><div class="highlight"><pre>./S4 -a &quot;a=1;b=2;c=3&quot; input.lua
+</pre></div>
 </div>
 <p>Then within the script, the variables may be set with the statement:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">pcall</span><span class="p">(</span><span class="n">loadstring</span><span class="p">(</span><span class="n">S4</span><span class="o">.</span><span class="n">arg</span><span class="p">))</span>
@@ -294,8 +375,9 @@ When solutions are requested, only a minimal set of internal computations are pe
 <tt class="descclassname">Simulation:</tt><tt class="descname">SetLattice</tt><big>(</big><em>{x1</em>, <em>y1}</em>, <em>{x2</em>, <em>y2}</em><big>)</big></dt>
 <dd><p>Sets the real-space lattice vectors.</p>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:SetLattice(L)
-S:SetLattice({x1,y1}, {x2,y2})</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:SetLattice(L)
+S:SetLattice({x1,y1}, {x2,y2})
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -316,7 +398,8 @@ All fields and eigenmodes of the system use the same Fourier basis of the same d
 <p>The computation time is roughly proportional to the cube of this number, and the memory usage is roughly proportional to the square.</p>
 </div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:SetNumG(n)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:SetNumG(n)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -338,12 +421,13 @@ All fields and eigenmodes of the system use the same Fourier basis of the same d
 <dd><blockquote>
 <div>Adds a new material with a specified dielectric constant.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:AddMaterial(name, {eps_r, eps_i})
+<div class="highlight-python"><div class="highlight"><pre>S:AddMaterial(name, {eps_r, eps_i})
 S:AddMaterial(name, {
     {xx_r, xx_i}, {xy_r, xy_i}, {xz_r, xz_i},
     {yx_r, yx_i}, {yy_r, yy_i}, {yz_r, yz_i},
     {zx_r, zx_i}, {zy_r, zy_i}, {zz_r, zz_i}
-    })</pre>
+    })
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -369,12 +453,13 @@ S:AddMaterial(name, {
 <dd><blockquote>
 <div>Updates an existing material with a new dielectric constant or adds a material if none exists.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:SetMaterial(name, {eps_r, eps_i})
+<div class="highlight-python"><div class="highlight"><pre>S:SetMaterial(name, {eps_r, eps_i})
 S:SetMaterial(name, {
     {xx_r, xx_i}, {xy_r, xy_i}, {xz_r, xz_i},
     {yx_r, yx_i}, {yy_r, yy_i}, {yz_r, yz_i},
     {zx_r, zx_i}, {zy_r, zy_i}, {zz_r, zz_i}
-    })</pre>
+    })
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -398,7 +483,8 @@ S:SetMaterial(name, {
 <dd><blockquote>
 <div>Adds a new unpatterned layer with a specified thickness and material.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:AddLayer(name, thickness, material)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:AddLayer(name, thickness, material)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -425,7 +511,8 @@ If no matching layer is found, adds a new unpatterned layer with a specified thi
 The behavior is undefined if the new material does not match the old material during an update (currently, the new material is ignored, but this may change in the future).
 If only the thickness needs to be modified, use <tt class="xref lua lua-func docutils literal"><span class="pre">SetLayerThickness()</span></tt>.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:SetLayer(name, thickness, material)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:SetLayer(name, thickness, material)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -450,7 +537,8 @@ If only the thickness needs to be modified, use <tt class="xref lua lua-func doc
 <div>Updates an existing layer with a new thickness.
 Previously cached layer eigenmodes are preserved, making this function the preferred way to update a layer&#8217;s thickness.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:SetLayerThickness(name, thickness)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:SetLayerThickness(name, thickness)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -473,7 +561,8 @@ Previously cached layer eigenmodes are preserved, making this function the prefe
 <div>Adds a new layer with a specified thickness, but identical patterning as another existing layer.
 Note that this merely creates a reference to the copied layer; further patterning of the copied layer also affects the new layer. Additionally, a copy of a copy cannot be made.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:AddLayerCopy(name, thickness, original_name)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:AddLayerCopy(name, thickness, original_name)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -498,7 +587,8 @@ Note that this merely creates a reference to the copied layer; further patternin
 <div>Adds a (filled) circle of a specified material to an existing non-copy layer.
 The circle should not intersect any other patterning shapes, but may contain or be contained within other shapes.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:SetLayerPatternCircle(layer, material, center, radius)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:SetLayerPatternCircle(layer, material, center, radius)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -525,7 +615,8 @@ The circle should not intersect any other patterning shapes, but may contain or 
 <div>Adds a (filled) ellipse of a specified material to an existing non-copy layer.
 The ellipse should not intersect any other patterning shapes, but may contain or be contained within other shapes.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:SetLayerPatternEllipse(layer, material, center, angle, halfwidths)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:SetLayerPatternEllipse(layer, material, center, angle, halfwidths)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -554,7 +645,8 @@ The ellipse should not intersect any other patterning shapes, but may contain or
 <div>Adds a (filled) rectangle of a specified material to an existing non-copy layer.
 The rectangle should not intersect any other patterning shapes, but may contain or be contained within other shapes.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:SetLayerPatternRectangle(layer, material, center, angle, halfwidths)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:SetLayerPatternRectangle(layer, material, center, angle, halfwidths)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -583,7 +675,8 @@ The rectangle should not intersect any other patterning shapes, but may contain 
 <div>Adds a (filled) polygon of a specified material to an existing non-copy layer.
 The polygon should not self-intersect nor intersect any other patterning shapes, but may contain or be contained within other shapes. The polygon must also be specified with positive orientation (the vertices circle CCW about an interior point).</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:SetLayerPatternPolygon(layer, material, center, angle, vertices)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:SetLayerPatternPolygon(layer, material, center, angle, vertices)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -614,14 +707,15 @@ Thus, <tt class="docutils literal"><span class="pre">vertices[1]</span></tt> is 
 If both tilt angles are specified to be zero, then the planewave is normally incident with the electric field polarized along the x-axis for the p-polarization.
 The phase of each polarization is defined at the origin (z = 0).</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:SetExcitationPlanewave({phi,theta}, {s_amp, s_phase}, {p_amp, p_phase}, order)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:SetExcitationPlanewave({phi,theta}, {s_amp, s_phase}, {p_amp, p_phase}, order)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
 <div><dl class="docutils">
 <dt>phi, theta</dt>
 <dd>(number) Angles in degrees. <tt class="docutils literal"><span class="pre">phi</span></tt> and <tt class="docutils literal"><span class="pre">theta</span></tt> give the spherical coordinate angles of the planewave k-vector.
-For zero angles, the k-vector is assumed to be (0, 0, kz), while the electric field is assumed to be (E0, 0, 0), and the magnetic field is in (0, H0, 0).
+For zero angles, the k-vector is assumed to be (0, 0, kz), while the electric field is assumed to be (0, -E0, 0), and the magnetic field is in (H0, 0, 0).
 The angle <tt class="docutils literal"><span class="pre">phi</span></tt> specifies first the angle by which the E,H,k frame should be rotated (CW) about the y-axis, and the angle <tt class="docutils literal"><span class="pre">theta</span></tt> specifies next the angle by which the E,H,k frame should be rotated (CCW) about the z-axis. Note the different directions of rotations for each angle.</dd>
 <dt>s_amp, p_amp</dt>
 <dd>(number) The electric field amplitude of the s- and p-polarizations of the planewave.</dd>
@@ -642,10 +736,11 @@ The angle <tt class="docutils literal"><span class="pre">phi</span></tt> specifi
 <dd><blockquote>
 <div>Low level function to set excitations by a superposition of incident modes of the exterior layers. For unpatterned layers, the incident modes are forward propagating planewaves in the front, and backward propagating planewaves in the back.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:SetExcitationExterior{
+<div class="highlight-python"><div class="highlight"><pre>S:SetExcitationExterior{
     { G-index, pol, { amp-re, amp-im } },
     ...
-}</pre>
+}
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -669,7 +764,8 @@ The angle <tt class="docutils literal"><span class="pre">phi</span></tt> specifi
 <dd><blockquote>
 <div>Sets the operating frequency of the system (and excitation).</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:SetFrequency(freqr, freqi)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:SetFrequency(freqr, freqi)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -695,7 +791,8 @@ The angle <tt class="docutils literal"><span class="pre">phi</span></tt> specifi
 <div>Retrieves the reciprocal lattice basis vectors.
 The vectors lack the scaling by 2pi (multiply them by 2pi to obtain the true reciprocal lattice basis vectors).</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>Gu,Gv = S:GetReciprocalLattice()</pre>
+<div class="highlight-python"><div class="highlight"><pre>Gu,Gv = S:GetReciprocalLattice()
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -719,7 +816,8 @@ Each vector is a table of length 2, holding the x- and y-coordinates of the vect
 <p>Note that this reconstruction is not representative of the actual dielectric constant profile used in simulations (such a notion is not meaningful). The reconstruction is created using the closed-form Fourier series coefficients of the specified patterning, summed over the terms comprising the G-vector list obtained from lattice truncation. This function exists to provide an intuitive sense for the spatial resolution of a particular G-vector truncation order.</p>
 </div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>eps_r, eps_i = S:GetEpsilon({x, y, z})</pre>
+<div class="highlight-python"><div class="highlight"><pre>eps_r, eps_i = S:GetEpsilon({x, y, z})
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -743,7 +841,8 @@ Each vector is a table of length 2, holding the x- and y-coordinates of the vect
 <dd><blockquote>
 <div>Outputs a list of PostScript commands to render the exact layer pattern description from the specified patterning commands. Assumes letter-sized paper.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:OutputLayerPatternDescription(name, filename)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:OutputLayerPatternDescription(name, filename)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -794,7 +893,8 @@ Each vector is a table of length 2, holding the x- and y-coordinates of the vect
 <dd><blockquote>
 <div>Outputs a <a class="reference external" href="http://www.povray.org">POV-Ray</a> script that will render one unit cell of the structure in 3D. Materials named <tt class="docutils literal"><span class="pre">air</span></tt> or <tt class="docutils literal"><span class="pre">vacuum</span></tt> (case insensitive) will be completely transparent.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:OutputStructurePOVRay(filename)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:OutputStructurePOVRay(filename)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -814,7 +914,8 @@ Each vector is a table of length 2, holding the x- and y-coordinates of the vect
 <dd><blockquote>
 <div>Returns the specified number of Fourier series orders to use (number of G-vectors), or, if a solution has been computed, the actual number of G-vectors used.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>n = S:GetNumG()</pre>
+<div class="highlight-python"><div class="highlight"><pre>n = S:GetNumG()
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -835,7 +936,8 @@ Each vector is a table of length 2, holding the x- and y-coordinates of the vect
 <div>Returns a table of reciprocal lattice coordinates of the Fourier series orders used.
 The coordinates are in the reciprocal lattice basis, and so they are integers.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>G = S:GetGList()</pre>
+<div class="highlight-python"><div class="highlight"><pre>G = S:GetGList()
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -858,7 +960,8 @@ The index can be used directly in GetPowerFluxByOrder to obtain the diffracted p
 The coordinate arguments are in the reciprocal lattice basis, and so they are integers.
 A particular diffraction order is only a meaningful concept in a uniform (unpatterned) layer, otherwise the diffraction order corresponds to an arbitrary layer eigenfunction index.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>i = S:GetDiffractionOrder(m, n)</pre>
+<div class="highlight-python"><div class="highlight"><pre>i = S:GetDiffractionOrder(m, n)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -885,7 +988,8 @@ For uniform (unpatterned) layers, the modes are simply the diffracted orders, an
 The first value is guaranteed to be the straight transmitted or specularly reflected diffraction order.
 For patterned layers, there is typically no meaningful information in these amplitudes.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>forw,back = S:GetAmplitudes(layer, offset)</pre>
+<div class="highlight-python"><div class="highlight"><pre>forw,back = S:GetAmplitudes(layer, offset)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -912,7 +1016,8 @@ For patterned layers, there is typically no meaningful information in these ampl
 <div>Returns the integral of the power (Poynting) flux density over a unit cell surface normal to the z-direction.
 In other words, the z-component of the power flux is returned.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>forw_r, back_r, forw_i, back_i = S:GetPowerFlux(layer, offset)</pre>
+<div class="highlight-python"><div class="highlight"><pre>forw_r, back_r, forw_i, back_i = S:GetPowerFlux(layer, offset)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -941,7 +1046,8 @@ In other words, the z-component of the power flux is returned.</div></blockquote
 <div>Returns the integral of the power (Poynting) flux density over a unit cell surface normal to the z-direction for each Fourier series order.
 In other words, the z-component of the Poynting flux for each order is returned.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>P = S:GetPowerFluxByOrder(layer, offset)</pre>
+<div class="highlight-python"><div class="highlight"><pre>P = S:GetPowerFluxByOrder(layer, offset)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -969,7 +1075,8 @@ These four quantities are described in the section for <tt class="xref lua lua-f
 <dd><blockquote>
 <div>Returns the integral of the electromagnetic stress tensor over a unit cell surface normal to the z-direction.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>Txr, Tyr, Tzr, Txi, Tyi, Tzi = S:GetStressTensorIntegral(layer, offset)</pre>
+<div class="highlight-python"><div class="highlight"><pre>Txr, Tyr, Tzr, Txi, Tyi, Tzi = S:GetStressTensorIntegral(layer, offset)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -997,7 +1104,8 @@ These four quantities are described in the section for <tt class="xref lua lua-f
 <dd><blockquote>
 <div>Returns the volume integral of the electromagnetic energy density (epsilon*|E|^2 + |H|^2) over a unit cell throughout the entire thickness of a layer.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>Ur,Ui = S:GetLayerEnergyDensityIntegral(layer)</pre>
+<div class="highlight-python"><div class="highlight"><pre>Ur,Ui = S:GetLayerEnergyDensityIntegral(layer)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1021,7 +1129,8 @@ These four quantities are described in the section for <tt class="xref lua lua-f
 <dd><blockquote>
 <div>Returns the volume integral of the electric energy density (epsilon*|E|^2) over a unit cell throughout the entire thickness of a layer.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>Ur,Ui = S:GetLayerElectricEnergyDensityIntegral(layer)</pre>
+<div class="highlight-python"><div class="highlight"><pre>Ur,Ui = S:GetLayerElectricEnergyDensityIntegral(layer)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1045,7 +1154,8 @@ These four quantities are described in the section for <tt class="xref lua lua-f
 <dd><blockquote>
 <div>Returns the volume integral of the magnetic energy density (|H|^2) over a unit cell throughout the entire thickness of a layer.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>Ur,Ui = S:GetLayerMagneticEnergyDensityIntegral(layer)</pre>
+<div class="highlight-python"><div class="highlight"><pre>Ur,Ui = S:GetLayerMagneticEnergyDensityIntegral(layer)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1069,7 +1179,8 @@ These four quantities are described in the section for <tt class="xref lua lua-f
 <dd><blockquote>
 <div>Returns the volume integral of the squared electric field intensity (|E|^2) over a unit cell throughout the entire thickness of a layer.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>Ur,Ui = S:GetLayerElectricFieldIntensityIntegral(layer)</pre>
+<div class="highlight-python"><div class="highlight"><pre>Ur,Ui = S:GetLayerElectricFieldIntensityIntegral(layer)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1093,7 +1204,8 @@ These four quantities are described in the section for <tt class="xref lua lua-f
 <dd><blockquote>
 <div>Returns the line integral along z (depth direction) of the squared magnitudes of electric and magnetic field components (|Ex|^2, |Ey|^2, etc.) throughout the entire thickness of a layer.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>IEx, IEy, IEz, IHx, IHy, IHz = S:GetLayerZIntegral(layer, {x, y})</pre>
+<div class="highlight-python"><div class="highlight"><pre>IEx, IEy, IEz, IHx, IHy, IHz = S:GetLayerZIntegral(layer, {x, y})
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1119,7 +1231,8 @@ These four quantities are described in the section for <tt class="xref lua lua-f
 <dd><blockquote>
 <div>Returns the electric field at a particular point within the structure.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>Exr, Eyr, Ezr, Exi, Eyi, Ezi = S:GetEField({x, y, z})</pre>
+<div class="highlight-python"><div class="highlight"><pre>Exr, Eyr, Ezr, Exi, Eyi, Ezi = S:GetEField({x, y, z})
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1145,7 +1258,8 @@ These four quantities are described in the section for <tt class="xref lua lua-f
 <dd><blockquote>
 <div>Returns the magnetic field at a particular point within the structure.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>Hxr, Hyr, Hzr, Hxi, Hyi, Hzi = S:GetHField({x, y, z})</pre>
+<div class="highlight-python"><div class="highlight"><pre>Hxr, Hyr, Hzr, Hxi, Hyi, Hzi = S:GetHField({x, y, z})
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1172,7 +1286,8 @@ These four quantities are described in the section for <tt class="xref lua lua-f
 <div>Returns the electric and magnetic field at a particular point within the structure.
 Note that it is more efficient to call this function when both fields are needed.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>Exr, Eyr, Ezr, Hxr, Hyr, Hzr, Exi, Eyi, Ezi, Hxi, Hyi, Hzi = S:GetFields({x, y, z})</pre>
+<div class="highlight-python"><div class="highlight"><pre>Exr, Eyr, Ezr, Hxr, Hyr, Hzr, Exi, Eyi, Ezi, Hxi, Hyi, Hzi = S:GetFields({x, y, z})
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1199,9 +1314,10 @@ Note that it is more efficient to call this function when both fields are needed
 <div>Returns the electric and magnetic fields on a regular grid over the unit cell (fundamental parallelogram) at a particular z coordinate.
 It is more efficient to use this function than <tt class="xref lua lua-func docutils literal"><span class="pre">GetFields()</span></tt>.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>E,H = S:GetFieldPlane(z, {nu, nv}, 'Array')
-S:GetFieldPlane(z, {nu, nv}, 'FileWrite', basename)
-S:GetFieldPlane(z, {nu, nv}, 'FileAppend', basename)</pre>
+<div class="highlight-python"><div class="highlight"><pre>E,H = S:GetFieldPlane(z, {nu, nv}, &#39;Array&#39;)
+S:GetFieldPlane(z, {nu, nv}, &#39;FileWrite&#39;, basename)
+S:GetFieldPlane(z, {nu, nv}, &#39;FileAppend&#39;, basename)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1242,7 +1358,8 @@ Arrays of dimension <cite>nu</cite> by <cite>nv</cite>, each element is a table 
 <div>Returns the determinant of the S-matrix (scattering matrix) of the entire structure.
 The determinant is an analytic function in the complex frequency plane and has poles at the complex modal frequencies of the system.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>mantr, manti, base, expo = S:GetSMatrixDeterminant()</pre>
+<div class="highlight-python"><div class="highlight"><pre>mantr, manti, base, expo = S:GetSMatrixDeterminant()
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1269,7 +1386,8 @@ The determinant is an analytic function in the complex frequency plane and has p
 <dd><blockquote>
 <div>Enables or disables smoothing of the Fourier series representations of the layer dielectric constants using the Lanczos sigma factor (box filtering). This reduces the Gibbs phenomenon ringing in the real space reconstruction.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:UseLanczosSmoothing(use)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:UseLanczosSmoothing(use)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1291,7 +1409,8 @@ The determinant is an analytic function in the complex frequency plane and has p
 <p>See the <a class="reference internal" href="tutorial.html#fmm-formulations-label"><em>Fourier Modal Method formulations</em></a> for details.</p>
 </div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:UseDiscretizedEpsilon(use)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:UseDiscretizedEpsilon(use)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1316,7 +1435,8 @@ This option is not guaranteed to work in the presence of tensor dielectric const
 See the <a class="reference internal" href="tutorial.html#fmm-formulations-label"><em>Fourier Modal Method formulations</em></a> for details.</p>
 </div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:UsePolarizationDecomposition(use)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:UsePolarizationDecomposition(use)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1340,7 +1460,8 @@ The average epsilon within a pixel is computed using the fill factor of each mat
 See the <a class="reference internal" href="tutorial.html#fmm-formulations-label"><em>Fourier Modal Method formulations</em></a> for details.</p>
 </div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:UseSubpixelSmoothing(use)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:UseSubpixelSmoothing(use)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1364,7 +1485,8 @@ When enabled, a Jones vector basis field is used instead of a conformal harmonic
 See the <a class="reference internal" href="tutorial.html#fmm-formulations-label"><em>Fourier Modal Method formulations</em></a> for details.</p>
 </div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:UseJonesVectorBasis(use)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:UseJonesVectorBasis(use)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1388,7 +1510,8 @@ When enabled, the resulting vector field is normalized. Where the vector field i
 See the <a class="reference internal" href="tutorial.html#fmm-formulations-label"><em>Fourier Modal Method formulations</em></a> for details.</p>
 </div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:UseNormalVectorBasis(use)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:UseNormalVectorBasis(use)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1412,7 +1535,8 @@ The resolution is multiplied by the largest G-vector extent (integer lattice coo
 <p>See the <a class="reference internal" href="tutorial.html#fmm-formulations-label"><em>Fourier Modal Method formulations</em></a> for details.</p>
 </div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:SetResolution(n)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:SetResolution(n)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1433,7 +1557,8 @@ The resolution is multiplied by the largest G-vector extent (integer lattice coo
 <div>Setting this option to a filename prefix causes the vector field used by the polarization decomposition to be dumped to files (one for each layer) in Gnuplot format.
 The files are named by concatenating the provided prefix string with each layer&#8217;s name.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:SetBasisFieldDumpPrefix(prefix)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:SetBasisFieldDumpPrefix(prefix)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1453,7 +1578,8 @@ The files are named by concatenating the provided prefix string with each layer&
 <dd><blockquote>
 <div>Sets the type of lattice truncation to use when selecting G-vectors.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:SetLatticeTruncation(trunc)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:SetLatticeTruncation(trunc)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1480,7 +1606,8 @@ The files are named by concatenating the provided prefix string with each layer&
 <dd><blockquote>
 <div>Sets the level of diagnostic output generated by the program.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S:SetVerbosity(level)</pre>
+<div class="highlight-python"><div class="highlight"><pre>S:SetVerbosity(level)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1525,7 +1652,8 @@ The drawback is slower computation of any output quantities that require solutio
 <div>Duplicates an existing Simulation object, copying all materials, layers, and excitation information.
 No partial solution information is copied.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>S2 = S:Clone()</pre>
+<div class="highlight-python"><div class="highlight"><pre>S2 = S:Clone()
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1547,7 +1675,7 @@ For example, it is used to resolve sharp peaks in transmission spectra.
 Interaction with a SpectrumSampler object is by contract; a new frequency is retrieved from it by which simulation results at that frequency are computed, and then the results are submitted.</p>
 <p>The frequencies given out by a SpectrumSampler object aim to produce a visually pleasing plot of the resulting spectrum by limiting the maximum normalized bend angles between adjacent line segments of the plot.</p>
 <p>A typical usage is shown below:</p>
-<div class="highlight-python"><pre>function f(x) -- example function
+<div class="highlight-python"><div class="highlight"><pre>function f(x) -- example function
     return math.sin(x)
 end
 sampler = S4.NewSpectrumSampler(0.1, 0.9, -- start and end frequencies
@@ -1566,7 +1694,8 @@ end
 spectrum = sampler:GetSpectrum()
 for i,xy in ipairs(spectrum) do
     print(xy[1],xy[2])
-end</pre>
+end
+</pre></div>
 </div>
 </dd></dl>
 
@@ -1577,7 +1706,8 @@ end</pre>
 <div>Queries whether the SpectrumSampler has completed sampling.
 When sampling has been completed, no further frequencies should be requested from the SpectrumSampler object, and no further results should be submitted.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>done = sampler:IsDone()</pre>
+<div class="highlight-python"><div class="highlight"><pre>done = sampler:IsDone()
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1593,7 +1723,8 @@ When sampling has been completed, no further frequencies should be requested fro
 <dd><blockquote>
 <div>Retrieves the next frequency at which to sample the spectrum. This function should only be used if the SpectrumSampler object was created with <cite>Parallize</cite> set to false (the default).</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>freq = sampler:GetFrequency()</pre>
+<div class="highlight-python"><div class="highlight"><pre>freq = sampler:GetFrequency()
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1609,7 +1740,8 @@ When sampling has been completed, no further frequencies should be requested fro
 <dd><blockquote>
 <div>Retrieves the next set of frequencies at which to sample the spectrum. This function should only be used if the SpectrumSampler object was created with <cite>Parallize</cite> set to true.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>freqlist = sampler:GetFrequency()</pre>
+<div class="highlight-python"><div class="highlight"><pre>freqlist = sampler:GetFrequency()
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1625,7 +1757,8 @@ When sampling has been completed, no further frequencies should be requested fro
 <dd><blockquote>
 <div>Submits a result to the SpectrumSampler object. The result is assumed to be at the frequency of the last requested frequency.  This function should only be used if the SpectrumSampler object was created with <cite>Parallize</cite> set to false (the default).</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>done = sampler:SubmitResult(result)</pre>
+<div class="highlight-python"><div class="highlight"><pre>done = sampler:SubmitResult(result)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1645,7 +1778,8 @@ When sampling has been completed, no further frequencies should be requested fro
 <dd><blockquote>
 <div>Submits a set of results to the SpectrumSampler object. The results are assumed to be at the frequencies of the last requested frequencies. This function should only be used if the SpectrumSampler object was created with <cite>Parallize</cite> set to true.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>done = sampler:SubmitResults(result_list)</pre>
+<div class="highlight-python"><div class="highlight"><pre>done = sampler:SubmitResults(result_list)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1666,7 +1800,8 @@ When sampling has been completed, no further frequencies should be requested fro
 <div>Retrieves a list of all sampled frequencies and submitted results.
 This function should only be used when the SpectrumSampler object indicates that sampling is complete.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>valarray = sampler:GetSpectrum()</pre>
+<div class="highlight-python"><div class="highlight"><pre>valarray = sampler:GetSpectrum()
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1685,7 +1820,7 @@ This function should only be used when the SpectrumSampler object indicates that
 <dd><p>The Interpolator object provides a tool to perform various types of interpolation on data.
 The most common use is to interpolate between experimentally determined values for dieletric constants.
 A typical usage is shown below:</p>
-<div class="highlight-python"><pre>interpolator = S4.NewInterpolator('linear', {
+<div class="highlight-python"><div class="highlight"><pre>interpolator = S4.NewInterpolator(&#39;linear&#39;, {
     {3.0, {14.2, 32}}, -- x, and list of y values
     {5.4, {4.6, 10}},
     {5.7, {42.7, 20}},
@@ -1695,7 +1830,8 @@ A typical usage is shown below:</p>
 for x = 0, 10, 0.1 do
     y1, y2 = interpolator:Get(x)
     print(x, y1, y2)
-end</pre>
+end
+</pre></div>
 </div>
 <p>At each x (abscissa) value, any number of y (ordinate) values can be specified for interpolation.</p>
 </dd></dl>
@@ -1706,7 +1842,8 @@ end</pre>
 <dd><blockquote>
 <div>Retrieves the interpolated ordinates for a given abscissa value.</div></blockquote>
 <p>Usage:</p>
-<div class="highlight-python"><pre>y1, y2, ... = interpolator:Get(x)</pre>
+<div class="highlight-python"><div class="highlight"><pre>y1, y2, ... = interpolator:Get(x)
+</pre></div>
 </div>
 <p>Arguments:</p>
 <blockquote>
@@ -1810,7 +1947,7 @@ end</pre>
     </div>
     <div class="footer">
         &copy; Copyright 2013, Victor Liu.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

@@ -68,7 +68,8 @@ Due to the scale invariant nature of the linear Maxwell&#8217;s equations, there
 Instead, one can imagine that all lengths specified in S<sup>4</sup> are multiples of a common reference length unit.</p>
 <p>When the lattice vectors are set, this determines a length scale.
 Suppose we have a square lattice with a periodicity of 680nm. It might be logical then to choose 1 micron as the base length unit, and to specify all lengths in microns. The lattice would then be set to the vectors (0.68, 0) and (0, 0.68).
-Since frequency is in units of inverse length, then <tt class="docutils literal"><span class="pre">SetFrequency(1)</span></tt> corresponds to a wavelength of 680nm or a physical frequency of (c/680nm) = 441 THz, and <tt class="docutils literal"><span class="pre">SetFrequency(1.1)</span></tt> corresponds to a wavelength of (680/1.1) = 618nm, etc.</p>
+Since frequency is in units of inverse length, then <tt class="docutils literal"><span class="pre">SetFrequency(1)</span></tt> corresponds to a wavelength of 1um or a physical frequency of (c/1um) = 300 THz, and <tt class="docutils literal"><span class="pre">SetFrequency(1.1)</span></tt> corresponds to a wavelength of (1/1.1) = 909nm, etc.</p>
+<p>For numerical stability, it is best to choose a length scale in which most dimensions are close to unity. For typical nanophotonic structures, using (implicit) microns is preferable to using (implicit) nanometers.</p>
 </div>
 <div class="section" id="amplitudes-and-powers">
 <h2>Amplitudes and powers<a class="headerlink" href="#amplitudes-and-powers" title="Permalink to this headline">¶</a></h2>
@@ -158,7 +159,7 @@ If the incident power is considered to have units of Watts per unit-cell-area, t
     </div>
     <div class="footer">
         &copy; Copyright 2013, Victor Liu.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>
