@@ -36,12 +36,12 @@ double polygon_area(int n, const double *v){
 	return 0.5*area;
 }
 
-inline double LeftTurn(const double a[2], const double b[2], const double c[2]){
+static inline double LeftTurn(const double a[2], const double b[2], const double c[2]){
 	extern double orient2d(double*, double*, double*);
 	return orient2d((double*)a, (double*)b, (double*)c);
 }
 
-inline int dsign(double x){
+static inline int dsign(double x){
 	if(0 == x){ return 0; }
 	else if(x > 0){ return 1; }
 	else{ return -1; }
