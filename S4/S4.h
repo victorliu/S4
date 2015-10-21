@@ -20,6 +20,8 @@
 #ifndef _S4_H_
 #define _S4_H_
 
+#include <stdio.h>
+
 // Note: the interface described in this file must be kept C-compatible.
 
 #ifdef __cplusplus
@@ -92,38 +94,38 @@ typedef struct Layer_{
 
 typedef struct Options_{
 	int use_discretized_epsilon;
-	
+
 	// Set use_subpixel_smoothing to nonzero if subpixel smoothing should
 	// be done on the Fourier transform of the dielectric functions.
 	// This will cause the dielectric function to be discretized instead
 	// of using the analytic Fourier transforms of specified shapes.
 	int use_subpixel_smoothing;
-	
+
 	// Set use_Lanczos_smoothing to nonzero if Lanczos smoothing should
 	// be done on the Fourier transform of the dielectric functions.
 	int use_Lanczos_smoothing;
-	
+
 	// Set use_polarization_basis to nonzero if a decomposition into the
 	// structure conforming polarization basis should be performed. By
 	// default, the basis is not everywhere-unit-normalized and purely
 	// real unless one of the following two options are used.
 	int use_polarization_basis;
-	
+
 	// Set use_jones_vector_basis to nonzero if a complex Jones
 	// vector polarization basis should be used. This setting has no
 	// effect if use_polarization_basis is zero.
 	int use_jones_vector_basis;
-	
+
 	// Set use_normal_vector_basis to nonzero if a normalized normal
 	// vector polarization basis should be used. This setting has no
 	// effect if use_polarization_basis is zero.
 	int use_normal_vector_basis;
-	
+
 	// Set use_normal_vector_field to nonzero if a normal vector field
 	// should be generated. The field is everywhere normal to material
 	// interfaces and forced to have unit magnitude everywhere.
 	int use_normal_vector_field;
-	
+
 	// Set resolution to be the multiple of the reciprocal lattice order
 	// extent by which the polarization basis vector field should be
 	// discretized. For example, if the reciprocal lattice orders go up
@@ -134,29 +136,29 @@ typedef struct Options_{
 	// The default value is 64, and must be at least 2 to satisfy the
 	// Nyquist sampling criterion.
 	int resolution;
-	
+
 	// Set vector_field_dump_filename_prefix to non-NULL if the
 	// automatically generated vector field in the polarization
 	// decomposition should be output to files whose prefix is the
 	// specified string (suffix is layer name).
 	char *vector_field_dump_filename_prefix;
-	
+
 	// Specifies how G vectors should be chosen (currently not used)
 	// 0 = Circular truncation
 	// 1 = Parallelogramic truncation
 	int lattice_truncation;
-	
+
 	// Specifies how much simulation output progress to output to stdout
 	int verbosity;
-	
+
 	// Set use_experimental_fmm to nonzero if the experimental FMM
 	// formulation should be used. (For experimental/debug purposes)
 	int use_experimental_fmm;
-	
+
 	// Set use_less_memory to nonzero if intermediate matrices should not
 	// be stored in memory when possible.
 	int use_less_memory;
-	
+
 	double lanczos_smoothing_width;
 	int lanczos_smoothing_power;
 } Options;
@@ -208,15 +210,15 @@ typedef struct Simulation_{
 	int n_G;            // Number of G-vectors (Fourier planewave orders).
 	Material *material; // linked list of materials
 	Layer *layer;       // linked list of layers
-	
+
 	// Excitation
 	double omega[2]; // real and imaginary parts of omega
 	double k[2]; // xy components of k vector, as fraction of k0 = omega
 	Excitation exc;
-	
+
 	Solution *solution; // The solution object is not allocated until needed.
 	Options options;
-	
+
 	struct FieldCache *field_cache; // Internal cache of vector field FT when using polarization bases
 } Simulation;
 
@@ -341,6 +343,10 @@ int Simulation_SolveLayer(Simulation *S, Layer *layer);
 // powers[3] - imag back
 int Simulation_GetPoyntingFlux(Simulation *S, Layer *layer, double offset, double powers[4]);
 int Simulation_GetPoyntingFluxByG(Simulation *S, Layer *layer, double offset, double *powers);
+
+// Returns a list of S->n_G complex numbers of mode propagation constants
+// q should be length 2*S->n_G
+int Simulation_GetPropagationConstants(Simulation *S, Layer *layer, double *q);
 
 // Returns lists of 2*S->n_G complex numbers of forward and backward amplitudes
 // forw and back should each be length 4*S->n_G
