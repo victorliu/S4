@@ -266,5 +266,11 @@ S4_pyext: objdir $(S4_LIBNAME)
 	sh gensetup.py.sh $(OBJDIR) $(S4_LIBNAME)
 	python setup.py build
 
+S4_R: objdir $(S4_LIBNAME)
+	R CMD BUILD RCWA
+	R CMD INSTALL RCWA
+
 clean:
 	rm -rf $(OBJDIR)
+
+
