@@ -20,9 +20,6 @@
 #ifndef _PATTERN_H_
 #define _PATTERN_H_
 
-/* The floating point number type to use. */
-typedef double REAL;
-
 /* A pattern is defined as a set of 1D geometrical shapes (e.g. circles)
  * in the 2D plane. All shapes must be closed, simply connected contours.
  *
@@ -51,36 +48,36 @@ typedef enum shape_type_{
 typedef struct shape_{
 	/* `type' determines which field in the union is used. */
 	shape_type type;
-	
+
 	/* Location of the center of the shape. For circles, ellipses, and
 	 * rectangles, the center is the geometric center (center of mass).
 	 */
-	REAL center[2]; /* x and y coordinates */
-	
+	double center[2]; /* x and y coordinates */
+
 	/* The angle by which the shape is rotated, CCW, in radians.
 	 * Obviously, the rotation is applied first, then the translation
 	 * given in `center' is applied.
 	 */
-	REAL angle;
-	
+	double angle;
+
 	/* The proper choice of field to use is determined by `type' above.
 	 */
 	union{
 		struct{
-			REAL radius;
+			double radius;
 		} circle;
 		struct{
-			REAL halfwidth[2]; /* x and y semimajor axes */
+			double halfwidth[2]; /* x and y semimajor axes */
 		} ellipse;
 		struct{
-			REAL halfwidth[2]; /* x and y halfwidths */
+			double halfwidth[2]; /* x and y halfwidths */
 		} rectangle;
 		struct{
 			int n_vertices;
 			/* Separately allocated, length 2*n_vertices.
 			 * A list of xy-pairs in CCW orientation.
 			 */
-			REAL *vertex;
+			double *vertex;
 		} polygon;
 	} vtab;
 	int tag; /* available for user defined purposes */
@@ -102,7 +99,7 @@ typedef struct Pattern_{
  * containing shape. The containing shape of shapes[i] is shapes[parent[i]]
  * unless parent[i] == -1, in which case shapes[i] is not contained within
  * any other shape.
- * 
+ *
  * Arguments:
  *    nshapes  IN      Number of shapes; length of `shapes'.
  *    shapes   IN/OUT  Array of `shape' structures. On exit, the array
@@ -151,16 +148,16 @@ int pattern_get_shape(
 	int nshapes,
 	const shape *shapes,
 	const int *parent,
-	const REAL x[2],
+	const double x[2],
 	int *shape_index,
-	REAL n[2]
+	double n[2]
 );
 /* Convenience version of the above. */
 int Pattern_GetShape(
 	const Pattern *p,
-	const REAL x[2],
+	const double x[2],
 	int *shape_index,
-	REAL n[2]
+	double n[2]
 );
 
 /* Returns an approximate outward normal vector to the shape.
@@ -172,7 +169,7 @@ int Pattern_GetShape(
  * Return values:
  *   -n: If n-th argument is invalid.
  */
-int shape_get_normal(const shape *s, const REAL x[2], REAL n[2]);
+int shape_get_normal(const shape *s, const double x[2], double n[2]);
 
 /* Returns the Fourier transform of the pattern, given values for the interior
  * of each shape and the background.
@@ -203,26 +200,26 @@ int pattern_get_fourier_transform(
 	int nshapes,
 	const shape *shapes,
 	const int *parent,
-	const REAL *value,
-	const REAL f[2],
+	const double *value,
+	const double f[2],
 	int ndim,
-	REAL unit_cell_size,
-	REAL FT[2]
+	double unit_cell_size,
+	double FT[2]
 );
 /* Convenience version of the above. */
 int Pattern_GetFourierTransform(
 	const Pattern *p,
-	const REAL *value,
-	const REAL f[2],
+	const double *value,
+	const double f[2],
 	int ndim,
-	REAL unit_cell_size,
-	REAL FT[2]
+	double unit_cell_size,
+	double FT[2]
 );
 
 /* Returns an area weighting of each shape within one cell of a uniform
  * discretization of the origin-centered unit square.
  *  The area-fraction of each shape within the rectangle
- * [x0,x0+dx] x [y0,y0+dy] is returned in `value'. The discretization has 
+ * [x0,x0+dx] x [y0,y0+dy] is returned in `value'. The discretization has
  * `nx' cells along the x-direction, and `ny' cells along the y-direction.
  * The total region is the unit square [-0.5,0.5] x [-0.5,0.5], so
  *            x0 = -0.5, 0.5 + dx, 0.5 + 2*dx, ..., 0.5 - dx
@@ -255,7 +252,7 @@ int pattern_discretize_cell(
 	const double L[4],
 	int nu, int nv,
 	int iu, int iv,
-	REAL *value
+	double *value
 );
 /* Convenience version of the above. */
 int Pattern_DiscretizeCell(
@@ -263,7 +260,7 @@ int Pattern_DiscretizeCell(
 	const double L[4],
 	int nu, int nv,
 	int iu, int iv,
-	REAL *value
+	double *value
 );
 
 /* Returns a vector field which is tangential or normal to the shapes.
@@ -321,7 +318,7 @@ int pattern_generate_flow_field(
 	int type,
 	const double L[4],
 	int nu, int nv,
-	REAL *field
+	double *field
 );
 /* Convenience version of the above. */
 int Pattern_GenerateFlowField(
@@ -329,7 +326,7 @@ int Pattern_GenerateFlowField(
 	int type,
 	const double L[4],
 	int nu, int nv,
-	REAL *value
+	double *value
 );
 
 #endif /* _PATTERN_H_ */

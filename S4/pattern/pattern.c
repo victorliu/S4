@@ -111,7 +111,7 @@ static double my_j0(double x){ /* spherical bessel of first kind, order 0 */
 double Sinc(double x){
 	return my_j0(M_PI*x);
 }
-static REAL shape_area(const shape *s){
+static double shape_area(const shape *s){
 	switch(s->type){
 	case CIRCLE:
 		return M_PI * s->vtab.circle.radius*s->vtab.circle.radius;
@@ -122,7 +122,7 @@ static REAL shape_area(const shape *s){
 	case POLYGON:
 		{
 			int i;
-			REAL a = 0;
+			double a = 0;
 			for(i = 0; i < s->vtab.polygon.n_vertices; ++i){
 				int j = (i+1)%s->vtab.polygon.n_vertices;
 				a += (s->vtab.polygon.vertex[2*i+0]*s->vtab.polygon.vertex[2*j+1] - s->vtab.polygon.vertex[2*i+1]*s->vtab.polygon.vertex[2*j+0]);
@@ -134,7 +134,7 @@ static REAL shape_area(const shape *s){
 	}
 }
 
-static void shape_get_interior_point(const shape *s, REAL x[2]){
+static void shape_get_interior_point(const shape *s, double x[2]){
 	switch(s->type){
 	case CIRCLE:
 	case ELLIPSE:
@@ -151,10 +151,10 @@ static void shape_get_interior_point(const shape *s, REAL x[2]){
 	}
 }
 
-static int shape_contains_point(const shape *s, const REAL x_[2]){
-	REAL x[2];
-	const REAL ca = cos(s->angle);
-	const REAL sa = sin(s->angle);
+static int shape_contains_point(const shape *s, const double x_[2]){
+	double x[2];
+	const double ca = cos(s->angle);
+	const double sa = sin(s->angle);
 	x[0] = (x_[0] - s->center[0]) * ca + (x_[1] - s->center[1]) * sa;
 	x[1] = (x_[0] - s->center[1]) *-sa + (x_[1] - s->center[1]) * ca;
 	switch(s->type){
@@ -162,8 +162,8 @@ static int shape_contains_point(const shape *s, const REAL x_[2]){
 		return x[0]*x[0] + x[1]*x[1] <= s->vtab.circle.radius*s->vtab.circle.radius;
 	case ELLIPSE:
 		{
-			REAL r = s->vtab.ellipse.halfwidth[0]*s->vtab.ellipse.halfwidth[0] - s->vtab.ellipse.halfwidth[1]*s->vtab.ellipse.halfwidth[1];
-			REAL f, L, d; /* f = focus length, L is twice the semi-major axis length */
+			double r = s->vtab.ellipse.halfwidth[0]*s->vtab.ellipse.halfwidth[0] - s->vtab.ellipse.halfwidth[1]*s->vtab.ellipse.halfwidth[1];
+			double f, L, d; /* f = focus length, L is twice the semi-major axis length */
 			if(r >= 0){
 				f = sqrt(r);
 				L = 2 * s->vtab.ellipse.halfwidth[0];
@@ -182,10 +182,10 @@ static int shape_contains_point(const shape *s, const REAL x_[2]){
 			int i, j;
 			int c = 0;
 			for(i = 0, j = s->vtab.polygon.n_vertices-1; i < s->vtab.polygon.n_vertices; j = i++){
-				REAL vix = s->vtab.polygon.vertex[2*i+0];
-				REAL viy = s->vtab.polygon.vertex[2*i+1];
-				REAL vjx = s->vtab.polygon.vertex[2*j+0];
-				REAL vjy = s->vtab.polygon.vertex[2*j+1];
+				double vix = s->vtab.polygon.vertex[2*i+0];
+				double viy = s->vtab.polygon.vertex[2*i+1];
+				double vjx = s->vtab.polygon.vertex[2*j+0];
+				double vjy = s->vtab.polygon.vertex[2*j+1];
 				if ( ((viy>x[1]) != (vjy>x[1]))
 				&& (x[0] < (vjx-vix) * (x[1]-viy) / (vjy-viy) + vix) ){ c = !c; }
 			}
@@ -196,14 +196,14 @@ static int shape_contains_point(const shape *s, const REAL x_[2]){
 	}
 }
 
-int shape_get_normal(const shape *s, const REAL x[2], REAL n[2]){
+int shape_get_normal(const shape *s, const double x[2], double n[2]){
 	if(NULL == s){ return -1; }
 	if(NULL == x){ return -2; }
 	if(NULL == n){ return -3; }
-	REAL r[2];
+	double r[2];
 	r[0] = x[0] - s->center[0];
 	r[1] = x[1] - s->center[1];
-	
+
 	switch(s->type){
 	case CIRCLE:
 		n[0] = r[0];
@@ -221,13 +221,13 @@ int shape_get_normal(const shape *s, const REAL x[2], REAL n[2]){
 		 * The gradient is then A.{x,y}
 		 */
 		{
-			const REAL ca = cos(s->angle);
-			const REAL sa = sin(s->angle);
-			const REAL ilx2 = 1./(s->vtab.ellipse.halfwidth[0]*s->vtab.ellipse.halfwidth[0]);
-			const REAL ily2 = 1./(s->vtab.ellipse.halfwidth[1]*s->vtab.ellipse.halfwidth[1]);
-			const REAL a = ca*ca*ilx2 + sa*sa*ily2;
-			const REAL b = ca*ca*ily2 + sa*sa*ilx2;
-			const REAL c = ca*sa*(ilx2-ily2);
+			const double ca = cos(s->angle);
+			const double sa = sin(s->angle);
+			const double ilx2 = 1./(s->vtab.ellipse.halfwidth[0]*s->vtab.ellipse.halfwidth[0]);
+			const double ily2 = 1./(s->vtab.ellipse.halfwidth[1]*s->vtab.ellipse.halfwidth[1]);
+			const double a = ca*ca*ilx2 + sa*sa*ily2;
+			const double b = ca*ca*ily2 + sa*sa*ilx2;
+			const double c = ca*sa*(ilx2-ily2);
 			n[0] = a*r[0] + c*r[1];
 			n[1] = c*r[0] + b*r[1];
 		}
@@ -240,15 +240,15 @@ int shape_get_normal(const shape *s, const REAL x[2], REAL n[2]){
 		 *   ry = proj onto {-sa,ca} of r
 		 */
 		{
-			const REAL ca = cos(s->angle);
-			const REAL sa = sin(s->angle);
-			const REAL rx = ca*r[0] + sa*r[1];
-			const REAL ry =-sa*r[0] + ca*r[1];
+			const double ca = cos(s->angle);
+			const double sa = sin(s->angle);
+			const double rx = ca*r[0] + sa*r[1];
+			const double ry =-sa*r[0] + ca*r[1];
 			if((fabs(rx)-s->vtab.rectangle.halfwidth[0]) > (fabs(ry)-s->vtab.rectangle.halfwidth[1])){
-				REAL sgn = (rx > 0. ? 1. : -.1);
+				double sgn = (rx > 0. ? 1. : -.1);
 				n[0] = sgn*ca; n[1] = sgn*sa;
 			}else{
-				REAL sgn = (ry > 0. ? 1. : -.1);
+				double sgn = (ry > 0. ? 1. : -.1);
 				n[0] = sgn*(-sa); n[1] = sgn*ca;
 			}
 		}
@@ -256,20 +256,20 @@ int shape_get_normal(const shape *s, const REAL x[2], REAL n[2]){
 	case POLYGON:
 		{
 			int i, j;
-			REAL maxdist = -1;
+			double maxdist = -1;
 			for(j = 0, i = s->vtab.polygon.n_vertices-1; j < s->vtab.polygon.n_vertices; i = j++){
 				/* compute distance from r to segment */
-				REAL v[2], pr[2];
+				double v[2], pr[2];
 				v[0] = s->vtab.polygon.vertex[2*j+0] - s->vtab.polygon.vertex[2*i+0];
 				v[1] = s->vtab.polygon.vertex[2*j+1] - s->vtab.polygon.vertex[2*i+1];
-				
+
 				pr[0] = r[0] - s->vtab.polygon.vertex[2*i+0];
 				pr[1] = r[1] - s->vtab.polygon.vertex[2*i+1];
 				{
-					const REAL v2 = v[0]*v[0] + v[1]*v[1];
-					const REAL prj = (pr[0]*v[0] + pr[1]*v[1])/v2;
-					const REAL voff[2] = {pr[0] - prj*v[0], pr[1] - prj*v[1]};
-					const REAL dist = hypot(voff[0], voff[1]);
+					const double v2 = v[0]*v[0] + v[1]*v[1];
+					const double prj = (pr[0]*v[0] + pr[1]*v[1])/v2;
+					const double voff[2] = {pr[0] - prj*v[0], pr[1] - prj*v[1]};
+					const double dist = hypot(voff[0], voff[1]);
 					if(dist > maxdist){
 						maxdist = dist;
 						n[0] = v[1];
@@ -284,7 +284,7 @@ int shape_get_normal(const shape *s, const REAL x[2], REAL n[2]){
 		break;
 	}
 	{ /* normalize */
-		REAL ln = hypot(n[0], n[1]);
+		double ln = hypot(n[0], n[1]);
 		if(ln > 0){
 			n[0] /= ln;
 			n[1] /= ln;
@@ -298,21 +298,21 @@ int shape_get_normal(const shape *s, const REAL x[2], REAL n[2]){
 /* Returns intersection area between shape s and the rectangle with
  * bottom left corner p0 and dimensions dp.
  */
-REAL shape_get_intersection_area_quad(const shape *s, const REAL p0[2], const REAL duv[4]){
+double shape_get_intersection_area_quad(const shape *s, const double p0[2], const double duv[4]){
 	/* We will use the strategy of decomposing polygonal shapes into triangles.
 	 * For the ellipse, we will apply a coordinate transformation to make it a circle.
 	 */
-	
-	REAL p0p[2] = {p0[0] - s->center[0], p0[1] - s->center[1]};
-	REAL upv[2] = {duv[0]+duv[2], duv[1]+duv[3]};
-	REAL umv[2] = {duv[0]-duv[2], duv[1]-duv[3]};
-	REAL lupv = hypot(upv[0], upv[1]);
-	REAL lumv = hypot(umv[0], umv[1]);
+
+	double p0p[2] = {p0[0] - s->center[0], p0[1] - s->center[1]};
+	double upv[2] = {duv[0]+duv[2], duv[1]+duv[3]};
+	double umv[2] = {duv[0]-duv[2], duv[1]-duv[3]};
+	double lupv = hypot(upv[0], upv[1]);
+	double lumv = hypot(umv[0], umv[1]);
 	switch(s->type){
 	case CIRCLE:
 		{
-			REAL a;
-			REAL tri_org[2], tri_u[2], tri_v[2];
+			double a;
+			double tri_org[2], tri_u[2], tri_v[2];
 			if(lupv < lumv){ /* split by u+v */
 				tri_org[0] = p0p[0];
 				tri_org[1] = p0p[1];
@@ -334,11 +334,11 @@ REAL shape_get_intersection_area_quad(const shape *s, const REAL p0[2], const RE
 		}
 	case ELLIPSE:
 		{
-			REAL a;
-			const REAL ca = cos(s->angle);
-			const REAL sa = sin(s->angle);
-			const REAL ratio = (s->vtab.ellipse.halfwidth[0] / s->vtab.ellipse.halfwidth[1]);
-			REAL tri_org[2], tri_u[2], tri_v[2];
+			double a;
+			const double ca = cos(s->angle);
+			const double sa = sin(s->angle);
+			const double ratio = (s->vtab.ellipse.halfwidth[0] / s->vtab.ellipse.halfwidth[1]);
+			double tri_org[2], tri_u[2], tri_v[2];
 			if(lupv < lumv){ /* split by u+v */
 				tri_org[0] = (p0p[0]* ca + p0p[1]*sa);
 				tri_org[1] = (p0p[0]*-sa + p0p[1]*ca);
@@ -371,9 +371,9 @@ REAL shape_get_intersection_area_quad(const shape *s, const REAL p0[2], const RE
 		}
 	case RECTANGLE:
 		{
-			const REAL ca = cos(s->angle);
-			const REAL sa = sin(s->angle);
-			REAL P[8], Q[8], Pi[16], u[2], v[2];
+			const double ca = cos(s->angle);
+			const double sa = sin(s->angle);
+			double P[8], Q[8], Pi[16], u[2], v[2];
 			int ret, nPi = 8;
 
 			P[2*0+0] = p0p[0];
@@ -407,13 +407,13 @@ REAL shape_get_intersection_area_quad(const shape *s, const REAL p0[2], const RE
 		}
 	case POLYGON:
 		{
-			const REAL ca = cos(s->angle);
-			const REAL sa = sin(s->angle);
-			REAL a = 0;
-			REAL P[8], Q[6], Pi[14], u[2], v[2];
+			const double ca = cos(s->angle);
+			const double sa = sin(s->angle);
+			double a = 0;
+			double P[8], Q[6], Pi[14], u[2], v[2];
 			int i, j, nPi;
 			int *tri = (int*)malloc(sizeof(int)*3*(s->vtab.polygon.n_vertices-2));
-			
+
 			P[2*0+0] = p0p[0]*ca + p0p[1]*sa;
 			P[2*0+1] = p0p[0]*-sa + p0p[1]*ca;
 			u[0] = duv[0]*ca + duv[1]*sa;
@@ -426,7 +426,7 @@ REAL shape_get_intersection_area_quad(const shape *s, const REAL p0[2], const RE
 			P[2*2+1] = P[2*1+1] + v[1];
 			P[2*3+0] = P[2*0+0] + v[0];
 			P[2*3+1] = P[2*0+1] + v[1];
-			
+
 			polygon_triangulate(s->vtab.polygon.n_vertices, s->vtab.polygon.vertex, tri);
 			/*
 			for(i = 0; i < s->vtab.polygon.n_vertices-2; ++i){
@@ -454,17 +454,17 @@ REAL shape_get_intersection_area_quad(const shape *s, const REAL p0[2], const RE
 /* Returns intersection area between shape s and the rectangle with
  * bottom left corner p0 and dimensions dp.
  */
-REAL shape_get_intersection_area(const shape *s, const REAL p0[2], const REAL dp[2]){
+double shape_get_intersection_area(const shape *s, const double p0[2], const double dp[2]){
 	/* We will use the strategy of decomposing polygonal shapes into triangles.
 	 * For the ellipse, we will apply a coordinate transformation to make it a circle.
 	 */
-	
-	REAL p0p[2] = {p0[0] - s->center[0], p0[1] - s->center[1]};
+
+	double p0p[2] = {p0[0] - s->center[0], p0[1] - s->center[1]};
 	switch(s->type){
 	case CIRCLE:
 		{
-			REAL a;
-			REAL tri_org[2], tri_u[2], tri_v[2];
+			double a;
+			double tri_org[2], tri_u[2], tri_v[2];
 			tri_org[0] = p0[0] - s->center[0];
 			tri_org[1] = p0[1] - s->center[1];
 			tri_u[0] = dp[0]; tri_u[1] = 0;
@@ -475,11 +475,11 @@ REAL shape_get_intersection_area(const shape *s, const REAL p0[2], const REAL dp
 		}
 	case ELLIPSE:
 		{
-			REAL a;
-			const REAL ca = cos(s->angle);
-			const REAL sa = sin(s->angle);
-			const REAL ratio = (s->vtab.ellipse.halfwidth[0] / s->vtab.ellipse.halfwidth[1]);
-			REAL tri_org[2], tri_u[2], tri_v[2];
+			double a;
+			const double ca = cos(s->angle);
+			const double sa = sin(s->angle);
+			const double ratio = (s->vtab.ellipse.halfwidth[0] / s->vtab.ellipse.halfwidth[1]);
+			double tri_org[2], tri_u[2], tri_v[2];
 			tri_org[0] = p0p[0]* ca + p0p[1]*sa;
 			tri_org[1] = (p0p[0]*-sa + p0p[1]*ca) * ratio;
 			tri_u[0] = dp[0]*ca; tri_u[1] = dp[0]*-sa;
@@ -491,9 +491,9 @@ REAL shape_get_intersection_area(const shape *s, const REAL p0[2], const REAL dp
 		}
 	case RECTANGLE:
 		{
-			const REAL ca = cos(s->angle);
-			const REAL sa = sin(s->angle);
-			REAL P[8], Q[8], Pi[16], u[2], v[2];
+			const double ca = cos(s->angle);
+			const double sa = sin(s->angle);
+			double P[8], Q[8], Pi[16], u[2], v[2];
 			int nPi = 8;
 			P[2*0+0] = p0[0] - s->center[0];
 			P[2*0+1] = p0[1] - s->center[1];
@@ -520,13 +520,13 @@ REAL shape_get_intersection_area(const shape *s, const REAL p0[2], const REAL dp
 		}
 	case POLYGON:
 		{
-			const REAL ca = cos(s->angle);
-			const REAL sa = sin(s->angle);
-			REAL a = 0;
-			REAL P[8], Q[6], Pi[14], u[2], v[2];
+			const double ca = cos(s->angle);
+			const double sa = sin(s->angle);
+			double a = 0;
+			double P[8], Q[6], Pi[14], u[2], v[2];
 			int i, j, nPi;
 			int *tri = (int*)malloc(sizeof(int)*3*(s->vtab.polygon.n_vertices-2));
-			
+
 			P[2*0+0] = p0p[0]*ca + p0p[1]*sa;
 			P[2*0+1] = p0p[0]*-sa + p0p[1]*ca;
 			u[0] = dp[0]*ca; u[1] = dp[0]*-sa;
@@ -537,7 +537,7 @@ REAL shape_get_intersection_area(const shape *s, const REAL p0[2], const REAL dp
 			P[2*2+1] = P[2*1+1] + v[1];
 			P[2*3+0] = P[2*0+0] + v[0];
 			P[2*3+1] = P[2*0+1] + v[1];
-			
+
 			polygon_triangulate(s->vtab.polygon.n_vertices, s->vtab.polygon.vertex, tri);
 			/*
 			for(i = 0; i < s->vtab.polygon.n_vertices-2; ++i){
@@ -565,14 +565,14 @@ REAL shape_get_intersection_area(const shape *s, const REAL p0[2], const REAL dp
 /* segment is from p0 to p0+d
  * returns number of intersections
  */
-int shape_get_tangent_cross_segment(const shape *s, const REAL p0[2], const REAL d0[2], REAL *cross){
+int shape_get_tangent_cross_segment(const shape *s, const double p0[2], const double d0[2], double *cross){
 	int i, c = 0;
-	REAL p0p[2] = {p0[0] - s->center[0], p0[1] - s->center[1]};
+	double p0p[2] = {p0[0] - s->center[0], p0[1] - s->center[1]};
 	*cross = 0;
 	switch(s->type){
 	case CIRCLE:
 		{
-			REAL isect[4];
+			double isect[4];
 			c = intersection_circle_segment(s->vtab.circle.radius, p0p, d0, isect, NULL);
 			for(i = 0; i < c; ++i){
 				/* Each intersection (x,y) implies a tangential normal vector (-y,x)/r */
@@ -583,12 +583,12 @@ int shape_get_tangent_cross_segment(const shape *s, const REAL p0[2], const REAL
 		}
 	case ELLIPSE:
 		{
-			const REAL ca = cos(s->angle);
-			const REAL sa = sin(s->angle);
-			const REAL ratio = (s->vtab.ellipse.halfwidth[0] / s->vtab.ellipse.halfwidth[1]);
-			const REAL iratio = 1./ratio;
-			
-			REAL p1[2], u[2], isect[4], u1;
+			const double ca = cos(s->angle);
+			const double sa = sin(s->angle);
+			const double ratio = (s->vtab.ellipse.halfwidth[0] / s->vtab.ellipse.halfwidth[1]);
+			const double iratio = 1./ratio;
+
+			double p1[2], u[2], isect[4], u1;
 			p1[0] = p0p[0]* ca + p0p[1]*sa;
 			p1[1] = (p0p[0]*-sa + p0p[1]*ca) * ratio;
 			u1 = d0[0]*-sa;
@@ -596,7 +596,7 @@ int shape_get_tangent_cross_segment(const shape *s, const REAL p0[2], const REAL
 
 			c = intersection_circle_segment(s->vtab.ellipse.halfwidth[0], p1, u, isect, NULL);
 			for(i = 0; i < c; ++i){
-				REAL L;
+				double L;
 				isect[2*c+1] *= iratio;
 				L = hypot(isect[2*c+0],isect[2*c+1]);
 				if(0 == L){ L = 1; }
@@ -606,9 +606,9 @@ int shape_get_tangent_cross_segment(const shape *s, const REAL p0[2], const REAL
 		}
 	case RECTANGLE:
 		{
-			const REAL ca = cos(s->angle);
-			const REAL sa = sin(s->angle);
-			REAL P[8], u[2], v[2];
+			const double ca = cos(s->angle);
+			const double sa = sin(s->angle);
+			double P[8], u[2], v[2];
 			u[0] = s->vtab.rectangle.halfwidth[0] * ca;
 			u[1] = s->vtab.rectangle.halfwidth[0] * sa;
 			v[0] = s->vtab.rectangle.halfwidth[1] *-sa;
@@ -621,7 +621,7 @@ int shape_get_tangent_cross_segment(const shape *s, const REAL p0[2], const REAL
 			P[2*2+1] = u[1]+v[1];
 			P[2*3+0] = v[0]-u[0];
 			P[2*3+1] = v[1]-u[1];
-			
+
 			c = intersection_polygon_segment(4, P, p0p, d0, NULL, cross, NULL, NULL);
 			break;
 		}
@@ -642,20 +642,20 @@ int shape_get_tangent_cross_segment(const shape *s, const REAL p0[2], const REAL
 /* cross0 is the cross product weighted by the t's
  * cross1 is the cross product weighted by (1-t)'s
  */
-int shape_get_tangent_cross_segment_tri(const shape *s, const REAL p0[2], const REAL d0[2], REAL *cross0, REAL *cross1){
+int shape_get_tangent_cross_segment_tri(const shape *s, const double p0[2], const double d0[2], double *cross0, double *cross1){
 	int i, c = 0;
-	REAL p0p[2] = {p0[0] - s->center[0], p0[1] - s->center[1]};
+	double p0p[2] = {p0[0] - s->center[0], p0[1] - s->center[1]};
 	*cross0 = 0;
 	*cross1 = 0;
 	switch(s->type){
 	case CIRCLE:
 		{
-			REAL isect[4];
-			REAL t[2];
+			double isect[4];
+			double t[2];
 			c = intersection_circle_segment(s->vtab.circle.radius, p0p, d0, isect, t);
 			for(i = 0; i < c; ++i){
 				/* Each intersection (x,y) implies a tangential normal vector (-y,x)/r */
-				REAL cross = (d0[0]*isect[2*i+0] + d0[1]*isect[2*i+1]);
+				double cross = (d0[0]*isect[2*i+0] + d0[1]*isect[2*i+1]);
 				*cross0 -= cross*t[i];
 				*cross1 -= cross*(1-t[i]);
 			}
@@ -665,12 +665,12 @@ int shape_get_tangent_cross_segment_tri(const shape *s, const REAL p0[2], const 
 		}
 	case ELLIPSE:
 		{
-			const REAL ca = cos(s->angle);
-			const REAL sa = sin(s->angle);
-			const REAL ratio = (s->vtab.ellipse.halfwidth[0] / s->vtab.ellipse.halfwidth[1]);
-			const REAL iratio = 1./ratio;
-			
-			REAL p1[2], u[2], isect[4], u1, t[2];
+			const double ca = cos(s->angle);
+			const double sa = sin(s->angle);
+			const double ratio = (s->vtab.ellipse.halfwidth[0] / s->vtab.ellipse.halfwidth[1]);
+			const double iratio = 1./ratio;
+
+			double p1[2], u[2], isect[4], u1, t[2];
 			p1[0] = p0p[0]* ca + p0p[1]*sa;
 			p1[1] = (p0p[0]*-sa + p0p[1]*ca) * ratio;
 			u1 = d0[0]*-sa;
@@ -678,7 +678,7 @@ int shape_get_tangent_cross_segment_tri(const shape *s, const REAL p0[2], const 
 
 			c = intersection_circle_segment(s->vtab.ellipse.halfwidth[0], p1, u, isect, t);
 			for(i = 0; i < c; ++i){
-				REAL L;
+				double L;
 				isect[2*c+1] *= iratio;
 				L = hypot(isect[2*c+0],isect[2*c+1]);
 				if(0 == L){ L = 1; }
@@ -689,10 +689,10 @@ int shape_get_tangent_cross_segment_tri(const shape *s, const REAL p0[2], const 
 		}
 	case RECTANGLE:
 		{
-			const REAL ca = cos(s->angle);
-			const REAL sa = sin(s->angle);
-			REAL dummy;
-			REAL P[8], u[2], v[2];
+			const double ca = cos(s->angle);
+			const double sa = sin(s->angle);
+			double dummy;
+			double P[8], u[2], v[2];
 			u[0] = s->vtab.rectangle.halfwidth[0] * ca;
 			u[1] = s->vtab.rectangle.halfwidth[0] * sa;
 			v[0] = s->vtab.rectangle.halfwidth[1] *-sa;
@@ -705,13 +705,13 @@ int shape_get_tangent_cross_segment_tri(const shape *s, const REAL p0[2], const 
 			P[2*2+1] = u[1]+v[1];
 			P[2*3+0] = v[0]-u[0];
 			P[2*3+1] = v[1]-u[1];
-			
+
 			c = intersection_polygon_segment(4, P, p0p, d0, NULL, &dummy, cross0, cross1);
 			break;
 		}
 	case POLYGON:
 		{
-			REAL dummy;
+			double dummy;
 			c = intersection_polygon_segment(
 				s->vtab.polygon.n_vertices,
 				s->vtab.polygon.vertex,
@@ -789,7 +789,7 @@ int pattern_get_containment_tree(
 	if(nshapes < 0){ return -1; }
 	if(NULL == shapes){ return -2; }
 	if(NULL == parent){ return -3; }
-	
+
 	/* We will assume for now that the non-self-intersection criterion is met. */
 	if(nshapes > 1){
 		for(i = 0; i < nshapes; ++i){
@@ -801,30 +801,30 @@ int pattern_get_containment_tree(
 			}
 		}
 	}
-	
-	REAL *area = (REAL*)malloc(sizeof(REAL)*nshapes);
+
+	double *area = (double*)malloc(sizeof(double)*nshapes);
 	for(i = 0; i < nshapes; ++i){
 		parent[i] = -1;
 		area[i] = shape_area(&shapes[i]);
 	}
-	
+
 	/* Sort by area */
 	for(k = 1; k < nshapes; ++k){
 		for(j = 0; j < k; ++j){
 			if(area[j] < area[k]){
 				shape ts = shapes[j];
-				REAL t = area[j]; area[j] = area[k]; area[k] = t;
+				double t = area[j]; area[j] = area[k]; area[k] = t;
 				shapes[j] = shapes[k];
 				shapes[k] = ts;
 			}
 		}
 	}
-	
+
 	/* The following is O(n^2), we might be able to do better with sorting
 	 * by area but n is usually small.
 	 */
 	for(i = 1; i < nshapes; ++i){
-		REAL p[2];
+		double p[2];
 		shape_get_interior_point(&shapes[i], p);
 
 		for(j = i-1; j >= 0; --j){
@@ -835,7 +835,7 @@ int pattern_get_containment_tree(
 		}
 	}
 	free(area);
-	
+
 	return 0;
 }
 int Pattern_GetContainmentTree(
@@ -848,9 +848,9 @@ int pattern_get_shape(
 	int nshapes, /* number of shapes in the array 'shapes' */
 	const shape *shapes, /* array of shapes, ordered by decreasing area */
 	const int *parent, /* from Pattern_GetContainmentTree */
-	const REAL x[2], /* location in the plane to get the tag */
+	const double x[2], /* location in the plane to get the tag */
 	int *shape_index, /* returned shape index */
-	REAL n[2]
+	double n[2]
 ){
 	int i, found = 0;
 	if(0 == nshapes){ return 1; }
@@ -859,7 +859,7 @@ int pattern_get_shape(
 	if(NULL == parent){ return -3; }
 	if(NULL == x){ return -4; }
 	if(NULL == shape_index){ return -5; }
-	
+
 	for(i = nshapes-1; i >= 0; --i){
 		if(shape_contains_point(&shapes[i], x)){
 			*shape_index = i;
@@ -875,9 +875,9 @@ int pattern_get_shape(
 }
 int Pattern_GetShape(
 	const Pattern *p,
-	const REAL x[2],
+	const double x[2],
 	int *shape_index,
-	REAL n[2]
+	double n[2]
 ){
 	return pattern_get_shape(p->nshapes, p->shapes, p->parent, x, shape_index, n);
 }
@@ -889,11 +889,11 @@ int pattern_get_fourier_transform(
 	int nshapes,
 	const shape *shapes,
 	const int *parent,
-	const REAL *value,
-	const REAL k_[2], /* remember, this is k/2pi */
+	const double *value,
+	const double k_[2], /* remember, this is k/2pi */
 	int ndim,
-	REAL unit_cell_size,
-	REAL f[2]
+	double unit_cell_size,
+	double f[2]
 ){
 	int i;
 	if(nshapes < 0){ return -1; }
@@ -913,7 +913,7 @@ int pattern_get_fourier_transform(
 			}
 		}
 	}
-	
+
 	const int DC = (0 == k_[0] && 0 == k_[1]) ? 1 : 0;
 	if(DC){
 		f[0] = value[0]; f[1] = value[1];
@@ -924,23 +924,23 @@ int pattern_get_fourier_transform(
 		return 0;
 	}
 
-	REAL inv_size = 1./unit_cell_size;
+	double inv_size = 1./unit_cell_size;
 
-	REAL k[2];
+	double k[2];
 	for(i = 0; i < nshapes; ++i){
 		const shape *s = &shapes[i];
-		
-		REAL dval[2] = {value[2*(i+1)+0]-value[2*(parent[i]+1)+0], value[2*(i+1)+1]-value[2*(parent[i]+1)+1]};
-		
-		REAL phase_angle = -2*M_PI*(k_[0]*s->center[0] + k_[1]*s->center[1]); /* phase = exp(i*phase_angle); */
-		REAL z[2] = {0,0};
-		REAL area;
-		
-		const REAL ca = cos(s->angle);
-		const REAL sa = sin(s->angle);
+
+		double dval[2] = {value[2*(i+1)+0]-value[2*(parent[i]+1)+0], value[2*(i+1)+1]-value[2*(parent[i]+1)+1]};
+
+		double phase_angle = -2*M_PI*(k_[0]*s->center[0] + k_[1]*s->center[1]); /* phase = exp(i*phase_angle); */
+		double z[2] = {0,0};
+		double area;
+
+		const double ca = cos(s->angle);
+		const double sa = sin(s->angle);
 		k[0] = k_[0] * ca + k_[1] * sa;
 		k[1] = k_[0] *-sa + k_[1] * ca;
-		
+
 		/* Each shape should set z to be the Fourier component, but without dval, and without area. */
 		switch(s->type){
 		case CIRCLE:
@@ -950,10 +950,10 @@ int pattern_get_fourier_transform(
 		case ELLIPSE:
 			area = M_PI*s->vtab.ellipse.halfwidth[0]*s->vtab.ellipse.halfwidth[1];
 			if(s->vtab.ellipse.halfwidth[0] >= s->vtab.ellipse.halfwidth[1]){
-				REAL r = s->vtab.ellipse.halfwidth[1] /  s->vtab.ellipse.halfwidth[0] * k[1];
+				double r = s->vtab.ellipse.halfwidth[1] /  s->vtab.ellipse.halfwidth[0] * k[1];
 				z[0] = Jinc(s->vtab.ellipse.halfwidth[0]*hypot(k[0],r));
 			}else{
-				REAL r = s->vtab.ellipse.halfwidth[0] /  s->vtab.ellipse.halfwidth[1] * k[0];
+				double r = s->vtab.ellipse.halfwidth[0] /  s->vtab.ellipse.halfwidth[1] * k[0];
 				z[0] =Jinc(s->vtab.ellipse.halfwidth[1]*hypot(r,k[1]));
 			}
 			break;
@@ -977,17 +977,17 @@ int pattern_get_fourier_transform(
 					 * S(k) = i/|k|^2 * Sum_{i=0,n-1} z.((v_{i+1}-v_{i}) x k) j0(k.(v_{i+1}-v_{i})/2) e^{ik.(v_{i+1}+v_{i})/2}
 					 */
 					int p,q;
-					REAL num, pa;
-					REAL rc[2], u[2];
+					double num, pa;
+					double rc[2], u[2];
 					for(p=s->vtab.polygon.n_vertices-1,q=0; q < s->vtab.polygon.n_vertices; p = q++){
 						u[0] = s->vtab.polygon.vertex[2*q+0]-s->vtab.polygon.vertex[2*p+0];
 						u[1] = s->vtab.polygon.vertex[2*q+1]-s->vtab.polygon.vertex[2*p+1];
 						rc[0] = 0.5*(s->vtab.polygon.vertex[2*q+0]+s->vtab.polygon.vertex[2*p+0]);
 						rc[1] = 0.5*(s->vtab.polygon.vertex[2*q+1]+s->vtab.polygon.vertex[2*p+1]);
-						
+
 						num = (u[0]*k[1]-u[1]*k[0]) * Sinc(k[0]*u[0]+k[1]*u[1]);
 						pa = -2*M_PI*(k[0]*rc[0]+k[1]*rc[1]);
-						
+
 						// Multiplication by i means we mess up the order here
 						z[0] += num * sin(pa);
 						z[1] -= num * cos(pa);
@@ -1008,9 +1008,9 @@ int pattern_get_fourier_transform(
 		//f += dval*z*phase/area;
 		//f += dval*(z[0]+i*z[1])*(cos(phase_angle)+i*sin(phase_angle)) / area;
 		//f += dval*( z[0]*cos-z[1]*sin + i*(z[1]*cos+z[0]*sin) ) / area;
-		REAL cpa = cos(phase_angle);
-		REAL spa = sin(phase_angle);
-		REAL t[2] = {area, area};
+		double cpa = cos(phase_angle);
+		double spa = sin(phase_angle);
+		double t[2] = {area, area};
 		if(DC){
 			t[0] *= cpa;
 			t[1] *= spa;
@@ -1025,11 +1025,11 @@ int pattern_get_fourier_transform(
 }
 int Pattern_GetFourierTransform(
 	const Pattern *p,
-	const REAL *value,
-	const REAL k[2],
+	const double *value,
+	const double k[2],
 	int ndim,
-	REAL unit_cell_size,
-	REAL f[2]
+	double unit_cell_size,
+	double f[2]
 ){
 	return pattern_get_fourier_transform(p->nshapes, p->shapes, p->parent, value, k, ndim, unit_cell_size, f);
 }
@@ -1041,13 +1041,13 @@ int pattern_discretize_cell(
 	const double L[4],
 	int nu, int nv, // size of grid; number of steps in x and y
 	int iu, int iv,
-	REAL *value
+	double *value
 ){
 	int k;
-	const REAL det = L[0]*L[3] - L[1]*L[2];
-	
+	const double det = L[0]*L[3] - L[1]*L[2];
+
 	const int dim = (0 == L[1] && 0 == L[2] && 0 == L[3]) ? 1 : 2;
-	
+
 	if(nshapes < 0){ return -1; }
 	if(nshapes != 0 && NULL == shapes){ return -2; }
 	if(NULL == parent){ return -3; }
@@ -1057,21 +1057,21 @@ int pattern_discretize_cell(
 	if(iu < 0 || iu >= nu){ return -7; }
 	if(iv < 0 || iv >= nv){ return -8; }
 	if(NULL == value){ return -9; }
-	
+
 	for(k = 0; k <= nshapes; ++k){
 		value[k] = 0;
 	}
 	value[0] = 1;
-	
+
 	if(1 == dim){
-		const REAL du = L[0] / (REAL)nu;
-		const REAL p0 = L[0]*((REAL)iu/(REAL)nu - 0.5); // left edge
+		const double du = L[0] / (double)nu;
+		const double p0 = L[0]*((double)iu/(double)nu - 0.5); // left edge
 		for(k = 0; k < nshapes; ++k){
-			REAL a = 0;
+			double a = 0;
 			const shape *s = &shapes[k];
 			if(RECTANGLE != s->type){ return -2; }
-			const REAL l = p0 - s->center[0];
-			const REAL h = s->vtab.rectangle.halfwidth[0];
+			const double l = p0 - s->center[0];
+			const double h = s->vtab.rectangle.halfwidth[0];
 			// Rectangle centered at origin with halfwidth h
 			// Pixel left edge at l
 			if(l+du <= -h || l >= h){ continue; } // pixel outside
@@ -1088,22 +1088,22 @@ int pattern_discretize_cell(
 			}
 		}
 	}else{
-		const REAL duv[4] = {
-			L[0]/(REAL)nu, L[1]/(REAL)nu,
-			L[2]/(REAL)nv, L[3]/(REAL)nv
+		const double duv[4] = {
+			L[0]/(double)nu, L[1]/(double)nu,
+			L[2]/(double)nv, L[3]/(double)nv
 			};
-		const REAL inv_pixel_area = 1./(duv[0]*duv[3]-duv[1]*duv[2]);
-		const REAL nuv[2] = {
-			(REAL)iu/(REAL)nu - 0.5,
-			(REAL)iv/(REAL)nv - 0.5
+		const double inv_pixel_area = 1./(duv[0]*duv[3]-duv[1]*duv[2]);
+		const double nuv[2] = {
+			(double)iu/(double)nu - 0.5,
+			(double)iv/(double)nv - 0.5
 		};
-		const REAL p0[2] = { // bottom left of pixel
+		const double p0[2] = { // bottom left of pixel
 			L[0]*nuv[0] + L[2]*nuv[1],
 			L[1]*nuv[0] + L[3]*nuv[1]
 		};
 
 		for(k = 0; k < nshapes; ++k){
-			REAL a = shape_get_intersection_area_quad(&shapes[k], p0, duv) * inv_pixel_area;
+			double a = shape_get_intersection_area_quad(&shapes[k], p0, duv) * inv_pixel_area;
 			if(a > 0){
 				value[k+1] += a;
 				value[parent[k]+1] -= a;
@@ -1114,7 +1114,7 @@ int pattern_discretize_cell(
 	// Dumb sampling
 	for(int i = 0; i < nx; ++i){
 		for(int j = 0; j < ny; ++j){
-			REAL p0[2] = {-0.5 + ((REAL)i+0.5)/nx, -0.5 + ((REAL)j+0.5)/ny}; // bottom left of pixel
+			double p0[2] = {-0.5 + ((double)i+0.5)/nx, -0.5 + ((double)j+0.5)/ny}; // bottom left of pixel
 			int index;
 			int ret = Pattern_GetShape(nshapes, shapes, parent, p0, &index);
 			if(ret == 0){
@@ -1133,7 +1133,7 @@ int Pattern_DiscretizeCell(
 	const double L[4],
 	int nu, int nv,
 	int iu, int iv,
-	REAL *value
+	double *value
 ){
 	return pattern_discretize_cell(p->nshapes, p->shapes, p->parent, L, nu, nv, iu, iv, value);
 }
@@ -1148,7 +1148,7 @@ static void fprint_double(FILE *fp, double x){
 	int len;
 	char buf[buflen];
 	len = snprintf(buf, buflen, fmt, x);
-	
+
 	char *target = &buf[0];
 	int freetarget = 0;
 	if(len > (int)(buflen - lexpsymb)){
@@ -1194,22 +1194,22 @@ static void fprint_spmatrix(FILE *fp, int n, const double *M, const int *Mcol, i
 
 #ifndef HAVE_LIBCHOLMOD
 
-static REAL norm(int n, const REAL *x){
+static double norm(int n, const double *x){
 #ifdef USE_BLAS
 	extern double dnrm2_(const int *n, const double *x, const int *incx);
 	const int ione = 1;
 	return dnrm2_(&n, x, &ione);
 #else
-	REAL ssq = 0, scale = 0;
+	double ssq = 0, scale = 0;
 	while(n --> 0){
 		if(0 != *x){
-			REAL temp = fabs(*x);
+			double temp = fabs(*x);
 			if(scale < temp){
-				REAL r = scale/temp;
+				double r = scale/temp;
 				ssq = ssq*r*r + 1.;
 				scale = temp;
 			}else{
-				REAL r = temp/scale;
+				double r = temp/scale;
 				ssq += r*r;
 			}
 		}
@@ -1218,13 +1218,13 @@ static REAL norm(int n, const REAL *x){
 	return scale*sqrt(ssq);
 #endif
 }
-static REAL dot(int n, const REAL *x, const REAL *y){
+static double dot(int n, const double *x, const double *y){
 #ifdef USE_BLAS
 	extern double ddot_(const int *n, const double *x, const int *incx, const double *y, const int *incy);
 	const int ione = 1;
 	return ddot_(&n, x, &ione, y, &ione);
 #else
-	REAL z = 0;
+	double z = 0;
 	while(n --> 0){
 		z += (*x)*(*y);
 		++x; ++y;
@@ -1234,16 +1234,16 @@ static REAL dot(int n, const REAL *x, const REAL *y){
 }
 
 static void cg(int n, const double *M, const int *Mcol, int Mnd, const double *b, double *x, double anorm){
-	const REAL tol = 1e-10*n;
+	const double tol = 1e-10*n;
 	const int max_iter = 2*n;
-	const REAL damp = DAMPING_FACTOR*anorm;
+	const double damp = DAMPING_FACTOR*anorm;
 	int i, j, iter;
-	REAL resid = 0, alpha = 0, beta = 0, rho = 0, rho_1 = 0, normb = 0;
-	REAL *work = (REAL*)malloc(sizeof(double) * 4*n);
-	REAL *p = work;
-	REAL *z = p + n;
-	REAL *q = z + n;
-	REAL *r = q + n;
+	double resid = 0, alpha = 0, beta = 0, rho = 0, rho_1 = 0, normb = 0;
+	double *work = (double*)malloc(sizeof(double) * 4*n);
+	double *p = work;
+	double *z = p + n;
+	double *q = z + n;
+	double *r = q + n;
 
 	normb = norm(n, b);
 	for(i = 0; i < n; ++i){ // r += A*x
@@ -1325,9 +1325,9 @@ static void sparse_linsolve_d(int n, const double *M, const int *Mcol, int Mnd, 
 	cholmod_factor *L;
 	cholmod_common c;
 	cholmod_start(&c);
-	
+
 	if(anorm){} // anorm is not used except with CG
-	
+
 	A = cholmod_allocate_sparse(n,n, n*Mnd, 0, 1, 1, CHOLMOD_REAL, &c);
 	Ax = (double*)(A->x);
 	nnz = 0;
@@ -1378,10 +1378,10 @@ static void sparse_linsolve_d(int n, const double *M, const int *Mcol, int Mnd, 
 		((UF_long*)A->p)[i] = nnz;
 		break;
 	}
-	
+
 	bs = cholmod_allocate_dense(n, 1, n, CHOLMOD_REAL, &c);
 	memcpy(bs->x, b, sizeof(double)*n);
-	
+
 	L = cholmod_analyze(A, &c);
 	cholmod_factorize(A, L, &c);
 	xs = cholmod_solve(CHOLMOD_A, L, bs, &c);
@@ -1407,12 +1407,12 @@ static int pattern_generate_flow_field_constraints(
 ){
 	int si, c = 0;
 	*value = 0;
-	
+
 	if(type){} // currently unused
 	if(parent){} // parent information is not currently used
-	
+
 	for(si = 0; si < nshapes; ++si){
-		REAL t;
+		double t;
 		int ct;
 		ct = shape_get_tangent_cross_segment(&shapes[si], p0, dp, &t);
 		if(ct > 0){
@@ -1435,12 +1435,12 @@ static int pattern_generate_flow_field_constraints_tri(
 	int si, c = 0;
 	*value0 = 0;
 	*value1 = 0;
-	
+
 	if(type){} // type is currently not used
 	if(parent){} // parent info is currently not used
-	
+
 	for(si = 0; si < nshapes; ++si){
-		REAL t0, t1;
+		double t0, t1;
 		int ct;
 		ct = shape_get_tangent_cross_segment_tri(&shapes[si], p0, dp, &t0, &t1);
 		if(ct > 0){
@@ -1459,23 +1459,23 @@ static double pattern_generate_flow_field_rect(
 	int type,
 	const double L[4],
 	int nu, int nv,
-	REAL *field
+	double *field
 ){
 	const int N = nu*nv;
 	const int N2 = 2*N;
 	int i, j;
 
-	REAL *work = (REAL*)malloc(sizeof(REAL)*N2*(5+2));
-	REAL *x = work;
-	REAL *b = x+N2;
-	REAL *M = b+N2;
+	double *work = (double*)malloc(sizeof(double)*N2*(5+2));
+	double *x = work;
+	double *b = x+N2;
+	double *M = b+N2;
 	int *iwork = (int*)malloc(sizeof(int)*N2*4);
 	int *Mcol = iwork;
-	
+
 	// The 1-form Laplacian M has exactly 5 non-zero entries per row on a
 	// rectangular grid. The constraint matrix Z is diagonal, with one
 	// entry per edge with a shape intersection.
-	
+
 	// Sparse matrix storage format:
 	// M is arranged in blocks of 5 elements, for each row,
 	// in ascending row order.
@@ -1484,23 +1484,23 @@ static double pattern_generate_flow_field_rect(
 	// Mcol gives the columns of these off-diagonal entries, so
 	// it is arranged in blocks of 4 elements, for each row, in
 	// the same order as M.
-	
+
 	// === Assemble the M matrix and RHS b ===
 	for(i = 0; i < N2; ++i){ b[i] = 0; }
 	for(i = 0; i < N2; ++i){ x[i] = 0; }
-	
+
 	// We index the edges by the cell order of `field', and within that,
 	// the bottom x-edge comes first, then the left y-edge.
-	const REAL dL[4] = {L[0]/nu,L[1]/nu, L[2]/nv,L[3]/nv};
+	const double dL[4] = {L[0]/nu,L[1]/nu, L[2]/nv,L[3]/nv};
 	/*
-	const REAL _dxdy = (REAL)nu*nv;
-	const REAL dy_dx3 = (REAL)nu*nu*nu/(REAL)nv;
-	const REAL dx_dy3 = (REAL)nv*nv*nv/(REAL)nu;
+	const double _dxdy = (double)nu*nv;
+	const double dy_dx3 = (double)nu*nu*nu/(double)nv;
+	const double dx_dy3 = (double)nv*nv*nv/(double)nu;
 	*/
-	const REAL _dxdy = 1;
-	const REAL dy_dx3 = (REAL)nu*nu/(REAL)(nv*nv);
-	const REAL dx_dy3 = (REAL)nv*nv/(REAL)(nu*nu);
-	
+	const double _dxdy = 1;
+	const double dy_dx3 = (double)nu*nu/(double)(nv*nv);
+	const double dx_dy3 = (double)nv*nv/(double)(nu*nu);
+
 	for(j = 0; j < nv; ++j){
 		int jp1 = (j+1)%nv;
 		int jm1 = (j+nv-1)%nv;
@@ -1508,14 +1508,14 @@ static double pattern_generate_flow_field_rect(
 			int ip1 = (i+1)%nu;
 			int im1 = (i+nu-1)%nu;
 			int k = i+j*nu;
-			
+
 			// The u-edge
 			M[5*(2*k+0)+0] = 2*(dy_dx3 + _dxdy);
 			Mcol[4*(2*k+0)+0] = 2*(i  +jm1*nu)+0; M[5*(2*k+0)+1] = -_dxdy;
 			Mcol[4*(2*k+0)+1] = 2*(im1+j  *nu)+0; M[5*(2*k+0)+2] = -dy_dx3;
 			Mcol[4*(2*k+0)+2] = 2*(ip1+j  *nu)+0; M[5*(2*k+0)+3] = -dy_dx3;
 			Mcol[4*(2*k+0)+3] = 2*(i  +jp1*nu)+0; M[5*(2*k+0)+4] = -_dxdy;
-			
+
 			// The v-edge
 			M[5*(2*k+1)+0] = 2*(dx_dy3 + _dxdy);
 			Mcol[4*(2*k+1)+0] = 2*(i  +jm1*nu)+1; M[5*(2*k+1)+1] = -dx_dy3;
@@ -1540,7 +1540,7 @@ static double pattern_generate_flow_field_rect(
 	for(i = 0; i < N2; ++i){ fprintf(stderr, " %f\n", b[i]); }
 	*/
 	// === Assemble the constraints and move them to RHS ===
-	
+
 	int found_multiple_xsects = 0;
 	if(0 == type){
 		for(j = 0; j < nv; ++j){
@@ -1548,22 +1548,22 @@ static double pattern_generate_flow_field_rect(
 				int k = i+j*nu;
 				int ei; // edge index;
 				int si, sj;
-				
+
 				for(sj = -1; sj <= 1; ++sj){ for(si = -1; si <= 1; ++si){
-				const REAL p0[2] = {
-					(si-0.5 + (REAL)i/nu) * L[0] + (sj-0.5 + (REAL)j/nv) * L[2],
-					(si-0.5 + (REAL)i/nu) * L[1] + (sj-0.5 + (REAL)j/nv) * L[3]
+				const double p0[2] = {
+					(si-0.5 + (double)i/nu) * L[0] + (sj-0.5 + (double)j/nv) * L[2],
+					(si-0.5 + (double)i/nu) * L[1] + (sj-0.5 + (double)j/nv) * L[3]
 					}; // bottom left of pixel
-				REAL cross;
+				double cross;
 				int c;
-				
+
 				for(ei = 0; ei < 2; ++ei){ const int nei = 1^ei;
 					double pshifted[2];
 					pshifted[0] = p0[0]+0.5*dL[2*ei+0]-0.5*dL[2*nei+0];
 					pshifted[1] = p0[1]+0.5*dL[2*ei+1]-0.5*dL[2*nei+1];
 					int row = 2*k+ei;
 					c = 0; cross = 0;
-					
+
 					c = pattern_generate_flow_field_constraints(
 						type,
 						nshapes, shapes, parent,
@@ -1590,8 +1590,8 @@ static double pattern_generate_flow_field_rect(
 		M[5*i+0] += x[i];
 		x[i] = b[i];
 	}
-	
-	
+
+
 	/*
 	for(j = 0; j < nv; ++j){
 		for(i = 0; i < nu; ++i){
@@ -1607,10 +1607,10 @@ static double pattern_generate_flow_field_rect(
 	}
 	for(i = 0; i < N2; ++i){ fprintf(stderr, " %f\n", b[i]); }
 	*/
-	
+
 	//fprint_spmatrix(stderr, N2, M, Mcol, 4);
 	sparse_linsolve_d(N2, M, Mcol, 4, b, x, _dxdy);
-	
+
 	// === Reconstruct the vector field ===
 	double max_field = 0;
 	for(j = 0; j < nv; ++j){
@@ -1624,7 +1624,7 @@ static double pattern_generate_flow_field_rect(
 			if(af > max_field){ max_field = af; }
 		}
 	}
-	
+
 	free(iwork);
 	free(work);
 	return max_field;
@@ -1637,19 +1637,19 @@ static double pattern_generate_flow_field_tri(
 	int type,
 	const double L[4],
 	int nu, int nv,
-	REAL *field
+	double *field
 ){
 	const int N = nu*nv;
 	const int N3 = 3*N;
 	int i, j;
-	
-	REAL *work = (REAL*)malloc(sizeof(REAL)*N3*(11+2));
-	REAL *x = work;
-	REAL *b = x+N3;
-	REAL *M = b+N3;
+
+	double *work = (double*)malloc(sizeof(double)*N3*(11+2));
+	double *x = work;
+	double *b = x+N3;
+	double *M = b+N3;
 	int *iwork = (int*)malloc(sizeof(int)*N3*10);
 	int *Mcol = iwork;
-	
+
 	// The fundamental parallelogram is like
 	//
 	//          +-----------+        +-----------+         |
@@ -1666,11 +1666,11 @@ static double pattern_generate_flow_field_tri(
 	// the diagonal d. The diagonal can be in one of two configurations
 	// depending on the angle between u and v. The orientation of the
 	// diagonals is always upwards toward v (v-u or v+u).
-	
+
 	// The 1-form Laplacian M has exactly 11 non-zero entries per row on a
 	// regular triangular grid. The constraint matrix Z is diagonal, with
 	// one entry per edge with a shape intersection.
-	
+
 	// pre-compute Hodge star components
 	// Note that due to the regularity of the grid, primal area = dual area
 	// sd is 1 if d = v-u, 0 if d = v+u
@@ -1725,7 +1725,7 @@ static double pattern_generate_flow_field_tri(
 	const double r_uv = _r_uv * _r_scale;
 	const double r_du = _r_du * _r_scale;
 	const double r_dv = _r_dv * _r_scale;
-	
+
 	// Sparse matrix storage format:
 	// M is arranged in blocks of 11 elements, for each row,
 	// in ascending row order.
@@ -1734,11 +1734,11 @@ static double pattern_generate_flow_field_tri(
 	// Mcol gives the columns of these off-diagonal entries, so
 	// it is arranged in blocks of 10 elements, for each row, in
 	// the same order as M.
-	
+
 	for(i = 0; i < N3; ++i){ b[i] = 0; }
 	for(i = 0; i < N3; ++i){ x[i] = 0; }
 	memset(M, 0, sizeof(double)*N3*11);
-	
+
 	// Neighborhood information
 	const signed char neigh_sd[] = {
 		// if sd
@@ -1758,14 +1758,14 @@ static double pattern_generate_flow_field_tri(
 		1,  0,  0,  1*+1, // v edge, this, pos (source side, pos)
 		2,  0,  0,  1*-1, // d, this, pos (sink side, neg)
 		2,  0, -1, -1*+1, // d edge, below, neg (source side, pos)
-		
+
 		0, -1,  0, -1*+1, // u edge, left, neg (source side, pos)
 		2, -1,  0,  1*+1, // d edge, left, pos (source side, pos)
 		1,  0, -1, -1*+1, // v edge, below, neg (source side, pos)
 		0,  1,  0,  1*-1, // u, right, pos (sink side, neg)
 		1,  1,  0,  1*-1, // v, right, pos (sink side, neg)
 		2,  1, -1, -1*-1, // d, belowright, neg (sink side, neg)
-		
+
 		//   v edge
 		//    The curl(curl(.)) part is
 		//    [ (v_this - u_aboveleft - d_left) - (u_this + d_this - v_this) ] /area(uvd)
@@ -1782,14 +1782,14 @@ static double pattern_generate_flow_field_tri(
 		0,  0,  0,  1*+1, // u, this, pos (source side, pos)
 		2,  0,  0, -1*-1, // d, this, neg (sink side, neg)
 		2, -1,  0,  1*+1, // d, left, pos (source side, pos)
-		
+
 		0, -1,  0, -1*+1, // u, left, neg (source side, pos)
 		1,  0, -1, -1*+1, // v, below, neg (source side, pos)
 		2,  0, -1, -1*+1, // d, below, neg (source side, pos)
 		0,  0,  1,  1*-1, // u, above, pos (sink side, neg)
 		1,  0,  1,  1*-1, // v, above, pos (sink side, neg)
 		2, -1,  1,  1*-1, // d, aboveleft, pos (sink side, neg)
-		
+
 		//   The d-edge
 		//    The curl(curl(.)) part is
 		//    [ (u_this + d_this - v_this) - (-d_this + v_right - u_above) ] /area(uvd)
@@ -1806,14 +1806,14 @@ static double pattern_generate_flow_field_tri(
 		0,  0,  0, -1*+1, // u, this, neg (source side, pos)
 		1,  0,  0, -1*-1, // v, this, neg (sink side, neg)
 		1,  1,  0,  1*+1, // v, right, pos (source side, pos)
-		
+
 		0,  1,  0,  1*+1, // u, right, pos (source side, pos)
 		1,  1, -1, -1*+1, // v, belowright, neg (source side, pos)
 		2,  1, -1, -1*+1, // d, belowright, neg (source side, pos)
 		0, -1,  1, -1*-1, // u, aboveleft, neg (sink side, neg)
 		1,  0,  1,  1*-1, // v, above, pos (sink side, neg)
 		2, -1,  1,  1*-1, // d, aboveleft, pos (sink side, neg)
-		
+
 		// if !sd
 		//   u edge
 		//    The curl(curl(.)) part is
@@ -1831,14 +1831,14 @@ static double pattern_generate_flow_field_tri(
 		1,  0, -1, -1*+1, // v, below, neg (source side, pos)
 		2,  0, -1, -1*-1, // d, below, neg (sink side, neg)
 		2,  0,  0,  1*+1, // d, this, pos (source side, pos)
-		
+
 		0, -1,  0, -1*+1, // u, left, neg (source side, pos)
 		1,  0,  0,  1*+1, // v, this, pos (source side, pos)
 		2, -1, -1, -1*+1, // d, belowleft, neg (source side, pos)
 		0,  1,  0,  1*-1, // u, right, pos (sink side, neg)
 		1,  1, -1, -1*-1, // v, belowright, neg (sink side, neg)
 		2,  1,  0,  1*-1, // d, right, pos (sink side, neg)
-		
+
 		//   v edge
 		//    The curl(curl(.)) part is
 		//    [ (v_this - d_left + u_left) - (-u_above + d_this - v_this) ] /area(uvd)
@@ -1855,14 +1855,14 @@ static double pattern_generate_flow_field_tri(
 		0, -1,  0, -1*+1, // u, left, neg (source side pos)
 		2, -1,  0, -1*-1, // d, left, neg (sink side neg)
 		2,  0,  0,  1*+1, // d, this, pos (source side pos)
-		
+
 		0,  0,  0,  1*+1, // u, this, pos (source side pos)
 		1,  0, -1, -1*+1, // v, below, neg (source side pos)
 		2, -1, -1, -1*+1, // d, belowleft, neg (source side pos)
 		0, -1,  1, -1*-1, // u, aboveleft, neg (sink side neg)
 		1,  0,  1,  1*-1, // v, above, pos (sink side neg)
 		2,  0,  1,  1*-1, // d, above, pos (sink side neg)
-		
+
 		//   The d-edge
 		//    The curl(curl(.)) part is
 		//    [ (-u_above + d_this - v_this) - (u_this + v_right - d_this) ] /area(uvd)
@@ -1879,7 +1879,7 @@ static double pattern_generate_flow_field_tri(
 		0,  0,  0,  1*+1, // u, this, pos (source side pos)
 		1,  1,  0, -1*-1, // v, right, neg (sink side neg)
 		1,  0,  0,  1*+1, // v, this, pos (source side pos)
-		
+
 		0, -1,  0, -1*+1, // u, left, neg (source side pos)
 		1,  0, -1, -1*+1, // v, below, neg (source side pos)
 		2, -1, -1, -1*+1, // d, belowleft, neg (source side pos)
@@ -1928,7 +1928,7 @@ static double pattern_generate_flow_field_tri(
 		r_uv, r_vv, r_dv,
 		r_du, r_dv, r_dd
 	};
-	
+
 	for(j = 0; j < nv; ++j){
 		int jp1 = (j+1)%nv;
 		int jm1 = (j+nv-1)%nv;
@@ -1939,7 +1939,7 @@ static double pattern_generate_flow_field_tri(
 			int i3[3] = {im1,i,ip1};
 			int k = i+j*nu;
 			int ei;
-			
+
 			for(ei = 0; ei < 3; ++ei){
 				int ci;
 				M[11*(3*k+ei)+0] = 2*(1 + hodge[ei+ei*3]);
@@ -1957,7 +1957,7 @@ static double pattern_generate_flow_field_tri(
 			}
 		}
 	}
-	
+
 	if(0 == type){
 		for(j = 0; j < nv; ++j){
 			int jp1 = (j+1)%nv;
@@ -1971,11 +1971,11 @@ static double pattern_generate_flow_field_tri(
 				int si, sj;
 				for(sj = -1; sj <= 1; ++sj){ for(si = -1; si <= 1; ++si){
 				int ei; // edge index;
-				REAL p0[2] = {
-					(si-0.5 + (REAL)i/nu) * L[0] + (sj-0.5 + (REAL)j/nv) * L[2],
-					(si-0.5 + (REAL)i/nu) * L[1] + (sj-0.5 + (REAL)j/nv) * L[3]
+				double p0[2] = {
+					(si-0.5 + (double)i/nu) * L[0] + (sj-0.5 + (double)j/nv) * L[2],
+					(si-0.5 + (double)i/nu) * L[1] + (sj-0.5 + (double)j/nv) * L[3]
 					}; // bottom left of pixel
-				REAL cross[6];
+				double cross[6];
 				int icross = 0;
 				for(ei = 0; ei < 3; ++ei){
 					if(sd && 2 == ei){ // for d, the last edge, we can change p0 without worry
@@ -2038,7 +2038,7 @@ static double pattern_generate_flow_field_tri(
 	sparse_linsolve_d(N3, M, Mcol, 10, b, x, M[0]);
 	//fprintf(stderr, "Ending CG\n");
 	//for(i = 0; i < N3; ++i){ x[i] = b[i]; }
-	
+
 	// === Reconstruct the vector field ===
 	double max_field = 0;
 	for(j = 0; j < nv; ++j){
@@ -2062,7 +2062,7 @@ static double pattern_generate_flow_field_tri(
 			if(af > max_field){ max_field = af; }
 		}
 	}
-	
+
 	free(iwork);
 	free(work);
 	return max_field;
@@ -2074,7 +2074,7 @@ int pattern_generate_flow_field(
 	int type,
 	const double L[4],
 	int nu, int nv,
-	REAL *field
+	double *field
 ){
 	if(nshapes < 0){ return -1; }
 	if(nshapes != 0 && NULL == shapes){ return -2; }
@@ -2084,9 +2084,9 @@ int pattern_generate_flow_field(
 	if(nu < 1){ return -6; }
 	if(nv < 1){ return -7; }
 	if(NULL == field){ return -8; }
-	
+
 	int i, j;
-	
+
 	if(0 == nshapes){
 		for(j = 0; j < nv; ++j){
 			for(i = 0; i < nu; ++i){
@@ -2096,10 +2096,10 @@ int pattern_generate_flow_field(
 		}
 		return 0;
 	}
-	
+
 	// Determine if we can get away with a simpler Laplacian formulation
 	int lattice_type = 0;
-	
+
 	double u_len = hypot(L[0],L[1]);
 	double v_len = hypot(L[2],L[3]);
 	double uv = L[0]*L[2] + L[1]*L[3];
@@ -2107,7 +2107,7 @@ int pattern_generate_flow_field(
 	if(fabs(uv / uv_max) < DBL_EPSILON){
 		lattice_type |= 1;
 	}
-	
+
 	double max_field = 1;
 	if(0 != (lattice_type&1)){ // square/rectangular lattice
 		// The u and v direction Laplacians are decoupled
@@ -2137,7 +2137,7 @@ int Pattern_GenerateFlowField(
 	int type,
 	const double L[4],
 	int nu, int nv,
-	REAL *value
+	double *value
 ){
 	return pattern_generate_flow_field(p->nshapes, p->shapes, p->parent, type, L, nu, nv, value);
 }
