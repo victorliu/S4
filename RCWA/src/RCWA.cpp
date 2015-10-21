@@ -285,6 +285,20 @@ public:
 			return;
 		}
 	}
+	Rcomplex GetEpsilon(Rcpp::NumericVector &vr){
+		int ret;
+		double r[3] = { vr[0], vr[1], vr[2] };
+		double feps[2];
+
+		ret = Simulation_GetEpsilon(S, r, feps);
+		if(0 != ret){
+			HandleSolutionErrorCode("get_epsilon", ret);
+		}
+		Rcomplex eps;
+		eps.r = feps[0];
+		eps.i = feps[1];
+		return eps;
+	}
 	Rcpp::NumericMatrix GetGList(){
 		int *G;
 		int n, ret;
@@ -315,10 +329,48 @@ public:
 		ret = Simulation_GetPoyntingFlux(S, layer, offset, power);
 
 		if(0 != ret){
-			HandleSolutionErrorCode("GetPoyntingFlux", ret);
+			HandleSolutionErrorCode("get_power_flux", ret);
+			return Rcpp::List::create();
 		}
 		Rcomplex forw; forw.r = power[0]; forw.i = power[2];
 		Rcomplex back; back.r = power[1]; back.i = power[3];
+		return Rcpp::List::create(
+			Rcpp::Named("forward")  = forw,
+			Rcpp::Named("backward") = back
+		);
+	}
+	Rcpp::List GetPowerFluxes(Rcpp::XPtr<Layer> player, const double &offset){
+		double *power;
+		int *G;
+		int n, i, ret;
+		Layer *layer = player.checked_get();
+
+		ret = Simulation_SolveLayer(S, layer);
+		if(0 != ret){
+			HandleSolutionErrorCode("GetPoyntingFluxByOrder", ret);
+			return Rcpp::List::create();
+		}
+
+		n = Simulation_GetNumG(S, &G);
+		if(NULL == G){
+			return Rcpp::List::create();
+		}
+
+		power = (double*)malloc(sizeof(double)*4*n);
+		Simulation_GetPoyntingFluxByG(S,
+			layer,
+			offset,
+			power);
+
+		Rcpp::ComplexVector forw(n), back(n);
+		for(i = 0; i < n; ++i){
+			Rcomplex v;
+			v.r = power[4*i+0]; v.i = power[4*i+2];
+			forw[i] = v;
+			v.r = power[4*i+1]; v.i = power[4*i+3];
+			back[i] = v;
+		}
+		free(power);
 		return Rcpp::List::create(
 			Rcpp::Named("forward")  = forw,
 			Rcpp::Named("backward") = back
@@ -391,8 +443,10 @@ RCPP_MODULE(S4RCWA){
 	.method("pattern_circle", &::S4::CSimulation::PatternCircle, "Pattern a layer with a circle")
 	.method("excitation_planewave", &::S4::CSimulation::ExcitationPlanewave, "Set a planewave excitation")
 	.method("set_frequency", &::S4::CSimulation::SetFrequency, "Sets the operating frequency")
+	.method("get_epsilon", &::S4::CSimulation::GetEpsilon, "Gets complex epsilon at a point in space")
 	.method("get_G_list", &::S4::CSimulation::GetGList, "Gets the list of G vectors (integer coordinates in reciprocal lattice basis")
 	.method("get_power_flux", &::S4::CSimulation::GetPowerFlux, "Gets net power flux in a layer at a given offset")
+	.method("get_power_fluxes", &::S4::CSimulation::GetPowerFluxes, "Gets power flux by diffracted order in a layer at a given offset")
 	.method("get_amplitudes", &::S4::CSimulation::GetAmplitudes, "Gets amplitudes of all modal bases in a given layer")
 	;
 }
