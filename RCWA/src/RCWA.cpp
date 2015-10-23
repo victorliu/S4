@@ -136,14 +136,14 @@ public:
 		free(S);
 	}
 
-	Rcpp::XPtr<Material> SetMaterial(const std::string &name, const Rcomplex &eps){
+	void SetMaterial(const std::string &name, const Rcomplex &eps){
 		Material *M = Simulation_GetMaterialByName(S, name.c_str(), NULL);
 		bool existed = true;
 		if(NULL == M){
 			M = Simulation_AddMaterial(S);
 			if(NULL == M){
 				::Rf_error("SetMaterial: There was a problem allocating the material named '%s'.", name.c_str());
-				return Rcpp::XPtr<Material>((Material*)NULL);
+				return;
 			}
 			existed = false;
 		}
@@ -154,7 +154,6 @@ public:
 			M->eps.s[0] = eps.r;
 			M->eps.s[1] = eps.i;
 		}
-		return Rcpp::XPtr<Material>(M);
 	}
 	static bool ScalarMaterial(SEXP *s, int n){
 		if(2 != n){ return false; }
@@ -164,14 +163,14 @@ public:
 		}catch(std::exception &ex){ return false; }
 		return true;
 	}
-	Rcpp::XPtr<Material> SetTensorMaterial(const std::string &name, const Rcpp::ComplexMatrix &eps){
+	void SetTensorMaterial(const std::string &name, const Rcpp::ComplexMatrix &eps){
 		Material *M = Simulation_GetMaterialByName(S, name.c_str(), NULL);
 		bool existed = true;
 		if(NULL == M){
 			M = Simulation_AddMaterial(S);
 			if(NULL == M){
 				::Rf_error("SetMaterial: There was a problem allocating the material named '%s'.", name.c_str());
-				return Rcpp::XPtr<Material>((Material*)NULL);
+				return;
 			}
 			existed = false;
 		}
@@ -200,7 +199,6 @@ public:
 				M->eps.abcde[i] = deps[i];
 			}
 		}
-		return Rcpp::XPtr<Material>(M);
 	}
 	static bool TensorMaterial(SEXP *s, int n){
 		if(2 != n){ return false; }
@@ -210,44 +208,130 @@ public:
 		}catch(std::exception &ex){ return false; }
 		return true;
 	}
-	Rcpp::XPtr<Layer> AddLayer(const std::string &name, const double thickness, Rcpp::XPtr<Material> mat){
+	void AddLayer(const std::string &name, const double thickness, const std::string &mat_name){
 		Layer *layer = Simulation_AddLayer(S);
 		if(NULL == layer){
 			::Rf_error("AddLayer: There was a problem allocating the layer named '%s'.", name.c_str());
-				return Rcpp::XPtr<Layer>((Layer*)NULL);
+				return;
 		}
-		Material *M = mat.checked_get();
 		Layer_Init(layer,
 			name.c_str(),
 			thickness,
-			M->name,
+			mat_name.c_str(),
 			NULL);
-
-		return Rcpp::XPtr<Layer>(layer);
 	}
-	Rcpp::XPtr<Layer> PatternCircle(Rcpp::XPtr<Layer> player, Rcpp::XPtr<Material> mat, const Rcpp::NumericVector &vcenter, const double &radius){
+	void PatternCircle(const std::string &layer_name, const std::string &mat_name, const Rcpp::NumericVector &vcenter, const double &radius){
 		int ret;
-		Layer *layer = player.checked_get();
+		Layer *layer = Simulation_GetLayerByName(S, layer_name.c_str(), NULL);
+		if(NULL == layer){
+			::Rf_error("pattern_circle: Layer named '%s' not found.", layer_name.c_str());
+			return;
+		}
 
 		if(NULL != layer->copy){
 			::Rf_error("pattern_circle: Cannot pattern a layer copy.");
-			return player;
+			return;
 		}
 
 		int material_index;
-		Material *M = mat.checked_get();
-		M = Simulation_GetMaterialByName(S, M->name, &material_index);
+		Material *M = Simulation_GetMaterialByName(S, mat_name.c_str(), &material_index);
 		if(NULL == M){
 			::Rf_error("pattern_circle: Material named '%s' not found.", M->name);
-			return player;
+			return;
 		}
 		double center[2] = { vcenter[0], vcenter[1] };
 		ret = Simulation_AddLayerPatternCircle(S, layer, material_index, center, radius);
 		if(0 != ret){
 			::Rf_error("pattern_circle: There was a problem allocating the pattern.");
-			return player;
+			return;
 		}
-		return player;
+	}
+	void PatternRectangle(const std::string &layer_name, const std::string &mat_name, const Rcpp::NumericVector &vcenter, const double &angle, const Rcpp::NumericVector &halfwidths){
+		int ret;
+		Layer *layer = Simulation_GetLayerByName(S, layer_name.c_str(), NULL);
+		if(NULL == layer){
+			::Rf_error("pattern_rectangle: Layer named '%s' not found.", layer_name.c_str());
+			return;
+		}
+
+		if(NULL != layer->copy){
+			::Rf_error("pattern_rectangle: Cannot pattern a layer copy.");
+			return;
+		}
+
+		int material_index;
+		Material *M = Simulation_GetMaterialByName(S, mat_name.c_str(), &material_index);
+		if(NULL == M){
+			::Rf_error("pattern_rectangle: Material named '%s' not found.", M->name);
+			return;
+		}
+		double center[2] = { vcenter[0], vcenter[1] };
+		double hw[2] = { halfwidths[0], halfwidths[1] };
+		ret = Simulation_AddLayerPatternRectangle(S, layer, material_index, center, (M_PI/180.)*angle, hw);
+		if(0 != ret){
+			::Rf_error("pattern_rectangle: There was a problem allocating the pattern.");
+			return;
+		}
+	}
+	void PatternEllipse(const std::string &layer_name, const std::string &mat_name, const Rcpp::NumericVector &vcenter, const double &angle, const Rcpp::NumericVector &halfwidths){
+		int ret;
+		Layer *layer = Simulation_GetLayerByName(S, layer_name.c_str(), NULL);
+		if(NULL == layer){
+			::Rf_error("pattern_ellipse: Layer named '%s' not found.", layer_name.c_str());
+			return;
+		}
+
+		if(NULL != layer->copy){
+			::Rf_error("pattern_ellipse: Cannot pattern a layer copy.");
+			return;
+		}
+
+		int material_index;
+		Material *M = Simulation_GetMaterialByName(S, mat_name.c_str(), &material_index);
+		if(NULL == M){
+			::Rf_error("pattern_ellipse: Material named '%s' not found.", M->name);
+			return;
+		}
+		double center[2] = { vcenter[0], vcenter[1] };
+		double hw[2] = { halfwidths[0], halfwidths[1] };
+		ret = Simulation_AddLayerPatternEllipse(S, layer, material_index, center, (M_PI/180.)*angle, hw);
+		if(0 != ret){
+			::Rf_error("pattern_ellipse: There was a problem allocating the pattern.");
+			return;
+		}
+	}
+	void PatternPolygon(const std::string &layer_name, const std::string &mat_name, const Rcpp::NumericVector &vcenter, const double &angle, const Rcpp::NumericMatrix &vertices){
+		int ret;
+		Layer *layer = Simulation_GetLayerByName(S, layer_name.c_str(), NULL);
+		if(NULL == layer){
+			::Rf_error("pattern_polygon: Layer named '%s' not found.", layer_name.c_str());
+			return;
+		}
+
+		if(NULL != layer->copy){
+			::Rf_error("pattern_polygon: Cannot pattern a layer copy.");
+			return;
+		}
+
+		int material_index;
+		Material *M = Simulation_GetMaterialByName(S, mat_name.c_str(), &material_index);
+		if(NULL == M){
+			::Rf_error("pattern_polygon: Material named '%s' not found.", M->name);
+			return;
+		}
+		double center[2] = { vcenter[0], vcenter[1] };
+		int n = vertices.ncol();
+		double *v = (double*)malloc(sizeof(double) * 2 * n);
+		for(int i = 0; i < n; ++i){
+			v[2*i+0] = vertices(0,i);
+			v[2*i+1] = vertices(1,i);
+		}
+		ret = Simulation_AddLayerPatternPolygon(S, layer, material_index, center, (M_PI/180.)*angle, n, v);
+		free(v);
+		if(0 != ret){
+			::Rf_error("pattern_polygon: There was a problem allocating the pattern.");
+			return;
+		}
 	}
 
 	void ExcitationPlanewave(const Rcpp::NumericVector &angles, const Rcomplex &s, const Rcomplex &p){
@@ -321,10 +405,14 @@ public:
 		}
 		return Gmat;
 	}
-	Rcpp::List GetPowerFlux(Rcpp::XPtr<Layer> player, const double &offset){
+	Rcpp::List GetPowerFlux(const std::string &layer_name, const double &offset){
 		double power[4];
 		int ret;
-		Layer *layer = player.checked_get();
+		Layer *layer = Simulation_GetLayerByName(S, layer_name.c_str(), NULL);
+		if(NULL == layer){
+			::Rf_error("get_power_fluxes: Layer named '%s' not found.", layer_name.c_str());
+			return 0;
+		}
 
 		ret = Simulation_GetPoyntingFlux(S, layer, offset, power);
 
@@ -339,15 +427,19 @@ public:
 			Rcpp::Named("backward") = back
 		);
 	}
-	Rcpp::List GetPowerFluxes(Rcpp::XPtr<Layer> player, const double &offset){
+	Rcpp::List GetPowerFluxes(const std::string layer_name, const double &offset){
 		double *power;
 		int *G;
 		int n, i, ret;
-		Layer *layer = player.checked_get();
+		Layer *layer = Simulation_GetLayerByName(S, layer_name.c_str(), NULL);
+		if(NULL == layer){
+			::Rf_error("get_power_fluxes: Layer named '%s' not found.", layer_name.c_str());
+			return 0;
+		}
 
 		ret = Simulation_SolveLayer(S, layer);
 		if(0 != ret){
-			HandleSolutionErrorCode("GetPoyntingFluxByOrder", ret);
+			HandleSolutionErrorCode("get_power_fluxes", ret);
 			return Rcpp::List::create();
 		}
 
@@ -376,11 +468,15 @@ public:
 			Rcpp::Named("backward") = back
 		);
 	}
-	Rcpp::List GetAmplitudes(Rcpp::XPtr<Layer> player, const double &offset){
+	Rcpp::List GetAmplitudes(const std::string &layer_name, const double &offset){
 		double *amp;
 		int *G;
 		int n, i, ret;
-		Layer *layer = player.checked_get();
+		Layer *layer = Simulation_GetLayerByName(S, layer_name.c_str(), NULL);
+		if(NULL == layer){
+			::Rf_error("get_amplitudes: Layer named '%s' not found.", layer_name.c_str());
+			return 0;
+		}
 
 		ret = Simulation_SolveLayer(S, layer);
 		if(0 != ret){
@@ -441,6 +537,9 @@ RCPP_MODULE(S4RCWA){
 	.method("set_material", &::S4::CSimulation::SetTensorMaterial, "Set a tensor epsilon material", &::S4::CSimulation::TensorMaterial)
 	.method("add_layer", &::S4::CSimulation::AddLayer, "Add an unpatterned layer")
 	.method("pattern_circle", &::S4::CSimulation::PatternCircle, "Pattern a layer with a circle")
+	.method("pattern_rectangle", &::S4::CSimulation::PatternRectangle, "Pattern a layer with a rectangle specified by halfwidths")
+	.method("pattern_ellipse", &::S4::CSimulation::PatternEllipse, "Pattern a layer with a ellipse specified by semimajor axes")
+	.method("pattern_polygon", &::S4::CSimulation::PatternPolygon, "Pattern a layer with a polygon specified by vertices")
 	.method("excitation_planewave", &::S4::CSimulation::ExcitationPlanewave, "Set a planewave excitation")
 	.method("set_frequency", &::S4::CSimulation::SetFrequency, "Sets the operating frequency")
 	.method("get_epsilon", &::S4::CSimulation::GetEpsilon, "Gets complex epsilon at a point in space")
