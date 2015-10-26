@@ -495,7 +495,7 @@ int Simulation_AddLayerPatternCircle(
 	if(NULL == layer){ ret = -2; }
 	if(material < 0){ ret = -3; }
 	if(NULL == center){ ret = -4; }
-	if(radius <= 0){ ret = -5; }
+	if(radius < 0){ ret = -5; }
 	if(0 != ret){
 		S4_TRACE("< Simulation_AddLayerPatternCircle (failed; ret = %d)\n", ret);
 		return ret;
