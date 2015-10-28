@@ -11,8 +11,13 @@
 #  On Debian, with reference BLAS and Lapack (slow)
 #   BLAS_LIB = -lblas
 #   LAPACK_LIB = -llapack
-BLAS_LIB = -lblas
-LAPACK_LIB = -llapack
+
+#BLAS_LIB = -lblas
+#LAPACK_LIB = -llapack
+BLAS_LIB = -lopenblas_seq
+LAPACK_LIB = -lopenblas_seq
+
+
 
 # Specify the flags for Lua headers and libraries (only needed for Lua frontend)
 #  On Debian,
@@ -25,30 +30,34 @@ LUA_LIB = -llua5.2 -ldl -lm
 #  FFTW3_INC can be left empty
 #  FFTW3_LIB = -lfftw3
 FFTW3_INC =
-FFTW3_LIB = 
+FFTW3_LIB = -lfftw3
 
 # Typically,
 #  PTHREAD_INC = -DHAVE_UNISTD_H -lpthread
 #  PTHREAD_LIB = -lpthread
-PTHREAD_INC = 
-PTHREAD_LIB = 
+PTHREAD_INC = -DHAVE_UNISTD_H -lpthread
+PTHREAD_LIB = -lpthread
 
 # Typically if installed,
-#  CHOLMOD_INC = -I/usr/include/suitesparse
-#  CHOLMOD_LIB = -lcholmod -lamd -lcolamd -lcamd -lccolamd
 CHOLMOD_INC = 
 CHOLMOD_LIB = 
+#CHOLMOD_INC = -I/usr/include/suitesparse
+#CHOLMOD_LIB = -lcholmod -lamd -lcolamd -lcamd -lccolamd
+
 
 # Specify the MPI library
-MPI_INC =
-MPI_LIB =
+#MPI_INC =
+#MPI_LIB =
 
 # Specify custom compilers if needed
 CXX = g++
 CC  = gcc
 
-CFLAGS += -O3 -fPIC
-#CFLAGS += -O0 -ggdb -fPIC -DDUMP_MATRICES -DENABLE_S4_TRACE
+#CFLAGS += -O3 -fPIC
+CFLAGS = -O3 -msse3 -msse2 -msse -fPIC
+
+# options for Sampler module
+OPTFLAGS = -O3
 
 OBJDIR = ./build
 S4_BINNAME = $(OBJDIR)/S4
@@ -95,7 +104,8 @@ objdir:
 	mkdir -p $(OBJDIR)
 	mkdir -p $(OBJDIR)/S4k
 	mkdir -p $(OBJDIR)/S4r
-
+	mkdir -p $(OBJDIR)/modules
+	
 S4_LIBOBJS = \
 	$(OBJDIR)/S4k/S4.o \
 	$(OBJDIR)/S4k/rcwa.o \
@@ -231,7 +241,7 @@ $(OBJDIR)/S4r/predicates.o: S4r/predicates.c
 
 $(OBJDIR)/S4k/main_lua.o: S4/main_lua.c objdir
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $(LUA_INC) $< -o $@
-S4lua: $(OBJDIR)/S4k/main_lua.o $(S4_LIBNAME)
+S4lua: $(OBJDIR)/S4k/main_lua.o $(S4_LIBNAME) sampler
 	$(CXX) $(CFLAGS) $(CPPFLAGS) $< -o $(S4_BINNAME) $(S4_LIBNAME) $(LIBS) $(LUA_LIB)
 
 $(OBJDIR)/S4r/main_lua.o: S4r/main_lua.c
@@ -242,6 +252,18 @@ $(OBJDIR)/S4r/S4r.o: S4r/S4r.cpp
 	$(CXX) -c $(CFLAGS) $(CPPFLAGS) $(LUA_INC) $< -o $@
 S4rlua: objdir $(OBJDIR)/S4r/main_lua.o $(OBJDIR)/S4r/lua_named_arg.o $(OBJDIR)/S4r/S4r.o $(S4r_LIBNAME)
 	$(CXX) $(CFLAGS) $(CPPFLAGS) $(OBJDIR)/S4r/main_lua.o $(OBJDIR)/S4r/lua_named_arg.o $(OBJDIR)/S4r/S4r.o -o $@ $(S4r_LIBNAME) $(LIBS) $(LUA_LIB)
+
+sampler: FunctionSampler1D.so FunctionSampler2D.so
+FunctionSampler1D.so: modules/function_sampler_1d.c modules/function_sampler_1d.h modules/lua_function_sampler_1d.c
+	gcc -c $(OPTFLAGS) -fpic -Wall -I. modules/function_sampler_1d.c -o $(OBJDIR)/modules/function_sampler_1d.o
+	gcc $(OPTFLAGS) -shared -fpic -Wall $(LUA_INC) -o $(OBJDIR)/FunctionSampler1D.so $(OBJDIR)/modules/function_sampler_1d.o modules/lua_function_sampler_1d.c $(LUA_LIB)
+FunctionSampler2D.so: modules/function_sampler_2d.c modules/function_sampler_2d.h modules/lua_function_sampler_2d.c
+	gcc -c $(OPTFLAGS) -fpic -Wall -I. modules/function_sampler_2d.c -o $(OBJDIR)/modules/function_sampler_2d.o
+	gcc -c -O2 -fpic -Wall -I. modules/predicates.c -o $(OBJDIR)/modules/mod_predicates.o
+	gcc $(OPTFLAGS) -shared -fpic -Wall $(LUA_INC) -o $(OBJDIR)/FunctionSampler2D.so $(OBJDIR)/modules/function_sampler_2d.o $(OBJDIR)/modules/mod_predicates.o modules/lua_function_sampler_2d.c $(LUA_LIB)
+
+
+
 
 #### Python extension
 

@@ -19,8 +19,8 @@ LAPACK_LIB = -framework Accelerate
 #  On Debian,
 #   LUA_INC = -I/usr/include/lua5.2
 #   LUA_LIB = -llua5.2 -ldl -lm
-LUA_INC = -I./lua-5.2.4/install/include
-LUA_LIB = -L./lua-5.2.4/install/lib -llua -ldl
+LUA_INC = -I./lua-5.2.3/install/include
+LUA_LIB = -L./lua-5.2.3/install/lib -llua -ldl
 
 # Typically if installed,
 #  FFTW3_INC can be left empty
@@ -45,8 +45,8 @@ MPI_INC =
 MPI_LIB =
 
 # Specify custom compilers if needed
-CXX = c++
-CC  = cc
+CXX = g++
+CC  = gcc
 
 CFLAGS = -O3 -fPIC
 
@@ -266,11 +266,5 @@ S4_pyext: objdir $(S4_LIBNAME)
 	sh gensetup.py.sh $(OBJDIR) $(S4_LIBNAME)
 	python setup.py build
 
-S4_R: objdir $(S4_LIBNAME)
-	R CMD BUILD RCWA
-	R CMD INSTALL RCWA
-
 clean:
 	rm -rf $(OBJDIR)
-
-
