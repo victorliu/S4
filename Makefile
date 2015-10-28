@@ -11,43 +11,41 @@
 #  On Debian, with reference BLAS and Lapack (slow)
 #   BLAS_LIB = -lblas
 #   LAPACK_LIB = -llapack
-
-#BLAS_LIB = -lblas
-#LAPACK_LIB = -llapack
-BLAS_LIB = -lopenblas_seq
-LAPACK_LIB = -lopenblas_seq
-
-
+BLAS_LIB = -lblas
+LAPACK_LIB = -llapack
 
 # Specify the flags for Lua headers and libraries (only needed for Lua frontend)
-#  On Debian,
-#   LUA_INC = -I/usr/include/lua5.2
-#   LUA_LIB = -llua5.2 -ldl -lm
-LUA_INC = -I/usr/include/lua5.2
-LUA_LIB = -llua5.2 -ldl -lm
+# Recommended: build lua in the current directory, and link against this local version
+# LUA_INC = -I./lua-5.2.4/install/include
+# LUA_LIB = -L./lua-5.2.4/install/lib -llua -ldl -lm
+LUA_INC = -I./lua-5.2.4/install/include
+LUA_LIB = -L./lua-5.2.4/install/lib -llua -ldl -lm
 
+# OPTIONAL
 # Typically if installed,
 #  FFTW3_INC can be left empty
 #  FFTW3_LIB = -lfftw3
 FFTW3_INC =
-FFTW3_LIB = -lfftw3
+FFTW3_LIB = 
 
 # Typically,
-#  PTHREAD_INC = -DHAVE_UNISTD_H -lpthread
+#  PTHREAD_INC = -DHAVE_UNISTD_H
 #  PTHREAD_LIB = -lpthread
-PTHREAD_INC = -DHAVE_UNISTD_H -lpthread
+PTHREAD_INC = -DHAVE_UNISTD_H
 PTHREAD_LIB = -lpthread
 
+# OPTIONAL
 # Typically if installed,
-CHOLMOD_INC = 
-CHOLMOD_LIB = 
 #CHOLMOD_INC = -I/usr/include/suitesparse
 #CHOLMOD_LIB = -lcholmod -lamd -lcolamd -lcamd -lccolamd
-
+CHOLMOD_INC = 
+CHOLMOD_LIB = 
 
 # Specify the MPI library
 #MPI_INC =
 #MPI_LIB =
+MPI_INC =
+MPI_LIB =
 
 # Specify custom compilers if needed
 CXX = g++
