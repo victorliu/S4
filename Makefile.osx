@@ -16,9 +16,9 @@ BLAS_LIB = -framework Accelerate
 LAPACK_LIB = -framework Accelerate
 
 # Specify the flags for Lua headers and libraries (only needed for Lua frontend)
-#  On Debian,
-#   LUA_INC = -I/usr/include/lua5.2
-#   LUA_LIB = -llua5.2 -ldl -lm
+# Recommended: build lua in the current directory, and link against this local version
+# LUA_INC = -I./lua-5.2.4/install/include
+# LUA_LIB = -L./lua-5.2.4/install/lib -llua -ldl
 LUA_INC = -I./lua-5.2.4/install/include
 LUA_LIB = -L./lua-5.2.4/install/lib -llua -ldl
 
