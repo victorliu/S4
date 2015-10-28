@@ -23,6 +23,7 @@
 #include <mpi.h>
 #endif
 
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -1208,7 +1209,7 @@ static int S4L_Simulation_SetNumG(lua_State *L){
 	int n;
 	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetNumG: 'Simulation' object expected.");
-	n = luaL_checkint(L, 2);
+	n = luaL_checkinteger(L, 2);
 	if(n < 1){
 		S4L_error(L, "SetNumG: Must have at least 1 G-vector.");
 	}
@@ -1224,7 +1225,7 @@ static int S4L_Simulation_GetNumG(lua_State *L){
 static int S4L_Simulation_SetResolution(lua_State *L){
 	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetResolution: 'Simulation' object expected.");
-	S->options.resolution = luaL_checkint(L, 2);
+	S->options.resolution = luaL_checkinteger(L, 2);
 	if(S->options.resolution < 2){
 		S4L_error(L, "SetResolution: Resolution must be at least 2.");
 	}
@@ -1937,7 +1938,8 @@ static int S4L_Simulation_SetExcitationPlanewave(lua_State *L){
 	pol_s[1] *= (M_PI/180.);
 	pol_p[1] *= (M_PI/180.);
 
-	order = luaL_optunsigned(L, 5, 0);
+//	order = luaL_optunsigned(L, 5, 0);
+	order = luaL_optinteger(L, 5, 0);
 	if(order > 0){ order--; }
 	ret = Simulation_MakeExcitationPlanewave(S, angle, pol_s, pol_p, order);
 	if(0 != ret){
@@ -2009,9 +2011,9 @@ static int S4L_Simulation_GetDiffractionOrder(lua_State *L){
 	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetDiffractionOrder: 'Simulation' object expected.");
 	
-	u = luaL_checkint(L, 2);
+	u = luaL_checkinteger(L, 2);
 	if(lua_gettop(L) > 2){
-		v = luaL_checkint(L, 3);
+		v = luaL_checkinteger(L, 3);
 	}
 	
 	i = Simulation_InitSolution(S);
@@ -2232,7 +2234,7 @@ static int S4L_Simulation_SetLanczosSmoothingWidth(lua_State *L){
 	luaL_argcheck(L, S != NULL, 1, "S4L_Simulation_SetLanczosSmoothingWidth: 'Simulation' object expected.");
 	width = luaL_checknumber(L, 2);
 	if(lua_gettop(L) > 2){
-		power = luaL_checkint(L, 3);
+		power = luaL_checkinteger(L, 3);
 	}
 	
 	prevwidth = S->options.lanczos_smoothing_width;
@@ -2337,7 +2339,7 @@ static int S4L_Simulation_SetVerbosity(lua_State *L){
 	int verbosity;
 	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetVerbosity: 'Simulation' object expected.");
-	verbosity = luaL_checkint(L, 2);
+	verbosity = luaL_checkinteger(L, 2);
 	
 	if(verbosity < 0){ verbosity = 0; }
 	if(verbosity > 9){ verbosity = 9; }
@@ -2438,8 +2440,8 @@ static int S4L_Simulation_OutputLayerPatternRealization(lua_State *L){
 		
 		ret = Simulation_OutputLayerPatternRealization(S,
 			layer,
-			luaL_checkint(L, 3),
-			luaL_checkint(L, 4),
+			luaL_checkinteger(L, 3),
+			luaL_checkinteger(L, 4),
 			fp);
 		if(0 != ret){
 			HandleSolutionErrorCode(L, "OutputLayerPatternRealization", ret);

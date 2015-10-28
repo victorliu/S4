@@ -19,7 +19,7 @@ LAPACK_LIB = -llapack
 #   LUA_INC = -I/usr/include/lua5.2
 #   LUA_LIB = -llua5.2 -ldl -lm
 LUA_INC = -I/usr/include/lua5.2
-LUA_LIB = -llua5.2 -ldl -lm
+LUA_LIB = $(LDFLAGS) -llua -ldl -lm
 
 # Typically if installed,
 #  FFTW3_INC can be left empty
@@ -31,7 +31,7 @@ FFTW3_LIB =
 #  PTHREAD_INC = -DHAVE_UNISTD_H -lpthread
 #  PTHREAD_LIB = -lpthread
 PTHREAD_INC = 
-PTHREAD_LIB = 
+PTHREAD_LIB = -lpthread
 
 # Typically if installed,
 #  CHOLMOD_INC = -I/usr/include/suitesparse
