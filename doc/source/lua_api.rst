@@ -615,7 +615,7 @@ Parameter specification
     G-index
         (number) Index of the mode. This is the same index that GetDiffractionOrder returns.
     pol
-        (string) Either 'x' or 'y' for the polarization of the electric field in unpatterned layers.
+        (string) Either 'x' or 'y' for the polarization of the electric field in unpatterned layers. (See :func:`GetAmplitudes` below for what the two polarizations are more precisely.)
     amp-re, amp-im
         (number) Real and imaginary parts of the amplitude coefficient for the mode.
 
@@ -827,6 +827,11 @@ Outputs requiring solutions
 
     forw,back
         Tables of length 2*NumG containing the complex amplitudes of each forward and backward mode. Each complex amplitude is a table of length 2 containing real and imaginary parts.
+        For uniform (unpatterned) layers, the amplitudes have the following interpretation. (Warning: You should double-check this using :func:`GetFields`.)
+        If a certain grating order n has k-vector (kx,ky,kz), then the contribution of that order to H is a*(1,0,-kx/kz) + b*(0,1,-ky/kz), where a is the complex number
+        forw[n] (or back[n]) and b is the complex number forw[n + NumG] (or back[n + NumG]). The contribution to E is the cross product of the above with (kx,ky,kz)/\|k\|, divided by
+        the refractive index. Note that the two polarizations are *not* orthogonal to each other when both kx and ky are nonzero. Note also that the vectors (1,0,-kx/kz) and (0,1,-ky/kz)
+        are not normalized, so the amplitude of an order is not numerically equal to the magnitude of the electric field it creates, even with refractive index 1.
 
 
 .. method:: Simulation:GetPowerFlux(layer, offset=0)
