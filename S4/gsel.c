@@ -85,8 +85,8 @@ static int G_same(const int Gi[2], const int Gj[2], const double Lk[4]){
 		Gj[0]*Lk[1]+Gj[1]*Lk[3]
 	);
 	const double maxlen = (ilen > jlen) ? ilen : jlen;
-	double d = sqrt(Gcmp_d(&Gi[0], &Gj[0], &Lkprod[0]));
-	return d < DBL_EPSILON*maxlen;
+	double d = fabs(Gcmp_d(&Gi[0], &Gj[0], &Lkprod[0]));
+	return d < 2*DBL_EPSILON*maxlen;
 }
 
 static int Gsel_parallelogramic(unsigned int *NG, const double Lk[4], int *G){
@@ -97,10 +97,10 @@ static int Gsel_parallelogramic(unsigned int *NG, const double Lk[4], int *G){
 		2.*(Lk[0]*Lk[2]+Lk[1]*Lk[3]),
 		Lk[2]*Lk[2]+Lk[3]*Lk[3]
 	};
-	
+
 	if(0 == (NGroot % 2)){ NGroot--; }
 	M = NGroot/2;
-	
+
 	for(j = 0; j < NGroot; ++j){
 		for(i = 0; i < NGroot; ++i){
 			G[2*(i+j*NGroot)+0] = i-M;
@@ -117,7 +117,7 @@ static int Gsel_circular(unsigned int *NG, const double Lk[4], int *G){
 	// with a circular disc. (u and v are the 2 shortest lattice vectors)
 	// From the area, we can find the radius (and round it up). Then, we
 	// can find the minimum extends in each of the two lattice directions.
-	
+
 	const double u = hypot(Lk[0],Lk[1]);
 	const double v = hypot(Lk[2],Lk[3]);
 	const double u2 = Lk[0]*Lk[0] + Lk[1]*Lk[1];
@@ -125,17 +125,17 @@ static int Gsel_circular(unsigned int *NG, const double Lk[4], int *G){
 	const double uv = Lk[0]*Lk[2] + Lk[1]*Lk[3];
 	double Lkprod[3] = { u2, 2*uv, v2 };
 	const double uxv = fabs(Lk[0]*Lk[3] - Lk[1]*Lk[2]);
-	
+
 	const double circ_area = (double)(*NG) * uxv;
 	const double circ_radius = sqrt(circ_area/M_PI) + u+v;
-	
+
 	const int u_extent = 1+(int)(circ_radius/(u*sqrt(1.-uv*uv/(u2*v2))));
 	const int v_extent = 1+(int)(circ_radius/(v*sqrt(1.-uv*uv/(u2*v2))));
 	const int uext21 = 2*u_extent+1;
 	const int vext21 = 2*v_extent+1;
 	int *Gtemp = (int*)malloc(sizeof(int)*2*uext21*vext21);
 	int i, j;
-	
+
 	for(i = 0; i < uext21; ++i){
 		for(j = 0; j < vext21; ++j){
 			Gtemp[2*(i+j*uext21)+0] = i-u_extent;
@@ -156,7 +156,7 @@ static int Gsel_circular(unsigned int *NG, const double Lk[4], int *G){
 		G[2*i+1] = Gtemp[2*i+1];
 	}
 	free(Gtemp);
-	
+
 	return 0;
 }
 
@@ -165,13 +165,13 @@ int G_select(const int method, unsigned int *NG, const double Lk[4], int *G){
 	if(*NG < 1){ return -2; }
 	if(NULL == Lk){ return -3; }
 	if(NULL == G){ return -4; }
-	
+
 	if(1 == *NG){
 		G[0] = 0;
 		G[1] = 0;
 		return 0;
 	}
-	
+
 	if(0 == method){
 		return Gsel_circular(NG, Lk, G);
 	}else if(1 == method){
