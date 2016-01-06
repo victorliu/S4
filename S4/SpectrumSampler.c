@@ -81,7 +81,7 @@ SpectrumSampler SpectrumSampler_New(double x0, double x1, const SpectrumSampler_
 		sampler->options.min_dx = 1e-6;
 		sampler->options.parallelize = 0;
 	}
-	
+
 	sampler->state = 0;
 	sampler->x0 = x0;
 	sampler->x1 = x1;
@@ -97,7 +97,7 @@ SpectrumSampler SpectrumSampler_New(double x0, double x1, const SpectrumSampler_
 		sampler->active_set.active_list.n_alloc  = sampler->options.initial_num_points;
 		sampler->active_set.active_list.active = (data_point**)malloc(sizeof(data_point*) * sampler->active_set.active_list.n_alloc);
 		sampler->active_set.active_list.buf = NULL;
-		
+
 		sampler->value = NULL;
 		data_point *tail = NULL;
 		for(i = 0; i < sampler->active_set.active_list.n_active; ++i){
@@ -117,12 +117,12 @@ SpectrumSampler SpectrumSampler_New(double x0, double x1, const SpectrumSampler_
 		sampler->active_set.active = sampler->value;
 		sampler->value->prev = NULL;
 		sampler->value->next = NULL;
-		
+
 		sampler->active_set.active->x = sampler->x0;
 	}
 	sampler->y_max = -DBL_MAX;
 	sampler->y_min = DBL_MAX;
-	
+
 	sampler->options.min_dx *= (sampler->x1 - sampler->x0);
 
 	return sampler;
@@ -206,7 +206,7 @@ static int needs_refinement(const SpectrumSampler sampler, const data_point *p){
 	if(fabs(y0-yp) < min_dy && fabs(yn-y0) < min_dy){
 		return 0;
 	}
-	
+
 	double local_y_max = yp;
 	if(y0 > local_y_max){ local_y_max = y0; }
 	if(yn > local_y_max){ local_y_max = yn; }
@@ -217,9 +217,9 @@ static int needs_refinement(const SpectrumSampler sampler, const data_point *p){
 	double dx1 = (xn-x0)/(xn-xp);
 	double dy0 = (y0-yp)/(local_y_max-local_y_min);
 	double dy1 = (yn-y0)/(local_y_max-local_y_min);
-	
+
 	double cosq = (dx0*dx1 + dy0*dy1) / sqrt((dx0*dx0 + dy0*dy0) * (dx1*dx1 + dy1*dy1));
-	
+
 	if(cosq < sampler->options.max_bend || dx1 > 3*dx0 || dx0 > 3*dx1){
 		if(x0-xp < sampler->options.min_dx){
 			return 1;
@@ -255,7 +255,7 @@ int SpectrumSampler_SubmitResult(SpectrumSampler sampler, double y){
 	if(sampler->options.parallelize){ return -1; }
 	if(y > sampler->y_max){ sampler->y_max = y; }
 	if(y < sampler->y_min){ sampler->y_min = y; }
-	
+
 	int found = 0;
 	sampler->active_set.active->y = y;
 	if(0 <= sampler->state && sampler->state < sampler->options.initial_num_points){
@@ -308,12 +308,12 @@ int SpectrumSampler_SubmitResult(SpectrumSampler sampler, double y){
 
 
 
-int SpectrumSampler_GetFrequencies(const SpectrumSampler sampler, const double **freqs){
+int SpectrumSampler_GetFrequencies(const SpectrumSampler sampler, double **freqs){
 	int i;
 	if(NULL == sampler){ return 0; }
 	if(NULL == freqs){ return 0; }
 	if(!sampler->options.parallelize){ return 0; }
-	
+
 	sampler->active_set.active_list.buf = (double*)realloc(sampler->active_set.active_list.buf, sizeof(double) * (sampler->active_set.active_list.n_active));
 	for(i = 0; i < sampler->active_set.active_list.n_active; ++i){
 		sampler->active_set.active_list.buf[i] = sampler->active_set.active_list.active[i]->x;
@@ -346,7 +346,7 @@ int SpectrumSampler_SubmitResults(SpectrumSampler sampler){
 	int i;
 	if(NULL == sampler){ return -1; }
 	if(!sampler->options.parallelize){ return -1; }
-	
+
 	for(i = 0; i < sampler->active_set.active_list.n_active; ++i){
 		double y = sampler->active_set.active_list.buf[i];
 		if(y > sampler->y_max){ sampler->y_max = y; }
@@ -355,7 +355,7 @@ int SpectrumSampler_SubmitResults(SpectrumSampler sampler){
 	}
 	sampler->state += sampler->active_set.active_list.n_active;
 	sampler->active_set.active_list.n_active = 0;
-	
+
 	// find new active set
 	data_point *t = sampler->active_set.active_list.active[0];
 	if(NULL == t->prev){ // cannot start at left-most point
@@ -382,9 +382,9 @@ int SpectrumSampler_SubmitResults(SpectrumSampler sampler){
 			t = t->next;
 		}
 	}
-	
+
 	if(0 == sampler->active_set.active_list.n_active){ sampler->done = 1; }
-	
+
 	return sampler->done;
 }
 

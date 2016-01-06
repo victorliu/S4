@@ -214,8 +214,8 @@ typedef struct
 }S4Excitation_Data;
 
 /*
-Description: the use is same as structure 'S4Interpolator_Data'. 
-			 But the members' name is same as the arguments of 
+Description: the use is same as structure 'S4Interpolator_Data'.
+			 But the members' name is same as the arguments of
 			 python API(ignore case).
 */
 typedef struct
@@ -299,9 +299,9 @@ int lanczos_converter(PyObject *obj, struct lanczos_smoothing_settings *s){
 
 /*
 Descritpion: used by function S4Sim_SetExcitationExterior() to parse arguments.
-Parameters: 
+Parameters:
 	data: the structure to store the arguments.
-return : 
+return :
 	0: failed.
 	1: success.
 */
@@ -340,7 +340,7 @@ int excitation_converter(PyObject *obj, S4Excitation_Data *data)
 			return 0;
 		}
 		data->exg[2 * i + 0] = PyInt_AsLong(pj);
-			
+
 		//get polarization: 'x' or 'y'
 		pj = PyTuple_GetItem(pi, 1);
 		if(!PyString_Check(pj))
@@ -656,17 +656,11 @@ static PyObject *S4Sim_Clone(S4Sim *self, PyObject *args){
 	return (PyObject*)cpy;
 }
 
-static PyObject *S4Sim_AddMaterial(S4Sim *self, PyObject *args, PyObject *kwds)
-{
-	static PyObject *S4Sim_SetMaterial(S4Sim *self, PyObject *args, PyObject *kwds);
-	return S4Sim_SetMaterial(self, args, kwds);
-}
-
 static PyObject *S4Sim_ConvertUnits(S4Sim *self, PyObject *args)
 {
 	double value;
-	const char *from_units;
-	const char *to_units;
+	const char *from_units = NULL;
+	const char *to_units = NULL;
 	if(!PyArg_ParseTuple(args, "dss", &value, from_units, to_units))
 		return NULL;
 	if(0 == convert_units(&value, from_units, to_units))
@@ -712,6 +706,11 @@ static PyObject *S4Sim_SetMaterial(S4Sim *self, PyObject *args, PyObject *kwds){
 	Py_RETURN_NONE;
 }
 
+static PyObject *S4Sim_AddMaterial(S4Sim *self, PyObject *args, PyObject *kwds)
+{
+	return S4Sim_SetMaterial(self, args, kwds);
+}
+
 static PyObject *S4Sim_AddLayer(S4Sim *self, PyObject *args, PyObject *kwds){
 	static char *kwlist[] = { "Name", "Thickness", "Material", NULL };
 	Layer *layer;
@@ -745,7 +744,7 @@ static PyObject *S4Sim_SetLayer(S4Sim *self, PyObject *args, PyObject *kwds)
 	{
 		layer->thickness = thickness;
 		if(NULL != material)
-			layer->material = material;
+			layer->material = strdup(material);
 		Simulation_RemoveLayerPatterns(&(self->S), layer);
 	}
 	Py_RETURN_NONE;
@@ -940,7 +939,7 @@ static PyObject *S4Sim_SetExcitationExterior(S4Sim *self, PyObject *args, PyObje
 	static char *kwlist[] = {"Excitations", NULL};
 	S4Excitation_Data exciData = {0, NULL, NULL};	//set exg or ex NULL to get the size of tuple.
 	int err;
-	/*double calls to one function with some flag to get size info, 
+	/*double calls to one function with some flag to get size info,
 	so heap location variable can be initialized. learn from WIN32 API :) */
 	if(!PyArg_ParseTupleAndKeywords(args, kwds, "O&:S4Sim_SetExcitationExterior", kwlist, &excitation_converter, &exciData))
 		return NULL;
@@ -1815,20 +1814,28 @@ static PyMethodDef S4Sim_methods[] = {
 	{"GetStressTensorIntegral"	, (PyCFunction)S4Sim_GetStressTensorIntegral, METH_VARARGS | METH_KEYWORDS, PyDoc_STR("GetStressTensorIntegral(layer,zoffset) -> Complex")},
 	{"GetLayerVolumeIntegral"	, (PyCFunction)S4Sim_GetLayerVolumeIntegral, METH_VARARGS | METH_KEYWORDS, PyDoc_STR("GetLayerVolumeIntegral(layer,which) -> Complex")},
 	{"GetLayerZIntegral"		, (PyCFunction)S4Sim_GetLayerZIntegral, METH_VARARGS | METH_KEYWORDS, PyDoc_STR("GetLayerZIntegral(layer,which,pos) -> Complex")},
+	/*
 	{"GetEField"				, (PyCFunction)S4Sim_GetEField, METH_VARARGS, PyDoc_STR("GetEField(x,y,z) -> (Tuple)")},
 	{"GetHField"				, (PyCFunction)S4Sim_GetHField, METH_VARARGS, PyDoc_STR("GetHField(x,y,z) -> (Tuple)")},
+	*/
 	{"GetFields"				, (PyCFunction)S4Sim_GetFields, METH_VARARGS, PyDoc_STR("GetFields(x,y,z) -> (Tuple,Tuple)")},
 	{"GetFieldsOnGrid"			, (PyCFunction)S4Sim_GetFieldsOnGrid, METH_VARARGS | METH_KEYWORDS, PyDoc_STR("GetFieldsOnGrid(z,nsamples,format,filename) -> Tuple")},
 	{"GetSMatrixDeterminant"	, (PyCFunction)S4Sim_GetSMatrixDeterminant, METH_NOARGS, PyDoc_STR("GetSMatrixDeterminant() -> Tuple")},
+	/*
 	{"GetDiffractionOrder"		, (PyCFunction)S4Sim_GetDiffractionOrder, METH_VARARGS, PyDoc_STR("GetDiffractionOrder(m,n) -> order")},
+	*/
 	{"SetOptions"				, (PyCFunction)S4Sim_SetOptions, METH_VARARGS | METH_KEYWORDS, PyDoc_STR("SetOptions() -> None")},
 	{"GetPoyntingFlux"			, (PyCFunction)S4Sim_GetPowerFlux, METH_VARARGS | METH_KEYWORDS, PyDoc_STR("GetPoyntingFlux(layer,zoffset) -> (forw, back)")},
 	{"GetPoyntingFluxByOrder"	, (PyCFunction)S4Sim_GetPowerFluxByOrder, METH_VARARGS | METH_KEYWORDS, PyDoc_STR("GetPoyntingFluxByOrder(layer,zoffset) -> Tuple")},
+	/*
 	{"GetGList"					, (PyCFunction)S4Sim_GetGList, METH_VARARGS, PyDoc_STR("GetGList() -> Tuple")},
 	{"GetNumG"					, (PyCFunction)S4Sim_GetNumG, METH_VARARGS, PyDoc_STR("GetNumG() -> G num")},
+	*/
 	/*options*/
+	/*
 	{"SetBasisFieldDumpPrefix"	, (PyCFunction)S4Sim_SetBasisFieldDumpPrefix, METH_VARARGS | METH_KEYWORDS, PyDoc_STR("SetBasisFieldDumpPrefix(prefix) -> None")},
 	{"SetLatticeTruncation"		, (PyCFunction)S4Sim_SetLatticeTruncation, METH_VARARGS | METH_KEYWORDS, PyDoc_STR("SetLatticeTruncation(Trunc) -> NOne")},
+	*/
 	{NULL, NULL}
 };
 

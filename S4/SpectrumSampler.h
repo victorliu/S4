@@ -38,7 +38,7 @@ int SpectrumSampler_SubmitResult(SpectrumSampler sampler, double y);
 int SpectrumSampler_GetNumPoints(const SpectrumSampler sampler);
 
 /* returns number of freqs */
-int SpectrumSampler_GetFrequencies(const SpectrumSampler sampler, const double **freqs);
+int SpectrumSampler_GetFrequencies(const SpectrumSampler sampler, double **freqs);
 int SpectrumSampler_GetSubmissionBuffer(const SpectrumSampler sampler, double **y);
 int SpectrumSampler_SubmitResults(SpectrumSampler sampler);
 
