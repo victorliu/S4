@@ -1202,15 +1202,15 @@ void GetFieldOnGrid(
 		memset(from[i], 0, sizeof(std::complex<double>) * N);
 		plan[i] = fft_plan_dft_2d(inxy_rev, from[i], to[i], 1);
 	}
-	
+
 	for(size_t i = 0; i < n; ++i){
 		eh[i] = (ky[i]*hx[i] - kx[i]*hy[i]);
-		if(EPSILON2_TYPE_BLKDIAG1_SCALAR == epstype || EPSILON2_TYPE_BLKDIAG2_SCALAR == epstype){
-			RNP::TBLAS::Scale(n, epsilon_inv[0], eh,1);
-			RNP::TBLAS::Copy(n, eh,1, &eh[n], 1);
-		}else{
-			RNP::TBLAS::MultMV<'N'>(n,n, z_one,epsilon_inv,n, eh,1, z_zero,&eh[n],1);
-		}
+	}
+	if(EPSILON2_TYPE_BLKDIAG1_SCALAR == epstype || EPSILON2_TYPE_BLKDIAG2_SCALAR == epstype){
+		RNP::TBLAS::Scale(n, epsilon_inv[0], eh,1);
+		RNP::TBLAS::Copy(n, eh,1, &eh[n], 1);
+	}else{
+		RNP::TBLAS::MultMV<'N'>(n,n, z_one,epsilon_inv,n, eh,1, z_zero,&eh[n],1);
 	}
 	for(size_t i = 0; i < n; ++i){
 		const int iu = G[2*i+0];
