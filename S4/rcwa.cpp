@@ -1294,7 +1294,7 @@ void GetZStressTensorIntegral(
 	
 	for(size_t i = 0; i < n; ++i){
 		hz[i] = (kx[i] * -ney[i] - ky[i] * ex[i]) / omega;
-		dz[i] = (hy[i]*hx[i] - kx[i]*hy[i]) / omega;
+		dz[i] = (ky[i]*hx[i] - kx[i]*hy[i]) / omega;
 	}
 	if(EPSILON2_TYPE_BLKDIAG1_SCALAR == epstype || EPSILON2_TYPE_BLKDIAG2_SCALAR == epstype){
 		RNP::TBLAS::Copy(n, dz,1, ez, 1);
