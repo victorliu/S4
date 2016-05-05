@@ -106,13 +106,40 @@ int FMMGetEpsilon_ClosedForm(const Simulation *S, const Layer *L, const int n, s
 		}
 		S4_TRACE("I  Epsilon(0,0) = %f,%f [omega=%f]\n", Epsilon2[0].real(), Epsilon2[0].imag(), S->omega[0]);
 
-		// Upper block of diagonal of Epsilon2 is already Epsilon
-		RNP::TBLAS::CopyMatrix<'A'>(n,n,&Epsilon2[0+0*n2],n2, &Epsilon2[n+n*n2],n2);
 		if(!S->options.use_polarization_basis){ // ordinary Laurent's rule
-			RNP::TBLAS::SetMatrix<'A'>(n,n, 0.,1., Epsilon_inv,n);
-			RNP::LinearSolve<'N'>(n,n, &Epsilon2[0+0*n2],n2, Epsilon_inv,n, NULL, NULL);
-			RNP::TBLAS::CopyMatrix<'A'>(n,n,&Epsilon2[n+n*n2],n2, &Epsilon2[0+0*n2],n2);
+			if(0 == S->Lr[2] && 0 == S->Lr[3]){ // 1D proper FFF rule
+				for(int j = 0; j < n; ++j){
+					for(int i = 0; i < n; ++i){
+						int dG[2] = {G[2*i+0]-G[2*j+0],G[2*i+1]-G[2*j+1]};
+						double f[2] = {
+							dG[0] * S->Lk[0] + dG[1] * S->Lk[2],
+							dG[0] * S->Lk[1] + dG[1] * S->Lk[3]
+						};
+						double ft[2];
+						Pattern_GetFourierTransform(&L->pattern, ivalues, f, ndim, unit_cell_size, ft);
+						if(S->options.use_Lanczos_smoothing){
+							double sigma = GetLanczosSmoothingFactor(mp1, pwr, f);
+							ft[0] *= sigma;
+							ft[1] *= sigma;
+						}
+						Epsilon_inv[i+j*n] = std::complex<double>(ft[0],ft[1]);
+					}
+				}
+				RNP::TBLAS::SetMatrix<'A'>(n,n, 0.,1., &Epsilon2[n+n*n2],n2);
+				RNP::LinearSolve<'N'>(n,n, Epsilon_inv,n, &Epsilon2[n+n*n2],n2, NULL, NULL);
+				RNP::TBLAS::SetMatrix<'A'>(n,n, 0.,1., Epsilon_inv,n);
+				RNP::TBLAS::CopyMatrix<'A'>(n,n,&Epsilon2[0+0*n2],n2, &Epsilon2[n+0*n2],n2); // use lower block for temp storage; will be cleaned up later
+				RNP::LinearSolve<'N'>(n,n, &Epsilon2[n+0*n2],n2, Epsilon_inv,n, NULL, NULL);
+			}else{
+				// Upper block of diagonal of Epsilon2 is already Epsilon
+				RNP::TBLAS::CopyMatrix<'A'>(n,n,&Epsilon2[0+0*n2],n2, &Epsilon2[n+n*n2],n2);
+				RNP::TBLAS::SetMatrix<'A'>(n,n, 0.,1., Epsilon_inv,n);
+				RNP::LinearSolve<'N'>(n,n, &Epsilon2[0+0*n2],n2, Epsilon_inv,n, NULL, NULL);
+				RNP::TBLAS::CopyMatrix<'A'>(n,n,&Epsilon2[n+n*n2],n2, &Epsilon2[0+0*n2],n2);
+			}
 		}else{
+			// Upper block of diagonal of Epsilon2 is already Epsilon
+			RNP::TBLAS::CopyMatrix<'A'>(n,n,&Epsilon2[0+0*n2],n2, &Epsilon2[n+n*n2],n2);
 			// Make Epsilon_inv
 			for(int j = 0; j < n; ++j){
 				for(int i = 0; i < n; ++i){
