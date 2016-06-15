@@ -13,6 +13,7 @@
 #   LAPACK_LIB = -llapack
 BLAS_LIB = -lblas
 LAPACK_LIB = -llapack
+READLINE = 1
 
 # Specify the flags for Lua headers and libraries (only needed for Lua frontend)
 # Recommended: build lua in the current directory, and link against this local version
@@ -93,6 +94,11 @@ CPPFLAGS += -DHAVE_MPI $(MPI_INC)
 endif
 
 LIBS = $(BLAS_LIB) $(LAPACK_LIB) $(FFTW3_LIB) $(PTHREAD_LIB) $(CHOLMOD_LIB) $(MPI_LIB)
+
+ifeq ($(READLINE),1)
+LIBS += -lreadline
+CPPFLAGS += -DHAVE_READLINE
+endif
 
 #### Compilation targets
 

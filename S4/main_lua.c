@@ -3023,8 +3023,45 @@ lua_State *new_S4_lua_state(){
 	return L;
 }
 
+#if HAVE_READLINE
+#include <readline/readline.h>
+// http://www.delorie.com/gnu/docs/readline/rlman_24.html
+/* A static variable for holding the line. */
+static char *line_read = (char *)NULL;
+
+/* Read a string, and return a pointer to it.
+   Returns NULL on EOF. */
+char *
+rl_gets (const char* prompt)
+{
+  /* If the buffer has already been allocated,
+     return the memory to the free pool. */
+  if (line_read)
+    {
+      free (line_read);
+      line_read = (char *)NULL;
+    }
+
+  /* Get a line from the user. */
+  line_read = readline (prompt);
+
+  /* If the line has any text in it,
+     save it on the history. */
+  if (line_read && *line_read)
+    add_history (line_read);
+
+  return (line_read);
+}
+#else
+char rlbuff[256];
+char* rl_gets (const char* prompt)
+{
+	printf("%s", prompt);
+	return fgets(rlbuff, sizeof rlbuff, stdin);
+}
+#endif
+
 int main(int argc, char *argv[]){
-	char buff[256];
 	int c;
 	int index, error;
 	unsigned int max_threads = get_max_threads();
@@ -3110,7 +3147,8 @@ int main(int argc, char *argv[]){
 	}else{ /* run in REPL mode */
 		fprintf(stdout, "No input file given, running in interactive mode\n");
 		S4L_set_interactive(L, 1);
-		while(fgets(buff, sizeof(buff), stdin) != NULL){
+		char* buff;
+		while((buff = rl_gets("> ")) != NULL){
 			error = luaL_loadbuffer(L, buff, strlen(buff), "line") || lua_pcall(L, 0, 0, 0);
 			if(error){
 				fprintf(stderr, "%s", lua_tostring(L, -1));
