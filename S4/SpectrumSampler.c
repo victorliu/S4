@@ -308,7 +308,7 @@ int SpectrumSampler_SubmitResult(SpectrumSampler sampler, double y){
 
 
 
-int SpectrumSampler_GetFrequencies(const SpectrumSampler sampler, double **freqs){
+int SpectrumSampler_GetFrequencies(const SpectrumSampler sampler, const double **freqs){
 	int i;
 	if(NULL == sampler){ return 0; }
 	if(NULL == freqs){ return 0; }
