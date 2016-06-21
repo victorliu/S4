@@ -351,6 +351,10 @@ int Simulation_GetPropagationConstants(Simulation *S, Layer *layer, double *q);
 // Returns lists of 2*S->n_G complex numbers of forward and backward amplitudes
 // forw and back should each be length 4*S->n_G
 int Simulation_GetAmplitudes(Simulation *S, Layer *layer, double offset, double *forw, double *back);
+// waves should be size 2*11*S->n_G
+// Each wave is:
+//   { kx, ky, kzr, kzi, ux, uy, uz, cur, cui, cvr, cvi }
+int Simulation_GetWaves(Simulation *S, Layer *layer, double *wave);
 
 // Returns a solution error code
 // Tint is a vector of time averaged stress tensor integral

@@ -56,6 +56,35 @@ void S4_free(void *ptr){
 	free_aligned(ptr);
 }
 
+
+static double geom_norm3d(const double v[3]){
+	double a[3] = {std::abs(v[0]),std::abs(v[1]),std::abs(v[2])};
+	double w = a[0];
+	if(a[1] > w){ w = a[1]; }
+	if(a[2] > w){ w = a[2]; }
+	if(0 == w){
+		return a[0] + a[1] + a[2];
+	}else{
+		a[0] /= w; a[1] /= w; a[2] /= w;
+		w *= std::sqrt(a[0]*a[0] + a[1]*a[1] + a[2]*a[2]);
+		return w;
+	}
+}
+static double geom_dot3d(const double *u, const double *v){
+	return (u[0]*v[0] + u[1]*v[1] + u[2]*v[2]);
+}
+static double geom_normalize3d(double *v){
+	const double n = geom_norm3d(v);
+	v[0] /= n; v[1] /= n; v[2] /= n;
+	return n;
+}
+static void geom_cross3d(const double *a, const double *b, double *result){
+	result[0] = a[1]*b[2] - a[2]*b[1];
+	result[1] = a[2]*b[0] - a[0]*b[2];
+	result[2] = a[0]*b[1] - a[1]*b[0];
+}
+
+
 struct LayerBands{
 	std::complex<double> *q; // length 2*glist.n
 	std::complex<double> *kp; // size (2*glist.n)^2 (k-parallel matrix)
@@ -1629,6 +1658,138 @@ int Simulation_GetAmplitudes(Simulation *S, Layer *layer, double offset, double 
 	return 0;
 }
 
+
+int Simulation_GetWaves(Simulation *S, Layer *layer, double *wave){
+	S4_TRACE("> Simulation_GetWaves(S=%p, layer=%p, wave=%p) [omega=%f]\n",
+		S, layer, wave, S->omega[0]);
+	int ret = 0;
+	if(NULL == S){ ret = -1; }
+	if(NULL == layer){ ret = -2; }
+	if(NULL == wave){ ret = -3; }
+	if(0 != ret){
+		S4_TRACE("< Simulation_GetWaves (failed; ret = %d) [omega=%f]\n", ret, S->omega[0]);
+		return ret;
+	}
+
+	const double w = S->omega[0];
+
+	LayerBands *Lbands;
+	LayerSolution *Lsoln;
+
+	ret = Simulation_GetLayerSolution(S, layer, &Lbands, &Lsoln);
+	if(0 != ret){
+		S4_TRACE("< Simulation_GetWaves (failed; Simulation_GetLayerSolution returned %d) [omega=%f]\n", ret, S->omega[0]);
+		return ret;
+	}
+
+	const int n = S->n_G;
+	const int n2 = 2*n;
+	const int n4 = 2*n2;
+
+	std::complex<double> *ab = Lsoln->ab;
+
+	for(int i = 0; i < n; ++i){
+		const double kx = S->solution->kx[i];
+		const double ky = S->solution->ky[i];
+		const std::complex<double> qi = Lbands->q[i];
+		for(int j = 0; j < 2; ++j){
+			wave[(2*i+j)*11+0] = kx;
+			wave[(2*i+j)*11+1] = ky;
+			wave[(2*i+j)*11+2] = Lbands->q[i].real();
+			wave[(2*i+j)*11+3] = Lbands->q[i].imag();
+			if(0 != j){
+				wave[(2*i+j)*11+2] = -wave[(2*i+j)*11+2];
+				wave[(2*i+j)*11+3] = -wave[(2*i+j)*11+3];
+			}
+			double rd[3] = {
+				wave[(2*i+j)*11+0],
+				wave[(2*i+j)*11+1],
+				wave[(2*i+j)*11+2]
+			};
+			geom_normalize3d(rd);
+/*
+if(qi.imag() == 0){
+	std::cout << "i = " << i << ", j = " << j << ", ab = " << ab[i+j*n2] << ", " << ab[i+n+j*n2] << std::endl;
+	std::cout << "   kx = " << kx << ", ky = " << ky << std::endl;
+	std::cout << "   qi = " << qi << std::endl;
+}*/
+
+{
+			const double qsign(0 == j ? 1 : -1);
+			const std::complex<double> Hx = ab[i  +j*n2];
+			const std::complex<double> Hy = ab[i+n+j*n2];
+			const std::complex<double> H[2][3] = {
+				{ Hx, 0, -(kx*Hx)/(qsign*qi.real()) },
+				{ 0, Hy, -(ky*Hy)/(qsign*qi.real()) }
+			};
+			// The E field is Cross[H,{kx,ky,(qsign*qi.real())}] / leps
+			std::complex<double> E[2][3];
+			const double sgn(qsign);
+			const Material *M = Simulation_GetMaterialByName(S, layer->material, NULL);
+			const double leps = (NULL != M ? M->eps.s[0] : 1);
+			E[0][2] = ky*Hx / leps;
+			E[0][0] =  kx*E[0][2]       / (sgn*qi.real());
+			E[0][1] = (ky*E[0][2] - Hx*w) / (sgn*qi.real());
+			E[1][2] = (-kx*Hy) / leps;
+			E[1][0] = (Hy*w + kx*E[1][2]) / (sgn*qi.real());
+			E[1][1] = (ky*E[1][2]) / (sgn*qi.real());
+/*if(qi.imag() == 0){
+	std::cout << "   leps = " << leps << std::endl;
+	std::cout << "   E[0] = " << E[0][0] << ", " << E[0][1] << ", " << E[0][2] << std::endl;
+	std::cout << "   E[1] = " << E[1][0] << ", " << E[1][1] << ", " << E[1][2] << std::endl;
+}*/
+			double ru[3] = { 1, 0, -kx/(qsign*Lbands->q[i].real()) };
+			geom_normalize3d(ru);
+			double v[3];
+			geom_cross3d(rd, ru, v);
+			std::complex<double> c0(ru[0]*(E[0][0]+E[1][0]) + ru[1]*(E[0][1]+E[1][1]) + ru[2]*(E[0][2]+E[1][2]));
+			std::complex<double> c1( v[0]*(E[0][0]+E[1][0]) +  v[1]*(E[0][1]+E[1][1]) +  v[2]*(E[0][2]+E[1][2]));
+			// Re-polarize so u is the s-polarization vector
+			{
+				// Don't touch d, only perform a rotation of u around d.
+				double p[3] = {1,0,0};
+				const double dxy2 = rd[0]*rd[0]+rd[1]*rd[1];
+				const double tol = 1e-15;
+				if(dxy2 > tol*tol){
+					if(fabs(rd[2]) > tol){
+						p[0] = rd[0];
+						p[1] = rd[1];
+						p[2] = -dxy2/rd[2];
+					}else{
+						p[0] = 0;
+						p[1] = 0;
+						p[2] = 1;
+					}
+				}
+				// Orthogonalize p to be sure
+				double pdd(geom_dot3d(p, rd));
+				p[0] -= pdd*rd[0];
+				p[1] -= pdd*rd[1];
+				p[2] -= pdd*rd[2];
+				geom_normalize3d(p);
+				// Now perform rotations
+				const double cs = geom_dot3d(p, ru);
+				const double sn = geom_dot3d(p, v);
+				const std::complex<double> c0p = cs*c0 + sn*c1;
+				c1 = cs*c1 - sn*c0;
+				c0 = c0p;
+
+				wave[(2*i+j)*11+ 4] = p[0];
+				wave[(2*i+j)*11+ 5] = p[1];
+				wave[(2*i+j)*11+ 6] = p[2];
+				wave[(2*i+j)*11+ 7] = c0.real();
+				wave[(2*i+j)*11+ 8] = c0.imag();
+				wave[(2*i+j)*11+ 9] = c1.real();
+				wave[(2*i+j)*11+10] = c1.imag();
+			}
+}
+		}
+	}
+
+	S4_TRACE("< Simulation_GetWaves [omega=%f]\n", S->omega[0]);
+	return 0;
+}
+
 void Simulation_DestroySolution(Simulation *S){
 	S4_TRACE("> Simulation_DestroySolution(S=%p) [omega=%f]\n", S, S->omega[0]);
 	Solution *sol;
@@ -2725,8 +2886,8 @@ int Simulation_MakeExcitationPlanewave(Simulation *S, const double angle[2], con
 	*/
 	/*
 	std::cout << "k: " << S->k[0] << "\t" << S->k[1] << std::endl;
-	std::cout << "hx: " << S->hx[0] << "\t" << S->hx[1] << std::endl;
-	std::cout << "hy: " << S->hy[0] << "\t" << S->hy[1] << std::endl;
+	std::cout << "hx: " << S->exc.sub.planewave.hx[0] << "\t" << S->exc.sub.planewave.hx[1] << std::endl;
+	std::cout << "hy: " << S->exc.sub.planewave.hy[0] << "\t" << S->exc.sub.planewave.hy[1] << std::endl;
 	//*/
 
 	S4_TRACE("< Simulation_MakeExcitationPlanewave\n");

@@ -1208,7 +1208,7 @@ static int S4L_Simulation_SetNumG(lua_State *L){
 	int n;
 	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetNumG: 'Simulation' object expected.");
-	n = luaL_checkint(L, 2);
+	n = luaL_checkinteger(L, 2);
 	if(n < 1){
 		S4L_error(L, "SetNumG: Must have at least 1 G-vector.");
 	}
@@ -1224,7 +1224,7 @@ static int S4L_Simulation_GetNumG(lua_State *L){
 static int S4L_Simulation_SetResolution(lua_State *L){
 	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetResolution: 'Simulation' object expected.");
-	S->options.resolution = luaL_checkint(L, 2);
+	S->options.resolution = luaL_checkinteger(L, 2);
 	if(S->options.resolution < 2){
 		S4L_error(L, "SetResolution: Resolution must be at least 2.");
 	}
@@ -1937,7 +1937,7 @@ static int S4L_Simulation_SetExcitationPlanewave(lua_State *L){
 	pol_s[1] *= (M_PI/180.);
 	pol_p[1] *= (M_PI/180.);
 
-	order = luaL_optunsigned(L, 5, 0);
+	order = luaL_optinteger(L, 5, 0);
 	if(order > 0){ order--; }
 	ret = Simulation_MakeExcitationPlanewave(S, angle, pol_s, pol_p, order);
 	if(0 != ret){
@@ -2009,9 +2009,9 @@ static int S4L_Simulation_GetDiffractionOrder(lua_State *L){
 	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetDiffractionOrder: 'Simulation' object expected.");
 	
-	u = luaL_checkint(L, 2);
+	u = luaL_checkinteger(L, 2);
 	if(lua_gettop(L) > 2){
-		v = luaL_checkint(L, 3);
+		v = luaL_checkinteger(L, 3);
 	}
 	
 	i = Simulation_InitSolution(S);
@@ -2182,6 +2182,84 @@ static int S4L_Simulation_GetAmplitudes(lua_State *L){
 	return 2;
 }
 
+static int S4L_Simulation_GetWaves(lua_State *L){
+	double *waves;
+	int n, n2, i, j, k, ret;
+	const char *layer_name;
+	Layer *layer;
+	Simulation *S = S4L_get_simulation(L, 1);
+	luaL_argcheck(L, S != NULL, 1, "GetWaves: 'Simulation' object expected.");
+
+	layer_name = luaL_checklstring(L, 2, NULL);
+	layer = Simulation_GetLayerByName(S, layer_name, NULL);
+	if(NULL == layer){
+		S4L_error(L, "GetWaves: Layer named '%s' not found.", layer_name);
+		return 0;
+	}
+	
+	ret = Simulation_SolveLayer(S, layer);
+	if(0 != ret){
+		HandleSolutionErrorCode(L, "GetWaves", ret);
+		return 0;
+	}
+	
+	n = Simulation_GetNumG(S, NULL);
+	n2 = 2*n;
+	
+	waves = (double*)malloc(sizeof(double)*11*n2);
+	Simulation_GetWaves(S, layer, waves);
+	
+	lua_createtable(L, n2, 0);
+	for(i = 0; i < n2; ++i){
+		const double *wave = &waves[11*i];
+		lua_pushinteger(L, i+1);
+		/* a wave object is:
+		 *   direction = {kx,ky,kzr,kzi}
+		 *   polarization = {x,y,z}
+		 *   cu = {re,im}
+		 *   cv = {re,im}
+		 */
+		lua_createtable(L, 0, 4);
+		{
+			lua_createtable(L, 4, 0);
+			for(k = 0; k < 4; ++k){
+				lua_pushinteger(L, k+1);
+				lua_pushnumber(L, wave[k]);
+				lua_settable(L, -3);
+			}
+			lua_setfield(L, -2, "k");
+			
+			lua_createtable(L, 3, 0);
+			for(k = 0; k < 3; ++k){
+				lua_pushinteger(L, k+1);
+				lua_pushnumber(L, wave[4+k]);
+				lua_settable(L, -3);
+			}
+			lua_setfield(L, -2, "u");
+			
+			lua_createtable(L, 2, 0);
+			for(k = 0; k < 2; ++k){
+				lua_pushinteger(L, k+1);
+				lua_pushnumber(L, wave[7+k]);
+				lua_settable(L, -3);
+			}
+			lua_setfield(L, -2, "cu");
+			
+			lua_createtable(L, 2, 0);
+			for(k = 0; k < 2; ++k){
+				lua_pushinteger(L, k+1);
+				lua_pushnumber(L, wave[9+k]);
+				lua_settable(L, -3);
+			}
+			lua_setfield(L, -2, "cv");
+		}
+		lua_settable(L, -3);
+	}
+	
+	free(waves);
+	return 1;
+}
+
 
 /*
 static int S4L_Simulation_EnableBasisFieldDump(lua_State *L){
@@ -2232,7 +2310,7 @@ static int S4L_Simulation_SetLanczosSmoothingWidth(lua_State *L){
 	luaL_argcheck(L, S != NULL, 1, "S4L_Simulation_SetLanczosSmoothingWidth: 'Simulation' object expected.");
 	width = luaL_checknumber(L, 2);
 	if(lua_gettop(L) > 2){
-		power = luaL_checkint(L, 3);
+		power = luaL_checkinteger(L, 3);
 	}
 	
 	prevwidth = S->options.lanczos_smoothing_width;
@@ -2337,7 +2415,7 @@ static int S4L_Simulation_SetVerbosity(lua_State *L){
 	int verbosity;
 	Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetVerbosity: 'Simulation' object expected.");
-	verbosity = luaL_checkint(L, 2);
+	verbosity = luaL_checkinteger(L, 2);
 	
 	if(verbosity < 0){ verbosity = 0; }
 	if(verbosity > 9){ verbosity = 9; }
@@ -2438,8 +2516,8 @@ static int S4L_Simulation_OutputLayerPatternRealization(lua_State *L){
 		
 		ret = Simulation_OutputLayerPatternRealization(S,
 			layer,
-			luaL_checkint(L, 3),
-			luaL_checkint(L, 4),
+			luaL_checkinteger(L, 3),
+			luaL_checkinteger(L, 4),
 			fp);
 		if(0 != ret){
 			HandleSolutionErrorCode(L, "OutputLayerPatternRealization", ret);
@@ -2863,7 +2941,12 @@ static int S4L_Simulation_GetLayerZIntegral(lua_State *L){
 	return 6;
 }
 
-static int S4_openlib(lua_State *L){
+#ifdef _WIN32
+extern __declspec(dllexport) 
+#else
+LUALIB_API 
+#endif
+int luaopen_RCWA(lua_State *L){
 	static const struct luaL_Reg S4_lib[] = {
 		{"NewSimulation", S4L_NewSimulation},
 		{"NewSpectrumSampler", S4L_NewSpectrumSampler},
@@ -2916,6 +2999,7 @@ static int S4_openlib(lua_State *L){
 		{"GetPowerFlux", S4L_Simulation_GetPoyntingFlux}, /* alias */
 		{"GetPowerFluxByOrder", S4L_Simulation_GetPoyntingFluxByOrder}, /* alias */
 		{"GetAmplitudes", S4L_Simulation_GetAmplitudes},
+		{"GetWaves", S4L_Simulation_GetWaves},
 		{"GetStressTensorIntegral", S4L_Simulation_GetStressTensorIntegral},
 		{"GetLayerEnergyDensityIntegral", S4L_Simulation_GetLayerEnergyDensityIntegral},
 		{"GetLayerElectricEnergyDensityIntegral", S4L_Simulation_GetLayerElectricEnergyDensityIntegral},
@@ -2958,7 +3042,7 @@ static int S4_openlib(lua_State *L){
 	lua_pushcfunction(L, &S4L_Simulation__gc);
 	lua_settable(L, -3);
 	lua_pop(L, 1);
-	
+	/*
 	luaL_newmetatable(L, "S4.SpectrumSampler");
 	luaL_newlib(L, SpectrumSamplerObj);
 	lua_setfield(L, -2, "__index");
@@ -2974,9 +3058,21 @@ static int S4_openlib(lua_State *L){
 	lua_pushcfunction(L, S4L_Interpolator__gc);
 	lua_settable(L, -3);
 	lua_pop(L, 1);
-	
+	*/
 	return 1;
 }
+
+lua_State *new_S4_lua_state(){
+	lua_State *L = luaL_newstate(); /* opens Lua */
+	
+	luaL_requiref(L, "RCWA", &luaopen_RCWA, 1);
+	lua_pop(L, 1);
+	
+	luaL_openlibs(L); /* opens the standard libraries */
+	return L;
+}
+
+#ifndef LUA_BUILD_AS_DLL
 
 void threadsafe_init(){
 	extern void exactinit();
@@ -3013,14 +3109,40 @@ int getopt(int argc, char * const argv[], const char *optstring);
 #include <ctype.h>
 
 
-lua_State *new_S4_lua_state(){
-	lua_State *L = luaL_newstate(); /* opens Lua */
-	
-	luaL_requiref(L, "S4", &S4_openlib, 1);
-	lua_pop(L, 1);
-	
-	luaL_openlibs(L); /* opens the standard libraries */
-	return L;
+
+#include <signal.h>
+static int traceback (lua_State *L) {
+  const char *msg = lua_tostring(L, 1);
+  if (msg)
+    luaL_traceback(L, L, msg, 1);
+  else if (!lua_isnoneornil(L, 1)) {  /* is there an error object? */
+    if (!luaL_callmeta(L, 1, "__tostring"))  /* try its 'tostring' metamethod */
+      lua_pushliteral(L, "(no error message)");
+  }
+  return 1;
+}
+static lua_State *globalL = NULL;
+static void lstop (lua_State *L, lua_Debug *ar) {
+  (void)ar;  /* unused arg. */
+  lua_sethook(L, NULL, 0, 0);
+  luaL_error(L, "interrupted!");
+}
+static void laction (int i) {
+  signal(i, SIG_DFL); /* if another SIGINT happens before lstop,
+                              terminate process (default action) */
+  lua_sethook(globalL, lstop, LUA_MASKCALL | LUA_MASKRET | LUA_MASKCOUNT, 1);
+}
+static int docall (lua_State *L, int narg, int nres) {
+  int status;
+  int base = lua_gettop(L) - narg;  /* function index */
+  lua_pushcfunction(L, traceback);  /* push traceback function */
+  lua_insert(L, base);  /* put it under chunk and args */
+  globalL = L;  /* to be available to 'laction' */
+  signal(SIGINT, laction);
+  status = lua_pcall(L, narg, nres, base);
+  signal(SIGINT, SIG_DFL);
+  lua_remove(L, base);  /* remove traceback function */
+  return status;
 }
 
 int main(int argc, char *argv[]){
@@ -3100,7 +3222,7 @@ int main(int argc, char *argv[]){
 				fprintf(stderr, "%s\n", lua_tostring(L, -1));
 				lua_pop(L, 1); /* pop error message from the stack */
 			}else{
-				error = lua_pcall(L, 0, 0, 0);
+				error = docall(L, 0, LUA_MULTRET);
 				if(error){
 					fprintf(stderr, "%s\n", lua_tostring(L, -1));
 					lua_pop(L, 1); /* pop error message from the stack */
@@ -3131,3 +3253,5 @@ int main(int argc, char *argv[]){
 #endif
 	return EXIT_SUCCESS;
 }
+
+#endif // LUA_BUILD_AS_DLL
