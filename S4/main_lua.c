@@ -3065,7 +3065,7 @@ int luaopen_RCWA(lua_State *L){
 lua_State *new_S4_lua_state(){
 	lua_State *L = luaL_newstate(); /* opens Lua */
 	
-	luaL_requiref(L, "RCWA", &luaopen_RCWA, 1);
+	luaL_requiref(L, "S4", &luaopen_RCWA, 1);
 	lua_pop(L, 1);
 	
 	luaL_openlibs(L); /* opens the standard libraries */
@@ -3230,7 +3230,8 @@ int main(int argc, char *argv[]){
 			}
 		}
 	}else{ /* run in REPL mode */
-		fprintf(stdout, "No input file given, running in interactive mode\n");
+		fprintf(stdout, "No input file given, running in interactive mode\n"); fflush(stdout);
+
 		S4L_set_interactive(L, 1);
 		while(fgets(buff, sizeof(buff), stdin) != NULL){
 			error = luaL_loadbuffer(L, buff, strlen(buff), "line") || lua_pcall(L, 0, 0, 0);
