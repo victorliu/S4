@@ -1,8 +1,8 @@
 OBJDIR = build
 SHLIB_EXT = so
 SHLIB_FLAGS = -fPIC -shared
-LA_LIBS = -llapack -lblas
-LUA_INC = -I/usr/include/lua5.2
+LA_LIBS = -llapack -lblas -lfftw -lcholmod -lamd -lcolamd -lcamd -lccolamd -lmpi -lpthread
+LUA_INC = -I/usr/include/lua5.2 -I/usr/include/suitesparse -I/usr/include/openmpi-x86_64/openmpi/ompi
 LUA_LIB = -llua5.2
 LUA_MODULE_LIB = 
 

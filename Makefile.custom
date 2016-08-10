@@ -1,0 +1,12 @@
+OBJDIR = build
+SHLIB_EXT = so
+SHLIB_FLAGS = -fPIC -shared
+LA_LIBS = -llapack -lblas
+LUA_INC = -I/usr/include/lua5.2
+LUA_LIB = -llua5.2
+LUA_MODULE_LIB = 
+
+CFLAGS += -O3 -Wall -march=native -fcx-limited-range -fno-exceptions -fPIC
+
+CC = gcc
+CXX = g++
