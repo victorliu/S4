@@ -2,11 +2,12 @@ OBJDIR = build
 SHLIB_EXT = so
 SHLIB_FLAGS = -bundle -undefined dynamic_lookup -fpic
 LA_LIBS = -framework Accelerate
-LUA_INC = -I$(HOME)/code/S4-ML/lua-5.2.4/install/include
-LUA_LIB = -L$(HOME)/code/S4-ML/lua-5.2.4/install/lib -llua
-LUA_MODULE_LIB = 
+LUA_INC = -Ilua-5.2.4/install/include
+LUA_LIB = -Llua-5.2.4/install/lib -llua
+LUA_MODULE_LIB =
 
-CFLAGS += -O2 -Wall -std=c++11
+CFLAGS += -O2 -Wall
+CXXFLAGS += -O2 -Wall -std=c++11
 
 CC = cc
 CXX = c++

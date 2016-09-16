@@ -2530,7 +2530,7 @@ int Simulation_GetFieldPlane(Simulation *S, int nxy[2], double zz, double *E, do
 	RNP::TBLAS::Copy(n4, Lsoln->ab,1, ab,1);
 	//RNP::IO::PrintVector(n4, ab, 1);
 	TranslateAmplitudes(S->n_G, Lbands->q, L->thickness, dz, ab);
-	size_t snxy[2] = { nxy[0], nxy[1] };
+	size_t snxy[2] = { (size_t)nxy[0], (size_t)nxy[1] };
 	GetFieldOnGrid(
 		S->n_G, S->solution->G, S->solution->kx, S->solution->ky, std::complex<double>(S->omega[0],S->omega[1]),
 		Lbands->q, Lbands->kp, Lbands->phi, Lbands->Epsilon_inv, Lbands->epstype,
