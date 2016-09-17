@@ -1725,7 +1725,12 @@ if(qi.imag() == 0){
 			// The E field is Cross[H,{kx,ky,(qsign*qi.real())}] / leps
 			std::complex<double> E[2][3];
 			const double sgn(qsign);
-			const Material *M = Simulation_GetMaterialByName(S, layer->material, NULL);
+			const Material *M = NULL;
+			if(layer->material){
+				M = Simulation_GetMaterialByName(S, layer->material, NULL);
+			}else{
+				M = Simulation_GetMaterialByName(S, Simulation_GetLayerByName(S, layer->copy, NULL)->material, NULL);
+			}
 			const double leps = (NULL != M ? M->eps.s[0] : 1);
 			E[0][2] = ky*Hx / leps;
 			E[0][0] =  kx*E[0][2]       / (sgn*qi.real());
