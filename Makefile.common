@@ -108,12 +108,12 @@ $(OBJDIR)/S4k/Eigensystems.o: S4/RNP/Eigensystems.cpp
 $(OBJDIR)/S4k/main_lua.o: S4/main_lua.c objdir
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $(LUA_INC) $< -o $@
 $(OBJDIR)/S4: $(OBJDIR)/S4k/main_lua.o $(S4_LIBNAME)
-	$(CXX) $(CFLAGS) $(CPPFLAGS) $< -o $(OBJDIR)/S4 -L$(OBJDIR) -lS4 $(LA_LIBS) $(LUA_LIB)
+	$(CXX) $(CFLAGS) $(CPPFLAGS) $< -o $@ -L$(OBJDIR) -lS4 $(LA_LIBS) $(LUA_LIB)
 
 $(OBJDIR)/S4k/main_lua_mpi.o: S4/main_lua.c objdir
 	$(CC) -c -DHAVE_MPI $(CFLAGS) $(CPPFLAGS) $(LUA_INC) $(MPI_INC) $< -o $@
 $(OBJDIR)/S4mpi: $(OBJDIR)/S4k/main_lua_mpi.o $(S4_LIBNAME)
-	$(CXX) $(CFLAGS) $(CPPFLAGS) $< -o $(OBJDIR)/S4 -L$(OBJDIR) -lS4 $(LA_LIBS) $(LUA_LIB) $(MPI_LIB)
+	$(CXX) $(CFLAGS) $(CPPFLAGS) $< -o $@ -L$(OBJDIR) -lS4 $(LA_LIBS) $(LUA_LIB) $(MPI_LIB)
 
 
 
