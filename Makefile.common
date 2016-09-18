@@ -15,6 +15,7 @@ CPPFLAGS += -IS4 -IS4/RNP -IS4/kiss_fft
 #### Compilation targets
 
 all: $(OBJDIR)/libS4.a $(OBJDIR)/S4 modules
+S4mpi: $(OBJDIR)/S4mpi
 
 objdir:
 	mkdir -p $(OBJDIR)
