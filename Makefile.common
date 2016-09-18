@@ -109,6 +109,13 @@ $(OBJDIR)/S4k/main_lua.o: S4/main_lua.c objdir
 $(OBJDIR)/S4: $(OBJDIR)/S4k/main_lua.o $(S4_LIBNAME)
 	$(CXX) $(CFLAGS) $(CPPFLAGS) $< -o $(OBJDIR)/S4 -L$(OBJDIR) -lS4 $(LA_LIBS) $(LUA_LIB)
 
+$(OBJDIR)/S4k/main_lua_mpi.o: S4/main_lua.c objdir
+	$(CC) -c -DHAVE_MPI $(CFLAGS) $(CPPFLAGS) $(LUA_INC) $(MPI_INC) $< -o $@
+$(OBJDIR)/S4mpi: $(OBJDIR)/S4k/main_lua_mpi.o $(S4_LIBNAME)
+	$(CXX) $(CFLAGS) $(CPPFLAGS) $< -o $(OBJDIR)/S4 -L$(OBJDIR) -lS4 $(LA_LIBS) $(LUA_LIB) $(MPI_LIB)
+
+
+
 modules: \
 	$(OBJDIR)/RCWA.$(SHLIB_EXT) \
 	$(OBJDIR)/FunctionSampler1D.$(SHLIB_EXT) \

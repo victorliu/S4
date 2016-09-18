@@ -4,9 +4,14 @@ SHLIB_FLAGS = -fPIC -shared
 LA_LIBS = -llapack -lblas
 LUA_INC = -I/usr/include/lua5.2
 LUA_LIB = -llua5.2
-LUA_MODULE_LIB = 
+LUA_MODULE_LIB =
 
-CFLAGS += -O3 -Wall -march=native -fcx-limited-range -fno-exceptions -fPIC
+MPI_INC =
+MPI_LIB =
 
+CFLAGS   += -O3 -Wall -march=native -fcx-limited-range -fno-exceptions -fPIC
+CXXFLAGS += -O3 -Wall -march=native -fcx-limited-range -fno-exceptions -fPIC
+
+# If compiling with MPI, the following must be modified to the proper MPI compilers
 CC = gcc
 CXX = g++
