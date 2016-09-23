@@ -238,7 +238,7 @@ void Material_InitTensor(Material *M, const char *name, const double abcde[10]);
 void Material_Destroy(Material *M);
 
 //// Simulation methods
-void Simulation_Init(Simulation *S);
+void Simulation_Init(Simulation *S, const double *Lr, unsigned int nG);
 void Simulation_Destroy(Simulation *S);
 void Simulation_Clone(const Simulation *S, Simulation *T);
 
