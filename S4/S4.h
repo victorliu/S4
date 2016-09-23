@@ -69,7 +69,6 @@ void S4_free(void *ptr);
 
 typedef struct Material_{
 	char *name;    // name of material
-	struct Material_ *next; // linked-list next pointer
 	int type; // 0 = scalar epsilon, 1 = tensor
 	union{
 		double s[2]; // real and imaginary parts of epsilon
@@ -86,7 +85,6 @@ typedef struct Layer_{
 	char *material;   // name of background material
 	Pattern pattern;  // See pattern.h
 	char *copy;       // See below.
-	struct Layer_ *next; // linked-list next pointer
 } Layer;
 // If a layer is a copy, then `copy' is the name of the layer that should
 // be copied, and `material' and `pattern' are inherited, and so they can
@@ -208,8 +206,10 @@ typedef struct Simulation_{
 	              //  2pi*{Lk[2],Lk[3]} is the second basis vector's x and y coords.
 	              // Computed by taking the inverse of Lr as a 2x2 column-major matrix.
 	int n_G;            // Number of G-vectors (Fourier planewave orders).
-	Material *material; // linked list of materials
-	Layer *layer;       // linked list of layers
+	int n_materials, n_materials_alloc;
+	Material *material; // array of materials
+	int n_layers, n_layers_alloc;
+	Layer *layer;       // array of layers
 
 	// Excitation
 	double omega[2]; // real and imaginary parts of omega
@@ -262,11 +262,11 @@ void Simulation_DestroyLayerSolutions(Simulation *S);
 int Simulation_MakeReciprocalLattice(Simulation *S);
 
 Material* Simulation_AddMaterial(Simulation *S);
-// Adds a blank material to the end of the linked list in S and returns
+// Adds a blank material to the end of the array in S and returns
 // a pointer to it.
 
 Layer* Simulation_AddLayer(Simulation *S);
-// Adds a blank layer to the end of the linked list in S and returns
+// Adds a blank layer to the end of the array in S and returns
 // a pointer to it.
 
 int Simulation_SetNumG(Simulation *S, int n);
