@@ -1406,12 +1406,12 @@ static int S4L_Simulation_SetMaterial(lua_State *L){
 		 * [ d e f ] -> [ d e   ]
 		 * [ g h i ]    [     i ]
 		 */
+		eps[4] = eps[6]; eps[5] = eps[7];
+		eps[6] = eps[8]; eps[7] = eps[9];
+		eps[8] = eps[16]; eps[9] = eps[17];
 		if(!existed){
 			Material_InitTensor(M, name, eps);
 		}else{
-			eps[4] = eps[6]; eps[5] = eps[7];
-			eps[6] = eps[8]; eps[7] = eps[9];
-			eps[8] = eps[16]; eps[9] = eps[17];
 			for(i = 0; i < 10; ++i){
 				M->eps.abcde[i] = eps[i];
 			}
