@@ -24,6 +24,7 @@ extern "C" {
 #endif
 
 void *malloc_aligned(size_t size, size_t alignment);
+void *realloc_aligned(void *ptr, size_t size, size_t alignment);
 void free_aligned(void *ptr);
 
 #ifdef __cplusplus
