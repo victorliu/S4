@@ -218,14 +218,18 @@ void Material_Destroy(Material *M){
 }
 
 
-void Simulation_Init(Simulation *S, const double Lr[4], unsigned int nG, int *G){
+void Simulation_Init(Simulation *S, const double *Lr, unsigned int nG, int *G){
 	S4_TRACE("> Simulation_Init(S=%p)\n", S);
 	S->solution = NULL; // needed by other initializations
 
-	S->Lr[0] = Lr[0];
-	S->Lr[1] = Lr[1];
-	S->Lr[2] = Lr[2];
-	S->Lr[3] = Lr[3];
+	if(NULL == Lr){
+		S->Lr[0] = 1;
+		S->Lr[1] = 0;
+		S->Lr[2] = 0;
+		S->Lr[3] = 1;
+	}else{
+		memcpy(S->Lr, Lr, sizeof(double) * 4);
+	}
 	Simulation_MakeReciprocalLattice(S);
 	if(nG < 1){ nG = 1; }
 	S->n_G = nG;

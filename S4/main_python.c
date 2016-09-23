@@ -617,7 +617,7 @@ static PyObject *S4Sim_new(PyTypeObject *type, PyObject *args, PyObject *kwds){
 	if(!PyArg_ParseTupleAndKeywords(args, kwds, "O&n:New", kwlist, &lattice_converter, &(Lr[0]), &nbasis)){ return NULL; }
 	self = (S4Sim*)type->tp_alloc(type, 0);
 	if(self != NULL){
-		Simulation_Init(&(self->S));
+		Simulation_Init(&(self->S), NULL, 0, NULL);
 		self->S.Lr[0] = Lr[0];
 		self->S.Lr[1] = Lr[1];
 		self->S.Lr[2] = Lr[2];
