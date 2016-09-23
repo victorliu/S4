@@ -1,12 +1,8 @@
-The file binary_grating.lua calculates the transmission spectrum of a
-binary grating (50% duty cycle) composed of square rods. The frequency
-range is chosen below the diffraction limit.
-
-Run this example by executing:
-$ S4 binary_grating.lua > out.txt
-The output of this script should be similar to binary_grating.txt
-
-Similarly, diffraction.lua calculates the diffraction efficiency for
-the same structure at higher frequencies. Run it by executing:
-$ S4 diffraction.lua > out.txt
-The output of this script should be similar to diffraction.txt
+Liu_OE_17_21897_2009: http://dx.doi.org/10.1364/OE.17.021897
+	Extremely basic binary grating of silicon square rods surrounded by air.
+Bi_OE_18_11969_2010: http://dx.doi.org/10.1364/OE.18.011969
+	Design of polarization splitting beam splitters by etching into fused silica.
+Pietarinen_OE_14_2583_2006: http://dx.doi.org/10.1364/OE.14.002583
+	Diffraction efficiency of multi-step transmission grating.
+Oliva_OE_19_14735_2011: http://dx.doi.org/10.1364/OE.19.014735
+	Diffraction efficiency of multi-step transmission grating.

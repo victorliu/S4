@@ -1,9 +1,4 @@
--- In a 1D pattern, the pattern should be specified only with rectangles.
--- The y-dimension of the rectangles is ignored.
-
-S = S4.NewSimulation()
-S:SetLattice({1,0}, {0,0}) -- 1D lattice
-S:SetNumG(27)
+S = S4.NewSimulation{ Lattice = 1, BasisSize = 27 }
 
 -- Material definition
 S:AddMaterial("Silicon", {12,0}) -- real and imag parts
@@ -26,17 +21,15 @@ S:AddLayerCopy('AirBelow', -- new layer name
 -- E polarized along the grating periodicity direction
 S:SetExcitationPlanewave(
 	{0,0},  -- incidence angles (spherical coordinates: phi in [0,180], theta in [0,360])
-	{0,0},  -- s-polarization amplitude and phase (in degrees)
-	{1,0})  -- p-polarization amplitude and phase
-
---S:UsePolarizationDecomposition()
+	{1,0},  -- s-polarization amplitude and phase (in degrees)
+	{0,0})  -- p-polarization amplitude and phase
 
 for freq=0.25,0.7,0.005 do
 	S:SetFrequency(freq)
-	
+
 	-- backward should be zero
-	forward,backward = S:GetPoyntingFlux('AirBelow', -- layer in which to get
+	forward,backward = S:GetPowerFlux('AirBelow', -- layer in which to get
 		                                 0)          -- z-offset
-	
+
 	print(freq .. '\t' .. forward);
 end
