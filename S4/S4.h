@@ -163,10 +163,6 @@ typedef struct Options_{
 	int lanczos_smoothing_power;
 } Options;
 
-typedef struct Solution_{
-	void **layer_solution; // opaque pointer to the layer solution vector
-} Solution;
-
 struct FieldCache;
 
 typedef struct Excitation_Planewave_{
@@ -196,6 +192,7 @@ typedef struct Excitation_{
 	char *layer; // name of layer after which excitation is applied
 } Excitation;
 
+struct Solution_;
 typedef struct Simulation_{
 	double Lr[4]; // real space lattice:
 	              //  {Lr[0],Lr[1]} is the first basis vector's x and y coords.
@@ -217,7 +214,7 @@ typedef struct Simulation_{
 	double k[2]; // xy components of k vector, as fraction of k0 = omega
 	Excitation exc;
 
-	Solution *solution; // The solution object is not allocated until needed.
+	struct Solution_ *solution; // The solution object is not allocated until needed.
 	Options options;
 
 	struct FieldCache *field_cache; // Internal cache of vector field FT when using polarization bases

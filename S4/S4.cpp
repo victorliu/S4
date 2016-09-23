@@ -97,9 +97,9 @@ struct LayerModes{
 	// max total size needed: 2n+13nn
 	int epstype;
 };
-struct LayerSolution{
-	std::complex<double> *ab; // length 2*glist.n
-	// total size needed: 4n
+struct Solution_{
+	std::complex<double> *ab;
+	int *solved;
 };
 
 // This structure caches the Fourier transform of the polarization basis
@@ -116,10 +116,10 @@ struct FieldCache{
 
 // If layer_solution is null, only computes layer_modes if it is non-NULL.
 // If layer_solution is not null, all layer's modes are computed.
-int Simulation_GetLayerSolution(Simulation *S, Layer *layer, LayerModes **layer_modes, LayerSolution **layer_solution);
+int Simulation_GetLayerSolution(Simulation *S, Layer *layer, LayerModes **layer_modes, std::complex<double> **layer_solution);
 
 // These two assume S->solution is set up already
-int Simulation_ComputeLayerSolution(Simulation *S, Layer *L, LayerModes **layer_modes, LayerSolution **layer_solution);
+int Simulation_ComputeLayerSolution(Simulation *S, Layer *L, LayerModes **layer_modes, std::complex<double> **layer_solution);
 int Simulation_ComputeLayerModes(Simulation *S, Layer *L, LayerModes **layer_modes);
 void Simulation_SetExcitationType(Simulation *S, int type);
 void Simulation_CopyExcitation(const Simulation *from, Simulation *to);
@@ -421,7 +421,7 @@ Material* Simulation_AddMaterial(Simulation *S){
 	Material *M;
 	if(S->n_materials >= S->n_materials_alloc){
 		 S->n_materials_alloc *= 2;
-		 S->material = (Material*)S4_realloc(S->material, sizeof(Material) * S->n_materials_alloc);
+		 S->material = (Material*)realloc(S->material, sizeof(Material) * S->n_materials_alloc);
 	}
 	M = &S->material[S->n_materials];
 	S->n_materials++;
@@ -440,7 +440,7 @@ Layer* Simulation_AddLayer(Simulation *S){
 	Layer *L;
 	if(S->n_layers >= S->n_layers_alloc){
 		S->n_layers_alloc *= 2;
-		S->layer = (Layer*)S4_realloc(S->layer, sizeof(Layer) * S->n_layers_alloc);
+		S->layer = (Layer*)realloc(S->layer, sizeof(Layer) * S->n_layers_alloc);
 	}
 	L = &S->layer[S->n_layers];
 	S->n_layers++;
@@ -450,8 +450,10 @@ Layer* Simulation_AddLayer(Simulation *S){
 }
 void Simulation_DestroyLayerModes(Layer *layer){
 	if(NULL != layer->modes){
-	if(NULL != layer->modes->q){ free(layer->modes->q); }
+		if(NULL != layer->modes->q){ S4_free(layer->modes->q); }
+		layer->modes->q = NULL;
 		free(layer->modes);
+		layer->modes = NULL;
 	}
 }
 int Simulation_RemoveLayerPatterns(Simulation *S, Layer *layer){
@@ -747,7 +749,6 @@ int Simulation_AddLayerPatternPolygon(
 int Simulation_InitSolution(Simulation *S){
 	S4_TRACE("> Simulation_InitSolution(S=%p) [omega=%f]\n", S, S->omega[0]);
 
-	Solution *sol;
 	if(NULL == S){
 		S4_TRACE("< Simulation_InitSolution (failed; S == NULL) [omega=%f]\n", S->omega[0]);
 		return -1;
@@ -824,20 +825,14 @@ int Simulation_InitSolution(Simulation *S){
 	if(NULL != S->solution){
 		Simulation_DestroySolution(S);
 	}
-	S->solution = (Solution*)S4_malloc(sizeof(Solution));
-	if(NULL == S->solution){
+	S->solution = (Solution_*)malloc(sizeof(Solution_));
+	S->solution->ab = (std::complex<double>*)S4_malloc(sizeof(std::complex<double>) * S->n_layers * 4 * S->n_G);
+	S->solution->solved = (int*)malloc(sizeof(int) * S->n_layers);
+	if(NULL == S->solution || NULL == S->solution->ab || NULL == S->solution->solved){
 		S4_TRACE("< Simulation_InitSolution (failed; could not allocate S->solution) [omega=%f]\n", S->omega[0]);
 		return 1;
 	}
-	sol = S->solution;
-	sol->layer_solution = (void**)S4_malloc(sizeof(void*)*S->n_layers);
-	if(NULL == sol->layer_solution){
-		S4_TRACE("< Simulation_InitSolution (failed; could not allocate sol->layer_solution) [omega=%f]\n", S->omega[0]);
-		return 1;
-	}
-	for(int i = 0; i < S->n_layers; ++i){
-		sol->layer_solution[i] = NULL;
-	}
+	memset(S->solution->solved, 0, sizeof(int) * S->n_layers);
 
 	S4_TRACE("I  Simulation_InitSolution G: (%d) [omega=%f]\n", S->n_G, S->omega[0]);
 
@@ -851,12 +846,12 @@ int Simulation_InitSolution(Simulation *S){
 }
 
 // realistically, can return -2 if layer is not found, or an InitSolution code
-int Simulation_GetLayerSolution(Simulation *S, Layer *layer, LayerModes **layer_modes, LayerSolution **layer_solution){
+int Simulation_GetLayerSolution(Simulation *S, Layer *layer, LayerModes **layer_modes, std::complex<double> **layer_solution){
 	S4_TRACE("> Simulation_GetLayerSolution(S=%p, layer=%p, layer_modes=%p (%p), layer_solution=%p (%p)) [omega=%f]\n",
 		S, layer,
 		layer_modes, (NULL != layer_modes ? *layer_modes : NULL), layer_solution, (NULL != layer_solution ? *layer_solution : NULL), S->omega[0]);
 	int error;
-	Solution *sol;
+	Solution_ *sol;
 	if(NULL == S){
 		S4_TRACE("< Simulation_GetLayerSolution (failed; S == NULL) [omega=%f]\n", S->omega[0]);
 		return -1;
@@ -875,11 +870,10 @@ int Simulation_GetLayerSolution(Simulation *S, Layer *layer, LayerModes **layer_
 	}
 	sol = S->solution;
 
-	LayerSolution** Lsoln = (LayerSolution**)sol->layer_solution;
 	for(int i = 0; i < S->n_layers; ++i){
 		Layer *L = &(S->layer[i]);
 		if(L == layer){
-			if(NULL == *Lsoln){
+			if(NULL == L->modes || !sol->solved[i]){
 				error = Simulation_ComputeLayerSolution(S, L, layer_modes, layer_solution);
 				if(0 != error){ // should never happen
 					S4_TRACE("< Simulation_GetLayerSolution (failed; Simulation_ComputeLayerSolution returned %d) [omega=%f]\n", error, S->omega[0]);
@@ -888,7 +882,6 @@ int Simulation_GetLayerSolution(Simulation *S, Layer *layer, LayerModes **layer_
 				if(NULL == L->copy){
 					L->modes = *layer_modes;
 				}
-				*Lsoln = *layer_solution;
 			}else{
 				if(NULL != L->copy){
 					int refi = 0;
@@ -897,13 +890,12 @@ int Simulation_GetLayerSolution(Simulation *S, Layer *layer, LayerModes **layer_
 				}else{
 					*layer_modes = L->modes;
 				}
-				*layer_solution = *Lsoln;
+				*layer_solution = &sol->ab[i*4*S->n_G];
 			}
 
 			S4_TRACE("< Simulation_GetLayerSolution [omega=%f]\n", S->omega[0]);
 			return 0;
 		}
-		++Lsoln;
 	}
 
 	S4_TRACE("< Simulation_GetLayerSolution (failed; layer not found) [omega=%f]\n", S->omega[0]);
@@ -930,14 +922,14 @@ int Simulation_SolveLayer(Simulation *S, Layer *layer){
 	}
 
 	LayerModes *Lmodes = NULL;
-	LayerSolution *Lsoln = NULL;
+	std::complex<double> *Lsoln = NULL;
 	int ret = Simulation_GetLayerSolution(S, layer, &Lmodes, &Lsoln);
 
 	S4_TRACE("< Simulation_SolveLayer [omega=%f]\n", S->omega[0]);
 	return ret;
 }
 
-int Simulation_ComputeLayerSolution(Simulation *S, Layer *L, LayerModes **layer_modes, LayerSolution **layer_solution){
+int Simulation_ComputeLayerSolution(Simulation *S, Layer *L, LayerModes **layer_modes, std::complex<double> **layer_solution){
 	S4_TRACE("> Simulation_ComputeLayerSolution(S=%p, L=%p (%s), layer_modes=%p (%p), LayerSolution=%p (%p)) [omega=%f]\n",
 		S, L, (NULL != L && NULL != L->name ? L->name : ""), layer_modes, (NULL != layer_modes ? *layer_modes : NULL), layer_solution, (NULL != layer_solution ? *layer_solution : NULL), S->omega[0]);
 	if(NULL != layer_modes && NULL == layer_solution){
@@ -960,8 +952,7 @@ int Simulation_ComputeLayerSolution(Simulation *S, Layer *L, LayerModes **layer_
 	const size_t n4 = 2*n2;
 
 	// compute all modes and then get solution
-	Solution *sol = S->solution;
-	LayerSolution **Lsoln = (LayerSolution**)sol->layer_solution;
+	Solution_ *sol = S->solution;
 	int which_layer = 0;
 	bool found_layer = false;
 	for(int i = 0; i < S->n_layers; ++i){
@@ -972,7 +963,6 @@ int Simulation_ComputeLayerSolution(Simulation *S, Layer *L, LayerModes **layer_
 		if(L == SL){
 			found_layer = true;
 			which_layer = i;
-			*Lsoln = (LayerSolution*)S4_malloc(sizeof(LayerSolution));
 			if(NULL != SL->copy){
 				int refi = 0;
 				Simulation_GetLayerByName(S, SL->copy, &refi);
@@ -980,10 +970,8 @@ int Simulation_ComputeLayerSolution(Simulation *S, Layer *L, LayerModes **layer_
 			}else{
 				*layer_modes = SL->modes;
 			}
-			*layer_solution = *Lsoln;
-			(*layer_solution)->ab = (std::complex<double>*)S4_malloc(sizeof(std::complex<double>)*n4);
+			*layer_solution = &sol->ab[i*n4];
 		}
-		++Lsoln;
 	}
 	if(!found_layer){
 		S4_TRACE("< Simulation_ComputeLayerSolution (failed; could not find layer) [omega=%f]\n", S->omega[0]);
@@ -1055,7 +1043,7 @@ int Simulation_ComputeLayerSolution(Simulation *S, Layer *L, LayerModes **layer_
 			lthick, lq, lepsinv, lepstype, lkp, lphi,
 			a0, // length 2*n
 			NULL, // bN
-			(*layer_solution)->ab);
+			(*layer_solution));
 		S4_free(a0);
 	}else if(2 == S->exc.type){
 		Excitation_Exterior *ext = &(S->exc.sub.exterior);
@@ -1102,7 +1090,7 @@ int Simulation_ComputeLayerSolution(Simulation *S, Layer *L, LayerModes **layer_
 			lthick, lq, lepsinv, lepstype, lkp, lphi,
 			a0, // length 2*n
 			bN, // bN
-			(*layer_solution)->ab);
+			(*layer_solution));
 		S4_free(a0);
 	}else if(1 == S->exc.type){
 		Layer *l[2];
@@ -1232,7 +1220,7 @@ int Simulation_ComputeLayerSolution(Simulation *S, Layer *L, LayerModes **layer_
 				lthick, lq, lepsinv, lepstype, lkp, lphi,
 				NULL, // length 2*n
 				&ab[n2], // bN
-				(*layer_solution)->ab);
+				(*layer_solution));
 		}else{
 			error = SolveInterior(
 				S->n_layers-li, which_layer-li,
@@ -1242,12 +1230,13 @@ int Simulation_ComputeLayerSolution(Simulation *S, Layer *L, LayerModes **layer_
 				lthick+li, lq+li, lepsinv+li, lepstype+li, lkp+li, lphi+li,
 				&ab[0], // length 2*n
 				NULL, // bN
-				(*layer_solution)->ab);
+				(*layer_solution));
 		}
 		S4_free(ab);
 	}
+	sol->solved[which_layer] = 1;
 
-	S4_TRACE("I  ab[0] = %f,%f [omega=%f]\n", (*layer_solution)->ab[0].real(), (*layer_solution)->ab[0].imag(), S->omega[0]);
+	S4_TRACE("I  ab[0] = %f,%f [omega=%f]\n", (*layer_solution)[0].real(), (*layer_solution)->ab[0].imag(), S->omega[0]);
 
 	S4_free(lq);
 	S4_free(lepstype);
@@ -1287,7 +1276,7 @@ int Simulation_ComputeLayerModes(Simulation *S, Layer *L, LayerModes **layer_mod
 
 	S4_VERB(1, "Computing modes of layer: %s\n", NULL != L->name ? L->name : "");
 
-	*layer_modes = (LayerModes*)S4_malloc(sizeof(LayerModes));
+	*layer_modes = (LayerModes*)malloc(sizeof(LayerModes));
 	LayerModes *pB = *layer_modes;
 	const int n = S->n_G;
 	const int n2 = 2*n;
@@ -1462,7 +1451,7 @@ int Simulation_GetPoyntingFlux(Simulation *S, Layer *layer, double offset, doubl
 	}
 
 	LayerModes *Lmodes;
-	LayerSolution *Lsoln;
+	std::complex<double> *Lsoln;
 
 	ret = Simulation_GetLayerSolution(S, layer, &Lmodes, &Lsoln);
 	if(0 != ret){
@@ -1481,7 +1470,7 @@ int Simulation_GetPoyntingFlux(Simulation *S, Layer *layer, double offset, doubl
 	}
 	std::complex<double> *work = ab + n4;
 
-	memcpy(ab, Lsoln->ab, sizeof(std::complex<double>) * n4);
+	memcpy(ab, Lsoln, sizeof(std::complex<double>) * n4);
 	TranslateAmplitudes(n, Lmodes->q, layer->thickness, offset, ab);
 
 	std::complex<double> forw, back;
@@ -1509,7 +1498,7 @@ int Simulation_GetPoyntingFluxByG(Simulation *S, Layer *layer, double offset, do
 	}
 
 	LayerModes *Lmodes;
-	LayerSolution *Lsoln;
+	std::complex<double> *Lsoln;
 
 	ret = Simulation_GetLayerSolution(S, layer, &Lmodes, &Lsoln);
 	if(0 != ret){
@@ -1530,7 +1519,7 @@ int Simulation_GetPoyntingFluxByG(Simulation *S, Layer *layer, double offset, do
 	std::complex<double> *back = forw + n;
 	std::complex<double> *work = back + n;
 
-	memcpy(ab, Lsoln->ab, sizeof(std::complex<double>) * n4);
+	memcpy(ab, Lsoln, sizeof(std::complex<double>) * n4);
 	TranslateAmplitudes(n, Lmodes->q, layer->thickness, offset, ab);
 
 	GetZPoyntingFluxComponents(n, S->kx, S->ky, std::complex<double>(S->omega[0],S->omega[1]), Lmodes->q, Lmodes->Epsilon_inv, Lmodes->epstype, Lmodes->kp, Lmodes->phi, ab, forw, back, work);
@@ -1558,16 +1547,6 @@ int Simulation_GetPropagationConstants(Simulation *S, Layer *L, double *q){
 	}
 
 	const int n = S->n_G;
-
-	Solution *sol;
-	if(NULL == S->solution){
-		int error = Simulation_InitSolution(S);
-		if(0 != error){
-			S4_TRACE("< Simulation_GetPropagationConstants (failed; Simulation_InitSolution returned %d) [omega=%f]\n", error, S->omega[0]);
-			return error;
-		}
-	}
-	sol = S->solution;
 
 	// compute all modes and then get solution
 	LayerModes *layer_modes;
@@ -1614,7 +1593,7 @@ int Simulation_GetAmplitudes(Simulation *S, Layer *layer, double offset, double 
 	}
 
 	LayerModes *Lmodes;
-	LayerSolution *Lsoln;
+	std::complex<double> *Lsoln;
 
 	ret = Simulation_GetLayerSolution(S, layer, &Lmodes, &Lsoln);
 	if(0 != ret){
@@ -1632,7 +1611,7 @@ int Simulation_GetAmplitudes(Simulation *S, Layer *layer, double offset, double 
 		return 1;
 	}
 
-	memcpy(ab, Lsoln->ab, sizeof(std::complex<double>) * n4);
+	memcpy(ab, Lsoln, sizeof(std::complex<double>) * n4);
 	TranslateAmplitudes(n, Lmodes->q, layer->thickness, offset, ab);
 
 	if(NULL != forw){
@@ -1669,7 +1648,7 @@ int Simulation_GetWaves(Simulation *S, Layer *layer, double *wave){
 	const double w = S->omega[0];
 
 	LayerModes *Lmodes;
-	LayerSolution *Lsoln;
+	std::complex<double> *Lsoln;
 
 	ret = Simulation_GetLayerSolution(S, layer, &Lmodes, &Lsoln);
 	if(0 != ret){
@@ -1681,7 +1660,7 @@ int Simulation_GetWaves(Simulation *S, Layer *layer, double *wave){
 	const int n2 = 2*n;
 	const int n4 = 2*n2;
 
-	std::complex<double> *ab = Lsoln->ab;
+	const std::complex<double> *ab = Lsoln;
 
 	for(int i = 0; i < n; ++i){
 		const double kx = S->kx[i];
@@ -1792,7 +1771,7 @@ if(qi.imag() == 0){
 
 void Simulation_DestroySolution(Simulation *S){
 	S4_TRACE("> Simulation_DestroySolution(S=%p) [omega=%f]\n", S, S->omega[0]);
-	Solution *sol;
+	Solution_ *sol;
 	if(NULL == S){
 		S4_TRACE("< Simulation_DestroySolution (early exit; S == NULL) [omega=%f]\n", S->omega[0]);
 		return;
@@ -1802,32 +1781,22 @@ void Simulation_DestroySolution(Simulation *S){
 		S4_TRACE("< Simulation_DestroySolution (early exit; sol == NULL) [omega=%f]\n", S->omega[0]);
 		return;
 	}
-	if(NULL != sol->layer_solution){
-		void **Lsoln = sol->layer_solution;
-		for(int i = 0; i < S->n_layers; ++i){
-			// release Lsoln
-			if(NULL != Lsoln){
-				LayerSolution *pS = (LayerSolution*)(*Lsoln);
-				if(NULL != pS){
-					if(NULL != pS->ab){
-						S4_free(pS->ab);
-					}
-					S4_free(pS);
-				}
-			}
-			++Lsoln;
-		}
-		S4_free(sol->layer_solution);
-		sol->layer_solution = NULL;
+	if(NULL != sol->ab){
+		S4_free(sol->ab);
+		sol->ab = NULL;
 	}
-	S4_free(S->solution); S->solution = NULL;
+	if(NULL != sol->solved){
+		free(sol->solved);
+		sol->solved = NULL;
+	}
+	free(S->solution); S->solution = NULL;
 
 	S4_TRACE("< Simulation_DestroySolution [omega=%f]\n", S->omega[0]);
 }
 
 void Simulation_DestroyLayerSolutions(Simulation *S){
 	S4_TRACE("> Simulation_DestroyLayerSolutions(S=%p) [omega=%f]\n", S, S->omega[0]);
-	Solution *sol;
+	Solution_ *sol;
 	if(NULL == S){
 		S4_TRACE("< Simulation_DestroyLayerSolutions (early exit; S == NULL) [omega=%f]\n", S->omega[0]);
 		return;
@@ -1838,22 +1807,8 @@ void Simulation_DestroyLayerSolutions(Simulation *S){
 		return;
 	}
 
-	if(NULL != sol->layer_solution){
-		void **Lsoln = sol->layer_solution;
-		for(int i = 0; i < S->n_layers; ++i){
-			// release Lsoln
-			if(NULL != Lsoln){
-				LayerSolution *pS = (LayerSolution*)(*Lsoln);
-				if(NULL != pS){
-					if(NULL != pS->ab){
-						S4_free(pS->ab);
-					}
-					S4_free(pS);
-				}
-			}
-			*Lsoln = NULL;
-			++Lsoln;
-		}
+	for(int i = 0; i < S->n_layers; ++i){
+		sol->solved[i] = 0;
 	}
 
 	S4_TRACE("< Simulation_DestroyLayerSolutions [omega=%f]\n", S->omega[0]);
@@ -2395,7 +2350,7 @@ int Simulation_GetField(Simulation *S, const double r[3], double fE[6], double f
 //fprintf(stderr, "(%f,%f,%f) in %s: dz = %f\n", r[0], r[1], r[2], L->name, dz);
 
 	LayerModes *Lmodes;
-	LayerSolution *Lsoln;
+	std::complex<double> *Lsoln;
 	int ret = Simulation_GetLayerSolution(S, L, &Lmodes, &Lsoln);
 	if(0 != ret){
 		S4_TRACE("< Simulation_GetField (failed; Simulation_GetLayerSolution returned %d)\n", ret);
@@ -2409,7 +2364,7 @@ int Simulation_GetField(Simulation *S, const double r[3], double fE[6], double f
 	}
 	std::complex<double> *work = ab + n4;
 
-	RNP::TBLAS::Copy(n4, Lsoln->ab,1, ab,1);
+	RNP::TBLAS::Copy(n4, Lsoln,1, ab,1);
 	//RNP::IO::PrintVector(n4, ab, 1);
 	TranslateAmplitudes(S->n_G, Lmodes->q, L->thickness, dz, ab);
 	std::complex<double> efield[3], hfield[3];
@@ -2476,7 +2431,7 @@ int Simulation_GetFieldPlane(Simulation *S, int nxy[2], double zz, double *E, do
 //fprintf(stderr, "(%f,%f,%f) in %s: dz = %f\n", r[0], r[1], r[2], L->name, dz);
 
 	LayerModes *Lmodes;
-	LayerSolution *Lsoln;
+	std::complex<double> *Lsoln;
 	int ret = Simulation_GetLayerSolution(S, L, &Lmodes, &Lsoln);
 	if(0 != ret){
 		S4_TRACE("< Simulation_GetFieldPlane (failed; Simulation_GetLayerSolution returned %d)\n", ret);
@@ -2490,7 +2445,7 @@ int Simulation_GetFieldPlane(Simulation *S, int nxy[2], double zz, double *E, do
 	}
 	std::complex<double> *work = ab + n4;
 
-	RNP::TBLAS::Copy(n4, Lsoln->ab,1, ab,1);
+	RNP::TBLAS::Copy(n4, Lsoln,1, ab,1);
 	//RNP::IO::PrintVector(n4, ab, 1);
 	TranslateAmplitudes(S->n_G, Lmodes->q, L->thickness, dz, ab);
 	size_t snxy[2] = { (size_t)nxy[0], (size_t)nxy[1] };
@@ -2644,7 +2599,7 @@ int Simulation_GetStressTensorIntegral(Simulation *S, Layer *layer, double offse
 	}
 
 	LayerModes *Lmodes;
-	LayerSolution *Lsoln;
+	std::complex<double> *Lsoln;
 
 	ret = Simulation_GetLayerSolution(S, layer, &Lmodes, &Lsoln);
 	if(0 != ret){
@@ -2663,7 +2618,7 @@ int Simulation_GetStressTensorIntegral(Simulation *S, Layer *layer, double offse
 	}
 	std::complex<double> *work = ab + n4;
 
-	memcpy(ab, Lsoln->ab, sizeof(std::complex<double>) * n4);
+	memcpy(ab, Lsoln, sizeof(std::complex<double>) * n4);
 	TranslateAmplitudes(n, Lmodes->q, layer->thickness, offset, ab);
 
 	std::complex<double> integral[3];
@@ -2701,7 +2656,7 @@ int Simulation_GetLayerVolumeIntegral(Simulation *S, Layer *layer, char which, d
 	}
 
 	LayerModes *Lmodes;
-	LayerSolution *Lsoln;
+	std::complex<double> *Lsoln;
 
 	ret = Simulation_GetLayerSolution(S, layer, &Lmodes, &Lsoln);
 	if(0 != ret){
@@ -2723,7 +2678,7 @@ int Simulation_GetLayerVolumeIntegral(Simulation *S, Layer *layer, char which, d
 	GetLayerVolumeIntegral(which,
 		n, S->kx, S->ky,
 		std::complex<double>(S->omega[0],S->omega[1]),
-		layer->thickness, Lmodes->q, Lmodes->kp, Lmodes->phi, Lmodes->Epsilon_inv, Lmodes->Epsilon2, Lmodes->epstype, Lsoln->ab, &zintegral, work);
+		layer->thickness, Lmodes->q, Lmodes->kp, Lmodes->phi, Lmodes->Epsilon_inv, Lmodes->Epsilon2, Lmodes->epstype, Lsoln, &zintegral, work);
 
 	S4_free(work);
 
@@ -2749,7 +2704,7 @@ int Simulation_GetLayerZIntegral(Simulation *S, Layer *layer, const double r[2],
 	}
 
 	LayerModes *Lmodes;
-	LayerSolution *Lsoln;
+	std::complex<double> *Lsoln;
 
 	ret = Simulation_GetLayerSolution(S, layer, &Lmodes, &Lsoln);
 	if(0 != ret){
@@ -2770,7 +2725,7 @@ int Simulation_GetLayerZIntegral(Simulation *S, Layer *layer, const double r[2],
 	GetLayerZIntegral(
 		n, S->kx, S->ky,
 		std::complex<double>(S->omega[0],S->omega[1]),
-		layer->thickness, r, Lmodes->q, Lmodes->kp, Lmodes->phi, Lmodes->Epsilon_inv, Lmodes->Epsilon2, Lmodes->epstype, Lsoln->ab, integral, work);
+		layer->thickness, r, Lmodes->q, Lmodes->kp, Lmodes->phi, Lmodes->Epsilon_inv, Lmodes->Epsilon2, Lmodes->epstype, Lsoln, integral, work);
 
 	S4_free(work);
 
@@ -3002,7 +2957,6 @@ int Simulation_GetSMatrix(Simulation *S, int from, int to, std::complex<double> 
 	const size_t n4 = 2*n2;
 
 	// compute all modes
-	Solution *sol = S->solution;
 	for(int i = 0; i < S->n_layers; ++i){
 		Layer *SL = &(S->layer[i]);
 		if(from <= i && (-1 == to || i <= to)){
