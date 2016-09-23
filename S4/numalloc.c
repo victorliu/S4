@@ -23,6 +23,7 @@
 #ifdef WIN32
 # include <malloc.h>
 void * _aligned_malloc(size_t size, size_t alignment);
+void * _aligned_realloc(void *ptr, size_t size, size_t alignment);
 void _aligned_free(void *ptr);
 #else
 #include <inttypes.h>
@@ -55,7 +56,7 @@ void *realloc_aligned(void *ptr, size_t size, size_t alignment){
 #else
 	void *pa;
 
-	pa = realloc((void**)ptr-1, (size+alignment-1)+sizeof(void*));
+	pa = realloc(*((void**)ptr-1), (size+alignment-1)+sizeof(void*));
 	if(!pa){ return NULL; }
 
 	ptr = (void*)( ((malloc_aligned_ULONG_PTR)pa+sizeof(void*)+alignment-1)&~(alignment-1) );

@@ -54,7 +54,7 @@ static void sym2x2rot(const std::complex<double> M[4], const double nvec[2], std
 
 int FMMGetEpsilon_Kottke(const Simulation *S, const Layer *L, const int n, std::complex<double> *Epsilon2, std::complex<double> *Epsilon_inv){
 	const int n2 = 2*n;
-	const int *G = S->solution->G;
+	const int *G = S->G;
 
 	// Make grid
 	// Determine size of the grid
@@ -72,7 +72,7 @@ int FMMGetEpsilon_Kottke(const Simulation *S, const Layer *L, const int n, std::
 	const double ing2 = 1./(double)ng2;
 	// The grid needs to hold 5 matrix elements: xx,xy,yx,yy,zz
 	// We actually make 5 different grids to facilitate the fft routines
-	
+
 	//std::complex<double> *work = (std::complex<double>*)S4_malloc(sizeof(std::complex<double>)*(6*ng2));
 	std::complex<double> *work = fft_alloc_complex(6*ng2);
 	std::complex<double>*fxx = work;
@@ -133,7 +133,7 @@ int FMMGetEpsilon_Kottke(const Simulation *S, const Layer *L, const int n, std::
 					std::swap(imat[0],imat[1]);
 				}
 				// imat[0] is the more-contained shape
-				
+
 				double nvec[2];
 				const double nxvec[2] = { ((double)ii[0]+0.5)/(double)ngrid[0]-0.5, ((double)ii[1]+0.5)/(double)ngrid[1]-0.5 };
 				const double xvec[2] = { // center of current parallelogramic pixel
@@ -190,7 +190,7 @@ int FMMGetEpsilon_Kottke(const Simulation *S, const Layer *L, const int n, std::
 					abcde[0][1] = fill * (abcd[0][1]/abcd[0][0]) + (1.-fill) * (abcd[1][1]/abcd[1][0]);
 					abcde[0][2] = fill * (abcd[0][2]/abcd[0][0]) + (1.-fill) * (abcd[1][2]/abcd[1][0]);
 					abcde[0][3] = fill * (abcd[0][3]-abcd[0][1]*abcd[0][2]/abcd[0][0]) + (1.-fill) * (abcd[1][3]-abcd[1][1]*abcd[1][2]/abcd[1][0]);
-					
+
 					// Invert the tau transform into abcd[1]
 					// invtau(t__) = [ -1/t11         -t12/t11      ]
 					//               [ -t21/t11   t22 - t21 t12/t11 ]
@@ -199,7 +199,7 @@ int FMMGetEpsilon_Kottke(const Simulation *S, const Layer *L, const int n, std::
 					abcd[1][2] = -abcde[0][2]/abcde[0][0];
 					abcd[1][3] = abcde[0][3] - abcde[0][1]*abcde[0][2]/abcde[0][0];
 //fprintf(stderr, " abcd[1]  = {%f,%f,%f,%f}\n", abcd[1][0].real(), abcd[1][1].real(), abcd[1][2].real(), abcd[1][3].real());
-				
+
 					// Unrotate abcd[1] into abcd[0]
 					nvec[1] = -nvec[1];
 					sym2x2rot(abcd[1], nvec, abcd[0]);
@@ -285,7 +285,7 @@ fzz[si1+si0*ngrid[1]].real(), fzz[si1+si0*ngrid[1]].imag()
 		int Erow = (w&2 ? n : 0);
 //memset(Fto, 0, sizeof(std::complex<double>)*ng2);
 		fft_plan_exec(plans[w]);
-		
+
 //fprintf(stderr, "Fto(%d)[0] = %f+I %f\n", w, Fto[0].real(), Fto[0].imag());
 		for(int j = 0; j < n; ++j){
 			for(int i = 0; i < n; ++i){
@@ -300,10 +300,10 @@ fzz[si1+si0*ngrid[1]].real(), fzz[si1+si0*ngrid[1]].imag()
 	for(int i = 0; i <= 4; ++i){
 		fft_plan_destroy(plans[i]);
 	}
-	
+
 	S4_free(discval);
 	//S4_free(work);
 	fft_free(work);
-	
+
 	return 0;
 }

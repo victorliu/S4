@@ -47,17 +47,17 @@ int FMMGetEpsilon_PolBasisNV(const Simulation *S, const Layer *L, const int n, s
 		S4_TRACE("I   Lanczos smoothing order = %f\n", mp1);
 		mp1 *= S->options.lanczos_smoothing_width;
 	}
-	
+
 	if(Epsilon_inv){} // prevent unused parameter warning
-	
+
 	const int n2 = 2*n;
 	const int nn = n*n;
 	const double unit_cell_size = Simulation_GetUnitCellSize(S);
-	const int *G = S->solution->G;
+	const int *G = S->G;
 	const int ndim = (0 == S->Lr[2] && 0 == S->Lr[3]) ? 1 : 2;
 	double *ivalues = (double*)S4_malloc(sizeof(double)*(2+10)*(L->pattern.nshapes+1));
 	double *values = ivalues + 2*(L->pattern.nshapes+1);
-	
+
 	// Get all the dielectric tensors
 	//bool have_tensor = false;
 	for(int i = -1; i < L->pattern.nshapes; ++i){
@@ -79,14 +79,14 @@ int FMMGetEpsilon_PolBasisNV(const Simulation *S, const Layer *L, const int n, s
 			//have_tensor = true;
 		}
 	}
-	
+
 	// Epsilon2 is
 	//   [ Epsilon - Delta*Pxx        -Delta*Pxy     ]
 	//   [     -Delta*Pyx        Epsilon - Delta*Pyy ]
 	// Pxy = Fourier transform of par_x^* par_y
 	//
 	// Need temp storage for Delta and P__
-	
+
 	std::complex<double> *P = Simulation_GetCachedField(S, L);
 	std::complex<double> *work = NULL;
 	std::complex<double> *mDelta = NULL;
@@ -106,7 +106,7 @@ int FMMGetEpsilon_PolBasisNV(const Simulation *S, const Layer *L, const int n, s
 			ngrid[i] = fft_next_fast_size(ngrid[i]);
 		}
 		const int ng2 = ngrid[0]*ngrid[1];
-		
+
 		work = (std::complex<double>*)S4_malloc(sizeof(std::complex<double>)*(6*nn + 4*ng2));
 		mDelta = work;
 		Eta = mDelta + nn;
@@ -118,7 +118,7 @@ int FMMGetEpsilon_PolBasisNV(const Simulation *S, const Layer *L, const int n, s
 		// Generate the vector field
 		const double ing2 = 1./(double)ng2;
 		int ii[2];
-		
+
 		double *vfield = (double*)S4_malloc(sizeof(double)*2*ng2);
 		if(0 == S->Lr[2] && 0 == S->Lr[3]){ // 1D, generate the trivial field
 			double nv[2] = {-S->Lr[1], S->Lr[0]};
@@ -134,7 +134,7 @@ int FMMGetEpsilon_PolBasisNV(const Simulation *S, const Layer *L, const int n, s
 			int error = 0;
 			S4_VERB(1, "Generating polarization vector field of size %d x %d\n", ngrid[0], ngrid[1]);
 			error = Pattern_GenerateFlowField(&L->pattern, 0, S->Lr, ngrid[0], ngrid[1], vfield);
-			
+
 			// Normalize the field
 			for(ii[1] = 0; ii[1] < ngrid[1]; ++ii[1]){
 				for(ii[0] = 0; ii[0] < ngrid[0]; ++ii[0]){
@@ -150,7 +150,7 @@ int FMMGetEpsilon_PolBasisNV(const Simulation *S, const Layer *L, const int n, s
 					}
 				}
 			}
-			
+
 			if(0 != error){
 				S4_TRACE("< Simulation_ComputeLayerBands (failed; Pattern_GenerateFlowField returned %d) [omega=%f]\n", error, S->omega[0]);
 				if(NULL != vfield){ S4_free(vfield); }
@@ -177,15 +177,15 @@ int FMMGetEpsilon_PolBasisNV(const Simulation *S, const Layer *L, const int n, s
 			}
 			free(filename);
 		}
-			
-			
+
+
 		for(ii[1] = 0; ii[1] < ngrid[1]; ++ii[1]){
 			for(ii[0] = 0; ii[0] < ngrid[0]; ++ii[0]){
 				par[2*(ii[0]+ii[1]*ngrid[0])+0] = vfield[2*(ii[0]+ii[1]*ngrid[0])+0];
 				par[2*(ii[0]+ii[1]*ngrid[0])+1] = vfield[2*(ii[0]+ii[1]*ngrid[0])+1];
 			}
 		}
-		
+
 
 		fft_plan plan = fft_plan_dft_2d(ngrid, Ffrom, Fto, 1);
 
@@ -204,7 +204,7 @@ int FMMGetEpsilon_PolBasisNV(const Simulation *S, const Layer *L, const int n, s
 			}
 
 			fft_plan_exec(plan);
-			
+
 			for(int j = 0; j < n; ++j){
 				for(int i = 0; i < n; ++i){
 					int f[2] = {G[2*i+0]-G[2*j+0],G[2*i+1]-G[2*j+1]};
@@ -226,7 +226,7 @@ int FMMGetEpsilon_PolBasisNV(const Simulation *S, const Layer *L, const int n, s
 		mDelta = work;
 		Eta = mDelta + nn;
 	}
-	
+
 	// Generate the Fourier matrix of epsilon^{-1}
 	for(int j = 0; j < n; ++j){
 		for(int i = 0; i < n; ++i){
@@ -259,8 +259,8 @@ int FMMGetEpsilon_PolBasisNV(const Simulation *S, const Layer *L, const int n, s
 		RNP::TBLAS::MultMM<'N','N'>(n,n,n, std::complex<double>(1.),mDelta,n, &P[Erow+Ecol*n2],n2, std::complex<double>(1.),&Epsilon2[Erow+Ecol*n2],n2);
 	}
 	if(NULL != work){ S4_free(work); }
-	
+
 	S4_free(ivalues);
-	
+
 	return 0;
 }

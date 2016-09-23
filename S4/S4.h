@@ -162,10 +162,8 @@ typedef struct Options_{
 } Options;
 
 typedef struct Solution_{
-	int *G; // length 2*n_G; uv coordinates of Lk
 	void **layer_bands;    // opaque pointer to the layer band structure
 	void **layer_solution; // opaque pointer to the layer solution vector
-	double *kx, *ky; // each length n_G
 } Solution;
 
 struct FieldCache;
@@ -206,6 +204,8 @@ typedef struct Simulation_{
 	              //  2pi*{Lk[2],Lk[3]} is the second basis vector's x and y coords.
 	              // Computed by taking the inverse of Lr as a 2x2 column-major matrix.
 	int n_G;            // Number of G-vectors (Fourier planewave orders).
+	int *G; // length 2*n_G; uv coordinates of Lk
+	double *kx, *ky; // each length n_G
 	int n_materials, n_materials_alloc;
 	Material *material; // array of materials
 	int n_layers, n_layers_alloc;
@@ -238,7 +238,7 @@ void Material_InitTensor(Material *M, const char *name, const double abcde[10]);
 void Material_Destroy(Material *M);
 
 //// Simulation methods
-void Simulation_Init(Simulation *S, const double *Lr, unsigned int nG);
+void Simulation_Init(Simulation *S, const double *Lr, unsigned int nG, int *G);
 void Simulation_Destroy(Simulation *S);
 void Simulation_Clone(const Simulation *S, Simulation *T);
 

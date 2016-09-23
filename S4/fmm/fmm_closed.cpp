@@ -35,13 +35,13 @@
 
 int FMMGetEpsilon_ClosedForm(const Simulation *S, const Layer *L, const int n, std::complex<double> *Epsilon2, std::complex<double> *Epsilon_inv){
 	const int n2 = 2*n;
-	const int *G = S->solution->G;
+	const int *G = S->G;
 	const int ndim = (0 == S->Lr[2] && 0 == S->Lr[3]) ? 1 : 2;
 	double *ivalues = (double*)S4_malloc(sizeof(double)*(2+10)*(L->pattern.nshapes+1));
 	double *values = ivalues + 2*(L->pattern.nshapes+1);
-	
+
 	S4_TRACE("I  Closed-form epsilon\n");
-	
+
 	// Get all the dielectric tensors
 	bool have_tensor = false;
 	for(int i = -1; i < L->pattern.nshapes; ++i){
@@ -63,7 +63,7 @@ int FMMGetEpsilon_ClosedForm(const Simulation *S, const Layer *L, const int n, s
 			have_tensor = true;
 		}
 	}
-	
+
 	double mp1 = 0;
 	int pwr = S->options.lanczos_smoothing_power;
 	if(S->options.use_Lanczos_smoothing){
@@ -255,8 +255,8 @@ int FMMGetEpsilon_ClosedForm(const Simulation *S, const Layer *L, const int n, s
 			}
 		}
 	}
-	
+
 	S4_free(ivalues);
-	
+
 	return 0;
 }

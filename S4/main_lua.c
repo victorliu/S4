@@ -1173,7 +1173,7 @@ static int S4L_NewSimulation(lua_State *L){
 	luaL_getmetatable(L, S4_simulation_typename);
 	lua_setmetatable(L, -2);
 	*pS = (Simulation*)malloc(sizeof(Simulation));
-	Simulation_Init(*pS, Lr, nG);
+	Simulation_Init(*pS, Lr, nG, NULL);
 	return 1;
 }
 static int S4L_Simulation__gc(lua_State *L){

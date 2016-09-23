@@ -35,13 +35,13 @@
 
 int FMMGetEpsilon_Experimental(const Simulation *S, const Layer *L, const int n, std::complex<double> *Epsilon2, std::complex<double> *Epsilon_inv){
 	const int n2 = 2*n;
-	const int *G = S->solution->G;
+	const int *G = S->G;
 	const int ndim = (0 == S->Lr[2] && 0 == S->Lr[3]) ? 1 : 2;
 	double *ivalues = (double*)S4_malloc(sizeof(double)*(2+10)*(L->pattern.nshapes+1));
 	double *values = ivalues + 2*(L->pattern.nshapes+1);
-	
+
 	S4_TRACE("I  Experimental epsilon\n");
-	
+
 	// Get all the dielectric tensors
 	bool have_tensor = false;
 	for(int i = -1; i < L->pattern.nshapes; ++i){
@@ -63,7 +63,7 @@ int FMMGetEpsilon_Experimental(const Simulation *S, const Layer *L, const int n,
 			have_tensor = true;
 		}
 	}
-	
+
 	const double unit_cell_size = Simulation_GetUnitCellSize(S);
 
 	if(!have_tensor){
@@ -94,7 +94,7 @@ int FMMGetEpsilon_Experimental(const Simulation *S, const Layer *L, const int n,
 			}
 		}
 		S4_TRACE("I  Epsilon(0,0) = %f,%f [omega=%f]\n", Epsilon2[0].real(), Epsilon2[0].imag(), S->omega[0]);
-	
+
 		// Upper block of diagonal of Epsilon2 is already Epsilon
 		RNP::TBLAS::CopyMatrix<'A'>(n,n,&Epsilon2[0+0*n2],n2, &Epsilon2[n+n*n2],n2);
 		RNP::TBLAS::SetMatrix<'A'>(n,n, 0.,0., &Epsilon2[n+0*n2],n2);
@@ -122,7 +122,7 @@ int FMMGetEpsilon_Experimental(const Simulation *S, const Layer *L, const int n,
 				values[3*ldv+2*(i+1)+1] = eps_temp.imag();
 				values[4*ldv+2*(i+1)+0] = eps_temp.real();
 				values[4*ldv+2*(i+1)+1] = eps_temp.imag();
-				
+
 				ivalues[0*ldv+2*(i+1)+0] = inveps_temp.real();
 				ivalues[0*ldv+2*(i+1)+1] = inveps_temp.imag();
 			}else{
@@ -139,7 +139,7 @@ int FMMGetEpsilon_Experimental(const Simulation *S, const Layer *L, const int n,
 				values[3*ldv+2*(i+1)+1] = M->eps.abcde[7];
 				values[4*ldv+2*(i+1)+0] = M->eps.abcde[8];
 				values[4*ldv+2*(i+1)+1] = M->eps.abcde[9];
-				
+
 				ivalues[0*ldv+2*(i+1)+0] = inveps_temp.real();
 				ivalues[0*ldv+2*(i+1)+1] = inveps_temp.imag();
 			}
@@ -177,8 +177,8 @@ int FMMGetEpsilon_Experimental(const Simulation *S, const Layer *L, const int n,
 			}
 		}
 	}
-	
+
 	S4_free(ivalues);
-	
+
 	return 0;
 }

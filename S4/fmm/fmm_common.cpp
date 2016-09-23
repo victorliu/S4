@@ -30,8 +30,8 @@ extern "C" double Jinc(double x);
 
 double GetLanczosSmoothingOrder(const Simulation *S){
 	double Lkuv = hypot(
-		S->solution->G[2*(S->n_G-1)+0]*S->Lk[0] + S->solution->G[2*(S->n_G-1)+1]*S->Lk[2],
-		S->solution->G[2*(S->n_G-1)+0]*S->Lk[1] + S->solution->G[2*(S->n_G-1)+1]*S->Lk[3]
+		S->G[2*(S->n_G-1)+0]*S->Lk[0] + S->G[2*(S->n_G-1)+1]*S->Lk[2],
+		S->G[2*(S->n_G-1)+0]*S->Lk[1] + S->G[2*(S->n_G-1)+1]*S->Lk[3]
 	);
 	double Lku = hypot(S->Lk[0],S->Lk[1]);
 	double Lkv = hypot(S->Lk[2],S->Lk[3]);

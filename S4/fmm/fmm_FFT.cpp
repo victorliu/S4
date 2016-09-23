@@ -38,8 +38,8 @@
 
 int FMMGetEpsilon_FFT(const Simulation *S, const Layer *L, const int n, std::complex<double> *Epsilon2, std::complex<double> *Epsilon_inv){
 	const int n2 = 2*n;
-	const int *G = S->solution->G;
-	
+	const int *G = S->G;
+
 	double mp1 = 0;
 	int pwr = S->options.lanczos_smoothing_power;
 	if(S->options.use_Lanczos_smoothing){
@@ -47,7 +47,7 @@ int FMMGetEpsilon_FFT(const Simulation *S, const Layer *L, const int n, std::com
 		S4_TRACE("I   Lanczos smoothing order = %f\n", mp1);
 		mp1 *= S->options.lanczos_smoothing_width;
 	}
-	
+
 	// Make grid
 	// Determine size of the grid
 	int ngrid[2] = {1,1};
@@ -70,7 +70,7 @@ int FMMGetEpsilon_FFT(const Simulation *S, const Layer *L, const int n, std::com
 	const double ing2 = 1./ng2;
 	// The grid needs to hold 5 matrix elements: xx,xy,yx,yy,zz
 	// We actually make 5 different grids to facilitate the fft routines
-	
+
 	std::complex<double> *work = (std::complex<double>*)S4_malloc(sizeof(std::complex<double>)*(6*ng2));
 	std::complex<double>*fxx = work;
 	std::complex<double>*fxy = fxx + ng2;
@@ -84,7 +84,7 @@ int FMMGetEpsilon_FFT(const Simulation *S, const Layer *L, const int n, std::com
 	for(int i = 0; i <= 4; ++i){
 		plans[i] = fft_plan_dft_2d(ngrid, fxx+i*ng2, Fto, 1);
 	}
-	
+
 	int ii[2];
 	for(ii[0] = 0; ii[0] < ngrid[0]; ++ii[0]){
 		const int si0 = ii[0] >= ngrid[0]/2 ? ii[0]-ngrid[0]/2 : ii[0]+ngrid[0]/2;
@@ -131,7 +131,7 @@ int FMMGetEpsilon_FFT(const Simulation *S, const Layer *L, const int n, std::com
 					S->Lr[1]*nxvec[0] + S->Lr[3]*nxvec[1]
 				};
 				shape_get_normal(&(L->pattern.shapes[imat[0]]), xvec, nvec);
-				
+
 				{ // use the area weighting
 					fxx[si1+si0*ngrid[1]] = 0;
 					fxy[si1+si0*ngrid[1]] = 0;
@@ -176,7 +176,7 @@ fzz[si1+si0*ngrid[1]].real(), fzz[si1+si0*ngrid[1]].imag()
 		}
 //fprintf(stderr, "\n");
 	}
-	
+
 	// Make Epsilon_inv first
 	{
 		//kiss_fftnd(fftcfg, (const kiss_fft_cpx *)(fxx+4*ng2), (kiss_fft_cpx *)Fto);
@@ -210,7 +210,7 @@ fzz[si1+si0*ngrid[1]].real(), fzz[si1+si0*ngrid[1]].imag()
 
 		//kiss_fftnd(fftcfg, (const kiss_fft_cpx *)(fxx+w*ng2), (kiss_fft_cpx *)Fto);
 		fft_plan_exec(plans[w]);
-		
+
 		for(int j = 0; j < n; ++j){
 			for(int i = 0; i < n; ++i){
 				int f[2] = {G[2*i+0]-G[2*j+0],G[2*i+1]-G[2*j+1]};
@@ -232,7 +232,7 @@ fzz[si1+si0*ngrid[1]].real(), fzz[si1+si0*ngrid[1]].imag()
 		fft_plan_destroy(plans[i]);
 	}
 	//free(fftcfg);
-	
+
 	S4_free(discval);
 	S4_free(work);
 	return 0;
