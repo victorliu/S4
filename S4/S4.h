@@ -79,12 +79,14 @@ typedef struct Material_{
 	} eps;
 } Material;
 
+struct LayerModes;
 typedef struct Layer_{
 	char *name;       // name of layer
 	double thickness; // thickness of layer
 	char *material;   // name of background material
 	Pattern pattern;  // See pattern.h
 	char *copy;       // See below.
+	struct LayerModes *modes;
 } Layer;
 // If a layer is a copy, then `copy' is the name of the layer that should
 // be copied, and `material' and `pattern' are inherited, and so they can
@@ -162,7 +164,6 @@ typedef struct Options_{
 } Options;
 
 typedef struct Solution_{
-	void **layer_bands;    // opaque pointer to the layer band structure
 	void **layer_solution; // opaque pointer to the layer solution vector
 } Solution;
 
