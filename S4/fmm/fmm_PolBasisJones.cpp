@@ -88,7 +88,7 @@ static void vfield_to_Jones_vector(double v[2], std::complex<double> j[2]){
 //       [ -ux uy* ]
 // where u is the Jones vector field, and each of the 4 blocks are the
 // Fourier transformed matrices.
-int FMMGetEpsilon_PolBasisJones(const Simulation *S, const Layer *L, const int n, std::complex<double> *Epsilon2, std::complex<double> *Epsilon_inv){
+int FMMGetEpsilon_PolBasisJones(const S4_Simulation *S, const S4_Layer *L, const int n, std::complex<double> *Epsilon2, std::complex<double> *Epsilon_inv){
 	double mp1 = 0;
 	int pwr = S->options.lanczos_smoothing_power;
 	if(S->options.use_Lanczos_smoothing){
@@ -110,7 +110,7 @@ int FMMGetEpsilon_PolBasisJones(const Simulation *S, const Layer *L, const int n
 	// Get all the dielectric tensors
 	//bool have_tensor = false;
 	for(int i = -1; i < L->pattern.nshapes; ++i){
-		const Material *M;
+		const S4_Material *M;
 		if(-1 == i){
 			M = Simulation_GetMaterialByName(S, L->material, NULL);
 		}else{
@@ -330,7 +330,7 @@ int FMMGetEpsilon_PolBasisJones(const Simulation *S, const Layer *L, const int n
 		RNP::TLASupport::LUDecomposition(n2,n2, P,n2, ipiv);
 
 		// Add to cache (assume that ipiv is immediately after P
-		Simulation_AddFieldToCache((Simulation*)S, L, S->n_G, P, 4*nn+2*n);
+		Simulation_AddFieldToCache((S4_Simulation*)S, L, S->n_G, P, 4*nn+2*n);
 	}else{
 		// P contains the cached version
 		//work = (std::complex<double>*)S4_malloc(sizeof(std::complex<double>)*2*nn);

@@ -52,7 +52,7 @@ static void sym2x2rot(const std::complex<double> M[4], const double nvec[2], std
 	RMR[2] = nvec[0]*MR[2] - nvec[1]*MR[0]; RMR[3] = nvec[0]*MR[3] - nvec[1]*MR[1];
 }
 
-int FMMGetEpsilon_Kottke(const Simulation *S, const Layer *L, const int n, std::complex<double> *Epsilon2, std::complex<double> *Epsilon_inv){
+int FMMGetEpsilon_Kottke(const S4_Simulation *S, const S4_Layer *L, const int n, std::complex<double> *Epsilon2, std::complex<double> *Epsilon_inv){
 	const int n2 = 2*n;
 	const int *G = S->G;
 
@@ -108,7 +108,7 @@ int FMMGetEpsilon_Kottke(const Simulation *S, const Layer *L, const int n, std::
 
 			if(nnz < 2){ // just one material
 //fprintf(stderr, "%d\t%d\t0\t0\n", ii[0], ii[1]);
-				const Material *M;
+				const S4_Material *M;
 				if(0 == imat[0]){
 					M = Simulation_GetMaterialByName(S, L->material, NULL);
 				}else{
@@ -149,7 +149,7 @@ int FMMGetEpsilon_Kottke(const Simulation *S, const Layer *L, const int n, std::
 					// Get the two tensors
 					std::complex<double> abcde[2][5];
 					for(int i = 0; i < 2; ++i){
-						const Material *M;
+						const S4_Material *M;
 						if(0 == imat[i]){
 							M = Simulation_GetMaterialByName(S, L->material, NULL);
 						}else{
@@ -219,7 +219,7 @@ int FMMGetEpsilon_Kottke(const Simulation *S, const Layer *L, const int n, std::
 					for(int i = 0; i <= L->pattern.nshapes; ++i){
 						if(0 == discval[i]){ continue; }
 						int j = i-1;
-						const Material *M;
+						const S4_Material *M;
 						if(-1 == j){
 							M = Simulation_GetMaterialByName(S, L->material, NULL);
 						}else{

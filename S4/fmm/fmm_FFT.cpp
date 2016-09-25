@@ -36,7 +36,7 @@
 #include <tools/kiss_fftnd.h>
 #include "fft_iface.h"
 
-int FMMGetEpsilon_FFT(const Simulation *S, const Layer *L, const int n, std::complex<double> *Epsilon2, std::complex<double> *Epsilon_inv){
+int FMMGetEpsilon_FFT(const S4_Simulation *S, const S4_Layer *L, const int n, std::complex<double> *Epsilon2, std::complex<double> *Epsilon_inv){
 	const int n2 = 2*n;
 	const int *G = S->G;
 
@@ -103,7 +103,7 @@ int FMMGetEpsilon_FFT(const Simulation *S, const Layer *L, const int n, std::com
 //S4_TRACE("I   %d,%d nnz = %d\n", ii[0], ii[1], nnz);
 
 			if(nnz < 2){ // just one material
-				const Material *M;
+				const S4_Material *M;
 				if(0 == imat[0]){
 					M = Simulation_GetMaterialByName(S, L->material, NULL);
 				}else{
@@ -140,7 +140,7 @@ int FMMGetEpsilon_FFT(const Simulation *S, const Layer *L, const int n, std::com
 					fzz[si1+si0*ngrid[1]] = 0;
 					for(int i = 0; i <= L->pattern.nshapes; ++i){
 						if(0 == discval[i]){ continue; }
-						const Material *M;
+						const S4_Material *M;
 						if(0 == i){
 							M = Simulation_GetMaterialByName(S, L->material, NULL);
 						}else{

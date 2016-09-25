@@ -33,7 +33,7 @@
 
 #include <limits>
 
-int FMMGetEpsilon_Experimental(const Simulation *S, const Layer *L, const int n, std::complex<double> *Epsilon2, std::complex<double> *Epsilon_inv){
+int FMMGetEpsilon_Experimental(const S4_Simulation *S, const S4_Layer *L, const int n, std::complex<double> *Epsilon2, std::complex<double> *Epsilon_inv){
 	const int n2 = 2*n;
 	const int *G = S->G;
 	const int ndim = (0 == S->Lr[2] && 0 == S->Lr[3]) ? 1 : 2;
@@ -45,7 +45,7 @@ int FMMGetEpsilon_Experimental(const Simulation *S, const Layer *L, const int n,
 	// Get all the dielectric tensors
 	bool have_tensor = false;
 	for(int i = -1; i < L->pattern.nshapes; ++i){
-		const Material *M;
+		const S4_Material *M;
 		if(-1 == i){
 			M = Simulation_GetMaterialByName(S, L->material, NULL);
 		}else{
@@ -103,7 +103,7 @@ int FMMGetEpsilon_Experimental(const Simulation *S, const Layer *L, const int n,
 	}else{ // have tensor dielectric
 		const int ldv = 2*(1+L->pattern.nshapes);
 		for(int i = -1; i < L->pattern.nshapes; ++i){
-			const Material *M;
+			const S4_Material *M;
 			if(-1 == i){
 				M = Simulation_GetMaterialByName(S, L->material, NULL);
 			}else{

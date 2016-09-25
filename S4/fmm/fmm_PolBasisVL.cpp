@@ -39,7 +39,7 @@
 #include "fft_iface.h"
 #include <cstring>
 
-int FMMGetEpsilon_PolBasisVL(const Simulation *S, const Layer *L, const int n, std::complex<double> *Epsilon2, std::complex<double> *Epsilon_inv){
+int FMMGetEpsilon_PolBasisVL(const S4_Simulation *S, const S4_Layer *L, const int n, std::complex<double> *Epsilon2, std::complex<double> *Epsilon_inv){
 	double mp1 = 0;
 	int pwr = S->options.lanczos_smoothing_power;
 	if(S->options.use_Lanczos_smoothing){
@@ -60,7 +60,7 @@ int FMMGetEpsilon_PolBasisVL(const Simulation *S, const Layer *L, const int n, s
 	// Get all the dielectric tensors
 	//bool have_tensor = false;
 	for(int i = -1; i < L->pattern.nshapes; ++i){
-		const Material *M;
+		const S4_Material *M;
 		if(-1 == i){
 			M = Simulation_GetMaterialByName(S, L->material, NULL);
 		}else{
@@ -227,7 +227,7 @@ int FMMGetEpsilon_PolBasisVL(const Simulation *S, const Layer *L, const int n, s
 
 		if(NULL != vfield){ S4_free(vfield); }
 		// Add to cache
-		Simulation_AddFieldToCache((Simulation*)S, L, S->n_G, P, 4*nn);
+		Simulation_AddFieldToCache((S4_Simulation*)S, L, S->n_G, P, 4*nn);
 	}else{
 		// P contains the cached version
 		// We still need temporary space to compute -Delta
