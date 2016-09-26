@@ -104,9 +104,181 @@ typedef struct S4_Options_{
 	int lanczos_smoothing_power;
 } S4_Options;
 
+typedef int (*S4_error_handler)(
+	void *data, const char *fname, int level, const char *msg
+);
+
 /**************************** Public API *****************************/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+/********************************************************************/
+/* Simulation object constructor, destructor, and copy constructor. */
+/********************************************************************/
+S4_Simulation* S4_Simulation_New(const S4_real *Lr, unsigned int nG, int *G);
+void S4_Simulation_Destroy(S4_Simulation *S);
+S4_Simulation* S4_Simulation_Clone(const S4_Simulation *S);
+
+S4_error_handler S4_Simulation_SetErrorHandler(
+	S4_Simulation *S, S4_error_handler handler, void *data
+);
+
+/**********************************/
+/* Simulation getters and setters */
+/**********************************/
+int S4_Simulation_SetLattice(S4_Simulation *S, const S4_real *Lr);
+int S4_Simulation_GetLattice(const S4_Simulation *S, S4_real *Lr);
+int S4_Simulation_SetBasis(S4_Simulation *S, unsigned int nG, int *G);
+int S4_Simulation_GetBasis(const S4_Simulation *S, int *G);
+int S4_Simulation_SetFrequency(S4_Simulation *S, const S4_real *freq_complex);
+int S4_Simulation_GetFrequency(const S4_Simulation *S, S4_real *freq_complex);
+int S4_Simulation_LayerCount(const S4_Simulation *S);
+int S4_Simulation_TotalThickness(const S4_Simulation *S, S4_real *thickness);
+
+/******************************/
+/* Material related functions */
+/******************************/
+#define S4_MATERIAL_TYPE_SCALAR_REAL      2
+#define S4_MATERIAL_TYPE_SCALAR_COMPLEX   3
+#define S4_MATERIAL_TYPE_XYTENSOR_REAL    4
+#define S4_MATERIAL_TYPE_XYTENSOR_COMPLEX 5
+S4_Material* S4_Simulation_SetMaterial(
+	S4_Simulation *S, S4_Material *M, const char *name, int type, const S4_real *eps
+);
+S4_Material* S4_Simulation_GetMaterialByName(
+	const S4_Simulation *S, const char *name
+);
+int S4_Material_GetName(
+	const S4_Simulation *S, const S4_Material *M, const char **name
+);
+int S4_Material_GetEpsilon(
+	const S4_Simulation *S, const S4_Material *M, S4_real *eps
+);
+
+/***************************/
+/* Layer related functions */
+/***************************/
+S4_Layer* S4_Simulation_SetLayer(
+	S4_Simulation *S, S4_Layer *L, const char *name, const S4_real *thickness,
+	const S4_Layer *copy, const S4_Material *material
+); /*
+if NULL == L:
+	Adds a new layer with optional name and thickness
+if NULL != L:
+	if NULL == name, then the name is not changed.
+*/
+S4_Layer* S4_Simulation_GetLayerByName(
+	const S4_Simulation *S, const char *name
+);
+int S4_Layer_GetName(
+	const S4_Simulation *S, const S4_Layer *L, const char **name
+);
+int S4_Layer_GetThickness(
+	const S4_Simulation *S, const S4_Layer *L, S4_real *thickness
+);
+
+
+/**********************************/
+/* Layer region related functions */
+/**********************************/
+int S4_Layer_ClearRegions(
+	S4_Simulation *S, S4_Layer *L
+);
+#define S4_REGION_TYPE_INTERVAL   11
+#define S4_REGION_TYPE_RECTANGLE  11
+#define S4_REGION_TYPE_ELLIPSE    12
+int S4_Layer_SetRegionHalfwidths(
+	S4_Simulation *S, S4_Layer *L, S4_Material *M,
+	int type, const S4_real *halfwidths,
+	const S4_real *center, const S4_real *angle_radians
+);
+
+#define S4_REGION_TYPE_POLYGON    21
+int S4_Layer_SetRegionVertices(
+	S4_Simulation *S, S4_Layer *L, S4_Material *M,
+	int type, int nv, const S4_real *v,
+	const S4_real *center, const S4_real *angle_radians
+);
+
+/********************************/
+/* Excitation related functions */
+/********************************/
+
+int S4_Simulation_ExcitationPlanewave(
+	S4_Simulation *S, const S4_real *kdir, const S4_real *udir,
+	const S4_real *amp_u, const S4_real *amp_v
+);
+int S4_Simulation_ExcitationExterior(S4_Simulation *S, int n, const int *exg, const double *ex);
+int S4_Simulation_ExcitationDipole(S4_Simulation *S, const double k[2], const char *layer, const double pos[2], const double moment[6]);
+
+/***********************************/
+/* Solution hint related functions */
+/***********************************/
+int S4_Simulation_SolveLayer(S4_Simulation *S, S4_Layer *L);
+
+/****************************/
+/* Output related functions */
+/****************************/
+
+int S4_Simulation_GetPowerFlux(
+	S4_Simulation *S, S4_Layer *layer, const S4_real *offset,
+	S4_real *power
+);
+int S4_Simulation_GetPowerFluxes(
+	S4_Simulation *S, S4_Layer *layer, const S4_real *offset,
+	S4_real *power
+);
+// waves should be size 2*11*S->n_G
+// Each wave is:
+//   { kx, ky, kzr, kzi, ux, uy, uz, cur, cui, cvr, cvi }
+int S4_Simulation_GetWaves(S4_Simulation *S, S4_Layer *layer, S4_real *wave);
+
+int S4_Simulation_GetFieldPlane(
+	S4_Simulation *S, int nxy[2], const S4_real *xyz0,
+	S4_real *E, S4_real *H
+);
+
+int S4_Simulation_GetEpsilon(
+	S4_Simulation *S, int nxy[2], const S4_real *xyz0, S4_real *eps
+); // eps is {real,imag}
+
+// Returns a solution error code
+// Tint is a vector of time averaged stress tensor integral
+int S4_Simulation_GetStressTensorIntegral(
+	S4_Simulation *S, S4_Layer *layer, const S4_real *offset,
+	S4_real *Tint
+);
+
+// Returns a solution error code
+// which can be 'U', 'E', 'H', 'e'
+// 'E' is epsilon*|E|^2, 'H' is |H|^2, 'e' is |E|^2, 'U' is 'E'+'H'
+#define S4_VOLUME_INTEGRAL_ENERGY_E  'E'
+#define S4_VOLUME_INTEGRAL_ENERGY_H  'H'
+#define S4_VOLUME_INTEGRAL_ENERGY    'U'
+#define S4_VOLUME_INTEGRAL_E_SQUARED 'e'
+int S4_Simulation_GetLayerVolumeIntegral(
+	S4_Simulation *S, S4_Layer *layer, int which, S4_real *integral
+);
+int S4_Simulation_GetLayerZIntegral(
+	S4_Simulation *S, S4_Layer *layer, const S4_real *r,
+	S4_real *integral
+);
+
+/***************************************/
+/* Mode/band-solving related functions */
+/***************************************/
+// Determinant is (rmant[0]+i*rmant[1])*base^expo
+int S4_Simulation_GetSMatrixDeterminant(
+	S4_Simulation *S, const S4_real *k,
+	S4_real *rmant, S4_real *base, int *expo
+);
+
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #include "S4_internal.h"
 

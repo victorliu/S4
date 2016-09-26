@@ -14,7 +14,9 @@ CPPFLAGS += -IS4 -IS4/RNP -IS4/kiss_fft
 
 #### Compilation targets
 
-all: $(OBJDIR)/libS4.a $(OBJDIR)/S4 modules
+S4_LIBNAME = libS4.a
+
+all: $(OBJDIR)/$(S4_LIBNAME) $(OBJDIR)/S4 modules
 S4mpi: $(OBJDIR)/S4mpi
 
 objdir:
@@ -107,12 +109,12 @@ $(OBJDIR)/S4k/Eigensystems.o: S4/RNP/Eigensystems.cpp
 
 $(OBJDIR)/S4k/main_lua.o: S4/main_lua.c objdir
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $(LUA_INC) $< -o $@
-$(OBJDIR)/S4: $(OBJDIR)/S4k/main_lua.o $(S4_LIBNAME)
+$(OBJDIR)/S4: $(OBJDIR)/S4k/main_lua.o $(OBJDIR)/$(S4_LIBNAME)
 	$(CXX) $(CFLAGS) $(CPPFLAGS) $< -o $@ -L$(OBJDIR) -lS4 $(LA_LIBS) $(LUA_LIB)
 
 $(OBJDIR)/S4k/main_lua_mpi.o: S4/main_lua.c objdir
 	$(CC) -c -DHAVE_MPI $(CFLAGS) $(CPPFLAGS) $(LUA_INC) $(MPI_INC) $< -o $@
-$(OBJDIR)/S4mpi: $(OBJDIR)/S4k/main_lua_mpi.o $(S4_LIBNAME)
+$(OBJDIR)/S4mpi: $(OBJDIR)/S4k/main_lua_mpi.o $(OBJDIR)/$(S4_LIBNAME)
 	$(CXX) $(CFLAGS) $(CPPFLAGS) $< -o $@ -L$(OBJDIR) -lS4 $(LA_LIBS) $(LUA_LIB) $(MPI_LIB)
 
 
@@ -136,7 +138,7 @@ $(OBJDIR)/FunctionSampler2D.$(SHLIB_EXT): modules/function_sampler_2d.c modules/
 
 S4_pyext: objdir $(OBJDIR)/libS4.a
 	echo "$(LIBS)" > $(OBJDIR)/tmp.txt
-	sh gensetup.py.sh $(OBJDIR) $(S4_LIBNAME)
+	sh gensetup.py.sh $(OBJDIR) $(OBJDIR)/$(S4_LIBNAME)
 	python setup.py build
 
 clean:

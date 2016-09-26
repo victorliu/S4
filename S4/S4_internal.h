@@ -165,12 +165,14 @@ void Material_InitTensor(S4_Material *M, const char *name, const double abcde[10
 void Material_Destroy(S4_Material *M);
 
 //// Simulation methods
+/*
 void Simulation_Init(S4_Simulation *S, const double *Lr, unsigned int nG, int *G);
 void Simulation_Destroy(S4_Simulation *S);
 void Simulation_Clone(const S4_Simulation *S, S4_Simulation *T);
-
+*/
 void Simulation_DestroySolution(S4_Simulation *S);
 void Simulation_DestroyLayerSolutions(S4_Simulation *S);
+void Simulation_DestroyLayerModes(S4_Layer *layer);
 
 // Destroys the solution belonging to a given simulation and sets
 // S->solution to NULL.
