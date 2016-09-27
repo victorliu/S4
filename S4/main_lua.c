@@ -1603,7 +1603,7 @@ static int S4L_Simulation_SetLayerPatternEllipse(lua_State *L){
 		}
 		lua_pop(L, 1);
 	}
-	S4_real angle = (M_PI/180.)*luaL_checknumber(L, 5);
+	S4_real angle = luaL_checknumber(L, 5) / 360.;
 	ret = S4_Layer_SetRegionHalfwidths(
 		S, layer, M, S4_REGION_TYPE_ELLIPSE, halfwidths, center, &angle
 	);
@@ -1671,7 +1671,7 @@ static int S4L_Simulation_SetLayerPatternRectangle(lua_State *L){
 		}
 		lua_pop(L, 1);
 	}
-	S4_real angle = (M_PI/180.)*luaL_checknumber(L, 5);
+	S4_real angle = luaL_checknumber(L, 5) / 360.;
 	ret = S4_Layer_SetRegionHalfwidths(
 		S, layer, M, S4_REGION_TYPE_RECTANGLE, halfwidths, center, &angle
 	);
@@ -1743,7 +1743,7 @@ static int S4L_Simulation_SetLayerPatternPolygon(lua_State *L){
 			lua_pop(L, 1);
 		}
 	}
-	S4_real angle = (M_PI/180.)*luaL_checknumber(L, 5);
+	S4_real angle = luaL_checknumber(L, 5) / 360.;
 	ret = S4_Layer_SetRegionVertices(
 		S, layer, M, S4_REGION_TYPE_POLYGON,
 		nvert, vert, center, &angle
@@ -2012,12 +2012,12 @@ static int S4L_Simulation_GetGList(lua_State *L){
 	S4_Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetGList: 'S4_Simulation' object expected.");
 
-	n = S4_Simulation_GetBasis(S, NULL);
+	n = S4_Simulation_GetBases(S, NULL);
 	G = (int*)malloc(sizeof(int)*2*n);
 	if(NULL == G){
 		return 0;
 	}
-	S4_Simulation_GetBasis(S, G);
+	S4_Simulation_GetBases(S, G);
 
 	lua_createtable(L, n, 0);
 	for(i = 0; i < n; ++i){
@@ -2235,7 +2235,7 @@ static int S4L_Simulation_GetWaves(lua_State *L){
 		return 0;
 	}
 
-	n = S4_Simulation_GetBasis(S, NULL);
+	n = S4_Simulation_GetBases(S, NULL);
 	n2 = 2*n;
 
 	waves = (double*)malloc(sizeof(double)*11*n2);

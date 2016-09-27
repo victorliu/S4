@@ -130,8 +130,8 @@ S4_error_handler S4_Simulation_SetErrorHandler(
 /**********************************/
 int S4_Simulation_SetLattice(S4_Simulation *S, const S4_real *Lr);
 int S4_Simulation_GetLattice(const S4_Simulation *S, S4_real *Lr);
-int S4_Simulation_SetBasis(S4_Simulation *S, unsigned int nG, int *G);
-int S4_Simulation_GetBasis(const S4_Simulation *S, int *G);
+int S4_Simulation_SetBases(S4_Simulation *S, unsigned int nG, int *G);
+int S4_Simulation_GetBases(const S4_Simulation *S, int *G);
 int S4_Simulation_SetFrequency(S4_Simulation *S, const S4_real *freq_complex);
 int S4_Simulation_GetFrequency(const S4_Simulation *S, S4_real *freq_complex);
 int S4_Simulation_LayerCount(const S4_Simulation *S);
@@ -189,17 +189,18 @@ int S4_Layer_ClearRegions(
 #define S4_REGION_TYPE_INTERVAL   11
 #define S4_REGION_TYPE_RECTANGLE  11
 #define S4_REGION_TYPE_ELLIPSE    12
+#define S4_REGION_TYPE_CIRCLE     13
 int S4_Layer_SetRegionHalfwidths(
 	S4_Simulation *S, S4_Layer *L, S4_Material *M,
 	int type, const S4_real *halfwidths,
-	const S4_real *center, const S4_real *angle_radians
+	const S4_real *center, const S4_real *angle_frac
 );
 
 #define S4_REGION_TYPE_POLYGON    21
 int S4_Layer_SetRegionVertices(
 	S4_Simulation *S, S4_Layer *L, S4_Material *M,
 	int type, int nv, const S4_real *v,
-	const S4_real *center, const S4_real *angle_radians
+	const S4_real *center, const S4_real *angle_frac
 );
 
 /********************************/

@@ -391,7 +391,7 @@ int S4_Simulation_GetLattice(const S4_Simulation *S, S4_real *Lr){
 	memcpy(Lr, S->Lr, sizeof(S4_real) * 4);
 	return 0;
 }
-int S4_Simulation_SetBasis(S4_Simulation *S, unsigned int nG, int *G){
+int S4_Simulation_SetBases(S4_Simulation *S, unsigned int nG, int *G){
 	int ret = 0;
 	if(NULL == S){ ret = -1; }
 	if(nG < 1){ ret = -2; }
@@ -429,7 +429,7 @@ int S4_Simulation_SetBasis(S4_Simulation *S, unsigned int nG, int *G){
 	}
 	return 0;
 }
-int S4_Simulation_GetBasis(const S4_Simulation *S, int *G){
+int S4_Simulation_GetBases(const S4_Simulation *S, int *G){
 	if(NULL == S){ return -1; }
 	if(NULL != G){
 		memcpy(G, S->G, sizeof(int) * 2 * S->n_G);
@@ -510,6 +510,7 @@ int Simulation_MakeReciprocalLattice(S4_Simulation *S){
 S4_Material* S4_Simulation_SetMaterial(
 	S4_Simulation *S, S4_Material *M, const char *name, int type, const S4_real *eps
 ){
+	int newmat = 0;
 	S4_TRACE("> S4_Simulation_AddMaterial(S=%p) [omega=%f]\n", S, S->omega[0]);
 	if(NULL == S){
 		S4_TRACE("< S4_Simulation_AddMaterial (failed; S == NULL) [omega=%f]\n", S->omega[0]);
@@ -527,6 +528,7 @@ S4_Material* S4_Simulation_SetMaterial(
 		M->eps.s[1] = 0;
 
 		S->n_materials++;
+		newmat = 1;
 	}else{
 		// check that M is valid
 		size_t imat = M - S->material;
@@ -538,28 +540,32 @@ S4_Material* S4_Simulation_SetMaterial(
 		}
 		M->name = strdup(name);
 	}
-	switch(type){
-	case S4_MATERIAL_TYPE_SCALAR_REAL:
-		M->eps.s[0] = eps[0];
-		break;
-	case S4_MATERIAL_TYPE_SCALAR_COMPLEX:
-		M->eps.s[0] = eps[0];
-		M->eps.s[1] = eps[1];
-		break;
-	case S4_MATERIAL_TYPE_XYTENSOR_REAL:
-		for(int i = 0; i < 5; ++i){
-			M->eps.abcde[2*i] = eps[i];
+	if(NULL != eps){
+		switch(type){
+		case S4_MATERIAL_TYPE_SCALAR_REAL:
+			M->eps.s[0] = eps[0];
+			break;
+		case S4_MATERIAL_TYPE_SCALAR_COMPLEX:
+			M->eps.s[0] = eps[0];
+			M->eps.s[1] = eps[1];
+			break;
+		case S4_MATERIAL_TYPE_XYTENSOR_REAL:
+			for(int i = 0; i < 5; ++i){
+				M->eps.abcde[2*i] = eps[i];
+			}
+			break;
+		case S4_MATERIAL_TYPE_XYTENSOR_COMPLEX:
+			for(int i = 0; i < 10; ++i){
+				M->eps.abcde[i] = eps[i];
+			}
+			break;
+		default:
+			if(newmat){
+				S->n_materials--;
+			}
+			M = NULL;
+			break;
 		}
-		break;
-	case S4_MATERIAL_TYPE_XYTENSOR_COMPLEX:
-		for(int i = 0; i < 10; ++i){
-			M->eps.abcde[i] = eps[i];
-		}
-		break;
-	default:
-		S->n_materials--;
-		M = NULL;
-		break;
 	}
 	S4_TRACE("< S4_Simulation_AddMaterial (returning M=%p) [omega=%f]\n", M, S->omega[0]);
 	return M;
@@ -727,14 +733,14 @@ int S4_Layer_ClearRegions(
 int S4_Layer_SetRegionHalfwidths(
 	S4_Simulation *S, S4_Layer *L, S4_Material *M,
 	int type, const S4_real *halfwidths,
-	const S4_real *center, const S4_real *angle_radians
+	const S4_real *center, const S4_real *angle_frac
 ){
-	S4_TRACE("> S4_Layer_SetRegionHalfwidths(S=%p, layer=%p, material=%p, halfwidths=%p (%f,%f), center=%p (%f,%f), angle=%f)\n",
+	S4_TRACE("> S4_Layer_SetRegionHalfwidths(S=%p, layer=%p, material=%p, halfwidths=%p (%f,%f), center=%p (%f,%f), angle_frac=%f)\n",
 		S, L,
 		material,
 		halfwidths, (NULL == halfwidths ? 0 : halfwidths[0]), (NULL == halfwidths ? 0 : halfwidths[1])
 		center, (NULL == center ? 0 : center[0]), (NULL == center ? 0 : center[1]),
-		angle);
+		angle_frac);
 	int ret = 0;
 	if(NULL == S){ ret = -1; }
 	if(NULL == L){ ret = -2; }
@@ -758,8 +764,8 @@ int S4_Layer_SetRegionHalfwidths(
 		sh->center[0] = center[0];
 		sh->center[1] = center[1];
 	}
-	if(NULL != angle_radians){
-		sh->angle = *angle_radians;
+	if(NULL != angle_frac){
+		sh->angle = 2*M_PI*(*angle_frac);
 	}
 	sh->tag = (M - S->material);
 	switch(type){
@@ -777,6 +783,10 @@ int S4_Layer_SetRegionHalfwidths(
 			sh->vtab.ellipse.halfwidth[1] = halfwidths[1];
 		}
 		break;
+	case S4_REGION_TYPE_CIRCLE:
+		sh->type = CIRCLE;
+		sh->vtab.circle.radius = halfwidths[0];
+		break;
 	default:
 		L->pattern.nshapes--;
 		break;
@@ -790,14 +800,14 @@ int S4_Layer_SetRegionHalfwidths(
 int S4_Layer_SetRegionVertices(
 	S4_Simulation *S, S4_Layer *L, S4_Material *M,
 	int type, int nv, const S4_real *v,
-	const S4_real *center, const S4_real *angle_radians
+	const S4_real *center, const S4_real *angle_frac
 ){
-	S4_TRACE("> S4_Layer_SetRegionVertices(S=%p, layer=%p, material=%p, nv=%d, v=%p, center=%p (%f,%f), angle=%f)\n",
+	S4_TRACE("> S4_Layer_SetRegionVertices(S=%p, layer=%p, material=%p, nv=%d, v=%p, center=%p (%f,%f), angle_frac=%f)\n",
 		S, L,
 		material,
 		nv, v,
 		center, (NULL == center ? 0 : center[0]), (NULL == center ? 0 : center[1]),
-		angle);
+		angle_frac);
 	int ret = 0;
 	if(NULL == S){ ret = -1; }
 	if(NULL == L){ ret = -2; }
@@ -822,8 +832,8 @@ int S4_Layer_SetRegionVertices(
 		sh->center[0] = center[0];
 		sh->center[1] = center[1];
 	}
-	if(NULL != angle_radians){
-		sh->angle = *angle_radians;
+	if(NULL != angle_frac){
+		sh->angle = 2*M_PI* (*angle_frac);
 	}
 	sh->tag = (M - S->material);
 	switch(type){
