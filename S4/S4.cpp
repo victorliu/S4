@@ -1881,15 +1881,15 @@ int Simulation_ComputeLayerModes(S4_Simulation *S, S4_Layer *L, LayerModes **lay
 }
 
 // realistically, can only return an InitSolution code
-int Simulation_GetPoyntingFlux(S4_Simulation *S, S4_Layer *layer, double offset, double powers[4]){
-	S4_TRACE("> Simulation_GetPoyntingFlux(S=%p, layer=%p, offset=%f, powers=%p) [omega=%f]\n",
-		S, layer, offset, powers, S->omega[0]);
+int S4_Simulation_GetPowerFlux(S4_Simulation *S, S4_Layer *layer, const double *offset, double *powers){
+	S4_TRACE("> S4_Simulation_GetPowerFlux(S=%p, layer=%p, offset=%f, powers=%p) [omega=%f]\n",
+		S, layer, *offset, powers, S->omega[0]);
 	int ret = 0;
 	if(NULL == S){ ret = -1; }
 	if(NULL == layer){ ret = -2; }
 	if(NULL == powers){ ret = -4; }
 	if(0 != ret){
-		S4_TRACE("< Simulation_GetPoyntingFlux (failed; ret = %d) [omega=%f]\n", ret, S->omega[0]);
+		S4_TRACE("< S4_Simulation_GetPowerFlux (failed; ret = %d) [omega=%f]\n", ret, S->omega[0]);
 		return ret;
 	}
 
@@ -1898,7 +1898,7 @@ int Simulation_GetPoyntingFlux(S4_Simulation *S, S4_Layer *layer, double offset,
 
 	ret = Simulation_GetLayerSolution(S, layer, &Lmodes, &Lsoln);
 	if(0 != ret){
-		S4_TRACE("< Simulation_GetPoyntingFlux (failed; Simulation_GetLayerSolution returned %d) [omega=%f]\n", ret, S->omega[0]);
+		S4_TRACE("< S4_Simulation_GetPowerFlux (failed; Simulation_GetLayerSolution returned %d) [omega=%f]\n", ret, S->omega[0]);
 		return ret;
 	}
 
@@ -1908,13 +1908,13 @@ int Simulation_GetPoyntingFlux(S4_Simulation *S, S4_Layer *layer, double offset,
 
 	std::complex<double> *ab = (std::complex<double> *)S4_malloc(sizeof(std::complex<double>) * (n4+4*n2));
 	if(NULL == ab){
-		S4_TRACE("< Simulation_GetPoyntingFlux (failed; allocation failed) [omega=%f]\n", S->omega[0]);
+		S4_TRACE("< S4_Simulation_GetPowerFlux (failed; allocation failed) [omega=%f]\n", S->omega[0]);
 		return 1;
 	}
 	std::complex<double> *work = ab + n4;
 
 	memcpy(ab, Lsoln, sizeof(std::complex<double>) * n4);
-	TranslateAmplitudes(n, Lmodes->q, layer->thickness, offset, ab);
+	TranslateAmplitudes(n, Lmodes->q, layer->thickness, *offset, ab);
 
 	std::complex<double> forw, back;
 	GetZPoyntingFlux(n, S->kx, S->ky, std::complex<double>(S->omega[0],S->omega[1]), Lmodes->q, Lmodes->Epsilon_inv, Lmodes->epstype, Lmodes->kp, Lmodes->phi, ab, &forw, &back, work);
@@ -1924,7 +1924,7 @@ int Simulation_GetPoyntingFlux(S4_Simulation *S, S4_Layer *layer, double offset,
 	powers[3] = back.imag();
 
 	S4_free(ab);
-	S4_TRACE("< Simulation_GetPoyntingFlux returning %f, %f, %f, %f [omega=%f]\n", powers[0], powers[1], powers[2], powers[3], S->omega[0]);
+	S4_TRACE("< S4_Simulation_GetPowerFlux returning %f, %f, %f, %f [omega=%f]\n", powers[0], powers[1], powers[2], powers[3], S->omega[0]);
 	return 0;
 }
 

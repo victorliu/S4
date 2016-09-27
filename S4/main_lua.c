@@ -2074,10 +2074,11 @@ static int S4L_Simulation_GetDiffractionOrder(lua_State *L){
  *   3 layer z-offset
  */
 static int S4L_Simulation_GetPoyntingFlux(lua_State *L){
-	double power[4];
+	S4_real power[4];
 	int ret;
 	const char *layer_name;
 	S4_Layer *layer;
+	S4_real offset = 0;
 	S4_Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetPoyntingFlux: 'S4_Simulation' object expected.");
 
@@ -2087,9 +2088,10 @@ static int S4L_Simulation_GetPoyntingFlux(lua_State *L){
 		S4L_error(L, "GetPoyntingFlux: S4_Layer named '%s' not found.", layer_name);
 		return 0;
 	}
-	ret = Simulation_GetPoyntingFlux(S,
+	offset = luaL_optnumber(L, 3, 0);
+	ret = S4_Simulation_GetPowerFlux(S,
 		layer,
-		luaL_optnumber(L, 3, 0),
+		&offset,
 		power);
 
 	lua_pushnumber(L, power[0]); /* real forw (time averaged) */

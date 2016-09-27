@@ -143,3 +143,8 @@ S4_pyext: objdir $(OBJDIR)/libS4.a
 
 clean:
 	rm -rf $(OBJDIR)
+
+#### S4v2 extension
+$(OBJDIR)/S4v2.$(SHLIB_EXT):
+	$(CC) $(LUA_INC) -c S4/ext_lua.c -o $(OBJDIR)/ext_lua.o
+	$(CC) -shared $(OBJDIR)/ext_lua.o $(LUA_MODULE_LIB) -L$(OBJDIR) -lS4 $(LA_LIBS) -lstdc++
