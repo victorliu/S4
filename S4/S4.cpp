@@ -1895,6 +1895,7 @@ int S4_Simulation_GetPowerFlux(S4_Simulation *S, S4_Layer *layer, const double *
 
 	LayerModes *Lmodes;
 	std::complex<double> *Lsoln;
+	const double off = (NULL != offset ? *offset : 0);
 
 	ret = Simulation_GetLayerSolution(S, layer, &Lmodes, &Lsoln);
 	if(0 != ret){
@@ -1914,7 +1915,7 @@ int S4_Simulation_GetPowerFlux(S4_Simulation *S, S4_Layer *layer, const double *
 	std::complex<double> *work = ab + n4;
 
 	memcpy(ab, Lsoln, sizeof(std::complex<double>) * n4);
-	TranslateAmplitudes(n, Lmodes->q, layer->thickness, *offset, ab);
+	TranslateAmplitudes(n, Lmodes->q, layer->thickness, off, ab);
 
 	std::complex<double> forw, back;
 	GetZPoyntingFlux(n, S->kx, S->ky, std::complex<double>(S->omega[0],S->omega[1]), Lmodes->q, Lmodes->Epsilon_inv, Lmodes->epstype, Lmodes->kp, Lmodes->phi, ab, &forw, &back, work);

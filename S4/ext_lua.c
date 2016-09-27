@@ -492,17 +492,17 @@ int lua_S4_Layer_SetRegion(lua_State *L){
 	luaL_checktype(L, 2, LUA_TTABLE);
 
 	lua_pushnil(L);
-	while(0 != lua_next(L, 1)){
+	while(0 != lua_next(L, 2)){
 		const char *key;
 		if(!lua_isstring(L, -2)){
-			return luaL_argerror(L, 1, "Expected only named arguments");
+			return luaL_argerror(L, 2, "Expected only named arguments");
 		}
 		key = lua_tostring(L, -2);
 
 		if(0 == strcmp("shape", key)){
 			const char *shapestr;
 			if(!lua_isstring(L, -1)){
-				return luaL_argerror(L, 1, "Invalid format for shape");
+				return luaL_argerror(L, 2, "Invalid format for shape");
 			}
 			shapestr = lua_tostring(L, -1);
 			if(0 == strcmp("circle", shapestr)){
@@ -518,13 +518,13 @@ int lua_S4_Layer_SetRegion(lua_State *L){
 				center[0] = lua_tonumber(L, -1);
 			}else{
 				if(!lua_istable(L, -1)){
-					return luaL_argerror(L, 1, "Invalid format for center");
+					return luaL_argerror(L, 2, "Invalid format for center");
 				}
 				for(i = 0; i < 2; ++i){
 					lua_pushinteger(L, i+1);
 					lua_gettable(L, -2);
 					if(!lua_isnumber(L, -1)){
-						return luaL_argerror(L, 1, "Invalid format for center");
+						return luaL_argerror(L, 2, "Invalid format for center");
 					}
 					center[i] = lua_tonumber(L, -1);
 					lua_pop(L, 1);
@@ -533,12 +533,12 @@ int lua_S4_Layer_SetRegion(lua_State *L){
 			argflags |= 0x02;
 		}else if(0 == strcmp("angle_degrees", key)){
 			if(!lua_isnumber(L, -1)){
-				return luaL_argerror(L, 1, "Invalid format for angle_degrees");
+				return luaL_argerror(L, 2, "Invalid format for angle_degrees");
 			}
 			angle_frac += lua_tonumber(L, -1) / 360.;
 		}else if(0 == strcmp("angle_radians", key)){
 			if(!lua_isnumber(L, -1)){
-				return luaL_argerror(L, 1, "Invalid format for angle_radians");
+				return luaL_argerror(L, 2, "Invalid format for angle_radians");
 			}
 			angle_frac += lua_tonumber(L, -1) / (2*M_PI);
 		}else if(0 == strcmp("halfwidths", key)){
@@ -546,13 +546,13 @@ int lua_S4_Layer_SetRegion(lua_State *L){
 				hw[0] = lua_tonumber(L, -1);
 			}else{
 				if(!lua_istable(L, -1)){
-					return luaL_argerror(L, 1, "Invalid format for halfwidths");
+					return luaL_argerror(L, 2, "Invalid format for halfwidths");
 				}
 				for(i = 0; i < 2; ++i){
 					lua_pushinteger(L, i+1);
 					lua_gettable(L, -2);
 					if(!lua_isnumber(L, -1)){
-						return luaL_argerror(L, 1, "Invalid format for halfwidths");
+						return luaL_argerror(L, 2, "Invalid format for halfwidths");
 					}
 					hw[i] = lua_tonumber(L, -1);
 					lua_pop(L, 1);
@@ -561,31 +561,31 @@ int lua_S4_Layer_SetRegion(lua_State *L){
 			argflags |= 0x04;
 		}else if(0 == strcmp("radius", key)){
 			if(!lua_isnumber(L, -1)){
-				return luaL_argerror(L, 1, "Invalid format for radius");
+				return luaL_argerror(L, 2, "Invalid format for radius");
 			}
 			hw[0] = lua_tonumber(L, -1);
 			hw[1] = hw[0];
 			argflags |= 0x08;
 		}else if(0 == strcmp("vertices", key)){
 			if(!lua_istable(L, -1)){
-				return luaL_argerror(L, 1, "Invalid format for vertices");
+				return luaL_argerror(L, 2, "Invalid format for vertices");
 			}
 			nv = lua_S4_len(L, -1);
 			if(nv < 2){
-				return luaL_argerror(L, 1, "Invalid format for vertices");
+				return luaL_argerror(L, 2, "Invalid format for vertices");
 			}
 			v = (S4_real*)malloc(sizeof(S4_real) * 2 * nv);
 			for(i = 0; i < nv; ++i){
 				lua_pushinteger(L, i+1);
 				lua_gettable(L, -2);
 				if(!lua_istable(L, -1) || 2 != lua_S4_len(L, -1)){
-					return luaL_argerror(L, 1, "Invalid format for vertices");
+					return luaL_argerror(L, 2, "Invalid format for vertices");
 				}
 				for(j = 0; j < 2; ++j){
 					lua_pushinteger(L, j+1);
 					lua_gettable(L, -2);
 					if(!lua_isnumber(L, -1)){
-						return luaL_argerror(L, 1, "Invalid format for vertices");
+						return luaL_argerror(L, 2, "Invalid format for vertices");
 					}
 					v[2*i+j] = lua_tonumber(L, -1);
 					lua_pop(L, 1);
@@ -594,15 +594,24 @@ int lua_S4_Layer_SetRegion(lua_State *L){
 			}
 			argflags |= 0x10;
 		}else if(0 == strcmp("material", key)){
-			const char *matname;
-			if(!lua_isstring(L, -1)){
-				return luaL_argerror(L, 1, "Invalid format for material");
+			if(lua_isstring(L, -1)){
+				const char *matname;
+				if(!lua_isstring(L, -1)){
+					return luaL_argerror(L, 2, "Invalid format for material");
+				}
+				matname = lua_tostring(L, -1);
+				M = S4_Simulation_GetMaterialByName(SL->S, matname);
+				if(NULL == M){
+					return luaL_error(L, "Unknown material '%s'", matname);
+				}
+			}else{
+				lua_S4_Material *SM = lua_S4_Material_check(L, -1);
+				M = SM->M;
+				if(NULL == M){
+					return luaL_error(L, "Invalid material");
+				}
 			}
-			matname = lua_tostring(L, -1);
-			M = S4_Simulation_GetMaterialByName(SL->S, matname);
-			if(NULL == M){
-				return luaL_error(L, "Unknown material '%s'", matname);
-			}
+
 			argflags |= 0x20;
 		}else{
 			return luaL_error(L, "Unrecognized argument: %s", key);
@@ -624,30 +633,30 @@ int lua_S4_Layer_SetRegion(lua_State *L){
 
 	if(S4_REGION_TYPE_INTERVAL == type){
 		if(!lattice1d || 0 != angle_frac || 0 != center[1] || 0 != hw[1]){
-			return luaL_argerror(L, 1, "Interval region must be used with 1d lattice and have zero y-components for center and halfwidths");
+			return luaL_argerror(L, 2, "Interval region must be used with 1d lattice and have zero y-components for center and halfwidths");
 		}
 		if(0 == (argflags & 0x02) || 0 == (argflags & 0x04)){
-			return luaL_argerror(L, 1, "Interval region requires specifying center and halfwidths");
+			return luaL_argerror(L, 2, "Interval region requires specifying center and halfwidths");
 		}
 		S4_Layer_SetRegionHalfwidths(SL->S, SL->L, M, type, hw, center, &angle_frac);
 		return 0;
 	}
 	if(S4_REGION_TYPE_ELLIPSE == type || S4_REGION_TYPE_RECTANGLE == type){
 		if(lattice1d){
-			return luaL_argerror(L, 1, "Region type must be used with 2d lattice");
+			return luaL_argerror(L, 2, "Region type must be used with 2d lattice");
 		}
 		if(0 == (argflags & 0x02) || 0 == (argflags & 0x04)){
-			return luaL_argerror(L, 1, "Region type requires specifying center and halfwidths");
+			return luaL_argerror(L, 2, "Region type requires specifying center and halfwidths");
 		}
 		S4_Layer_SetRegionHalfwidths(SL->S, SL->L, M, type, hw, center, &angle_frac);
 		return 0;
 	}
 	if(S4_REGION_TYPE_CIRCLE == type){
 		if(lattice1d){
-			return luaL_argerror(L, 1, "Circle region must be used with 2d lattice");
+			return luaL_argerror(L, 2, "Circle region must be used with 2d lattice");
 		}
 		if(0 == (argflags & 0x02) || 0 == (argflags & 0x08)){
-			return luaL_argerror(L, 1, "Circle region requires specifying center and radius");
+			return luaL_argerror(L, 2, "Circle region requires specifying center and radius");
 		}
 		S4_Layer_SetRegionHalfwidths(SL->S, SL->L, M, type, hw, center, &angle_frac);
 		return 0;
@@ -813,7 +822,7 @@ int lua_S4_Simulation_SetFrequency(lua_State *L){
 		freq[0] = lua_tonumber(L, 2);
 		if(lua_isnumber(L, 3)){
 			freq[1] = lua_tonumber(L, 3);
-		}else{
+		}else if(!lua_isnoneornil(L, 3)){
 			return luaL_argerror(L, 2, "Invalid format for frequency");
 		}
 		S4_real freq_prev[2];
@@ -845,7 +854,7 @@ int lua_S4_Simulation_AddMaterial(lua_State *L){
 	int type = 0;
 
 	lua_pushnil(L);
-	while(0 != lua_next(L, 1)){
+	while(0 != lua_next(L, 2)){
 		const char *key;
 		if(!lua_isstring(L, -2)){
 			return luaL_argerror(L, 1, "Expected only named arguments");
@@ -894,47 +903,63 @@ int lua_S4_Simulation_AddLayer(lua_State *L){
 	S4_real thickness = 0;
 
 	lua_pushnil(L);
-	while(0 != lua_next(L, 1)){
+	while(0 != lua_next(L, 2)){
 		const char *key;
 		if(!lua_isstring(L, -2)){
-			return luaL_argerror(L, 1, "Expected only named arguments");
+			return luaL_argerror(L, 2, "Expected only named arguments");
 		}
 		key = lua_tostring(L, -2);
 
 		if(0 == strcmp("name", key)){
 			if(!lua_isstring(L, -1)){
-				return luaL_argerror(L, 1, "Invalid format for name");
+				return luaL_argerror(L, 2, "Invalid format for name");
 			}
 			name = lua_tostring(L, -1);
 		}else if(0 == strcmp("material", key)){
-			const char *matname;
-			if(!lua_isstring(L, -1)){
-				return luaL_argerror(L, 1, "Invalid format for material");
-			}
-			matname = lua_tostring(L, -1);
-			M = S4_Simulation_GetMaterialByName(S, matname);
-			if(NULL == M){
-				return luaL_error(L, "Unknown material '%s'", matname);
+			if(lua_isstring(L, -1)){
+				const char *matname;
+				if(!lua_isstring(L, -1)){
+					return luaL_argerror(L, 1, "Invalid format for material");
+				}
+				matname = lua_tostring(L, -1);
+				M = S4_Simulation_GetMaterialByName(SL->S, matname);
+				if(NULL == M){
+					return luaL_error(L, "Unknown material '%s'", matname);
+				}
+			}else{
+				lua_S4_Material *SM = lua_S4_Material_check(L, -1);
+				M = SM->M;
+				if(NULL == M){
+					return luaL_error(L, "Invalid material");
+				}
 			}
 			argflags |= 0x01;
 		}else if(0 == strcmp("thickness", key)){
 			if(!lua_isnumber(L, -1)){
-				return luaL_argerror(L, 1, "Invalid format for thickness");
+				return luaL_argerror(L, 2, "Invalid format for thickness");
 			}
 			thickness = lua_tonumber(L, -1);
 			if(thickness < 0){
-				return luaL_argerror(L, 1, "Thickness must be positive");
+				return luaL_argerror(L, 2, "Thickness must be positive");
 			}
 			argflags |= 0x02;
 		}else if(0 == strcmp("copy", key)){
-			const char *lname;
-			if(!lua_isstring(L, -1)){
-				return luaL_argerror(L, 1, "Invalid format for copy");
-			}
-			lname = lua_tostring(L, -1);
-			copy = S4_Simulation_GetLayerByName(S, lname);
-			if(NULL == copy){
-				return luaL_error(L, "Unknown layer '%s'", lname);
+			if(lua_isstring(L, -1)){
+				const char *lname;
+				if(!lua_isstring(L, -1)){
+					return luaL_argerror(L, 2, "Invalid format for copy");
+				}
+				lname = lua_tostring(L, -1);
+				copy = S4_Simulation_GetLayerByName(S, lname);
+				if(NULL == copy){
+					return luaL_error(L, "Unknown layer '%s'", lname);
+				}
+			}else{
+				lua_S4_Layer *SL = lua_S4_Layer_check(L, -1);
+				copy = SL->L;
+				if(NULL == L){
+					return luaL_error(L, "Invalid layer");
+				}
 			}
 			argflags |= 0x04;
 		}else{
@@ -973,10 +998,10 @@ int lua_S4_Simulation_ExcitationPlanewave(lua_State *L){
 	S4_real k[3], u[3], cu[2], cv[2];
 
 	lua_pushnil(L);
-	while(0 != lua_next(L, 1)){
+	while(0 != lua_next(L, 2)){
 		const char *key;
 		if(!lua_isstring(L, -2)){
-			return luaL_argerror(L, 1, "Expected only named arguments");
+			return luaL_argerror(L, 2, "Expected only named arguments");
 		}
 		key = lua_tostring(L, -2);
 
@@ -998,7 +1023,7 @@ int lua_S4_Simulation_ExcitationPlanewave(lua_State *L){
 		lua_pop(L, 1);
 	}
 	if(0x0F != argflags){
-		return luaL_argerror(L, 1, "Must specify k, u, cu, cv");
+		return luaL_argerror(L, 2, "Must specify k, u, cu, cv");
 	}
 	S4_Simulation_ExcitationPlanewave(S, k, u, cu, cv);
 	return 0;
