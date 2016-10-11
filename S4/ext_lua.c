@@ -76,6 +76,9 @@ int lua_S4_Layer_GetPowerFlux(lua_State *L);
 //int lua_S4_Layer_GetPowerFluxes(lua_State *L);
 int lua_S4_Layer_GetWaves(lua_State *L);
 
+#ifdef _WIN32
+extern __declspec(dllexport)
+#endif
 int luaopen_S4v2(lua_State *L){
 	static const struct luaL_Reg S4v2_lib[] = {
 		{"NewSimulation", lua_S4_NewSimulation},
@@ -143,7 +146,6 @@ int luaopen_S4v2(lua_State *L){
 	luaL_newlib(L, S4v2_lib);
 	return 1;
 }
-
 
 int lua_S4_len(lua_State *L, int arg){
 	int n;
