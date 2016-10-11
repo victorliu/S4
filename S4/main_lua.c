@@ -256,12 +256,12 @@ S4_Simulation *S4L_get_simulation(lua_State *L, int index){
 
 typedef struct S4_solve_in_parallel_data_{
 	S4_Simulation *S;
-	S4_Layer *layer;
+	S4_LayerID layer;
 } S4_solve_in_parallel_data;
 
 void* S4_solve_in_parallel(void *p){
 	S4_solve_in_parallel_data *data = (S4_solve_in_parallel_data*)p;
-	Simulation_SolveLayer(data->S, data->layer);
+	S4_Simulation_SolveLayer(data->S, data->layer);
 	return NULL;
 }
 /* Expected stack:
@@ -277,11 +277,11 @@ static int S4L_SolveInParallel(lua_State *L){
 	n = lua_gettop(L);
 	data = (S4_solve_in_parallel_data*)malloc(sizeof(S4_solve_in_parallel_data)*(n-1));
 	for(i = 2; i <= n; ++i){
-		S4_Layer *layer;
+		S4_LayerID layer;
 		S4_Simulation *S = S4L_get_simulation(L, i);
 		luaL_argcheck(L, S != NULL, i, "SolveInParallel: 'S4_Simulation' object expected.");
-		layer = Simulation_GetLayerByName(S, layer_name, NULL);
-		if(NULL == layer){
+		layer = S4_Simulation_GetLayerByName(S, layer_name);
+		if(layer < 0){
 			S4L_error(L, "SolveInParallel: S4_Layer named '%s' not found.", layer_name);
 		}
 		data[i-2].S = S;
@@ -1194,18 +1194,15 @@ static int S4L_Simulation_Clone(lua_State *L){
 }
 
 static int S4L_Simulation_SetLattice(lua_State *L){
-	int i,j;
+	int i, j;
+	S4_real Lr[4] = { 0, 0, 0, 0 };
 	S4_Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetLattice: 'S4_Simulation' object expected.");
 
 	if(lua_isnumber(L, 2)){
-		double period = lua_tonumber(L, 2);
-		luaL_argcheck(L, period > 0, 2, "1D lattice constant must be positive");
-		S->Lr[0] = period;
-		S->Lr[1] = 0;
-		S->Lr[2] = 0;
-		S->Lr[3] = 0;
-		Simulation_MakeReciprocalLattice(S);
+		Lr[0] = lua_tonumber(L, 2);
+		luaL_argcheck(L, Lr[0] > 0, 2, "1D lattice constant must be positive");
+		S4_Simulation_SetLattice(S, Lr);
 	}else{
 		luaL_checktype(L, 2, LUA_TTABLE);
 		luaL_checktype(L, 3, LUA_TTABLE);
@@ -1217,12 +1214,12 @@ static int S4L_Simulation_SetLattice(lua_State *L){
 				if(!lua_isnumber(L, -1)){
 					S4L_error(L, "SetLattice: Lattice coordinates must be numeric.");
 				}else{
-					S->Lr[2*i+j] = (double)lua_tonumber(L, -1);
+					Lr[2*i+j] = (S4_real)lua_tonumber(L, -1);
 				}
 				lua_pop(L, 1);
 			}
 		}
-		i = Simulation_MakeReciprocalLattice(S);
+		i = S4_Simulation_SetLattice(S, Lr);
 		if(0 != i){
 			switch(i){
 			case 1: /* degenerate */
@@ -1289,7 +1286,7 @@ static int S4L_Simulation_AddMaterial(lua_State *L){
 	int i, j;
 	S4_real eps[18];
 	int type = 0;
-	S4_Material *M;
+	S4_MaterialID M;
 	const char *name;
 	S4_Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "AddMaterial: 'S4_Simulation' object expected.");
@@ -1336,8 +1333,8 @@ static int S4L_Simulation_AddMaterial(lua_State *L){
 		S4L_error(L, "AddMaterial: Expected either a scalar or tensor value for material %s.", name);
 	}
 
-	M = S4_Simulation_SetMaterial(S, NULL, name, type, eps);
-	if(NULL == M){
+	M = S4_Simulation_SetMaterial(S, -1, name, type, eps);
+	if(M < 0){
 		S4L_error(L, "AddMaterial: There was a problem allocating the material named '%s'.", name);
 		return 0;
 	}
@@ -1348,7 +1345,7 @@ static int S4L_Simulation_SetMaterial(lua_State *L){
 	int i, j;
 	double eps[18];
 	const char *name;
-	S4_Material *M;
+	S4_MaterialID M;
 	int type = 0;
 	S4_Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetMaterial: 'S4_Simulation' object expected.");
@@ -1397,7 +1394,7 @@ static int S4L_Simulation_SetMaterial(lua_State *L){
 	}
 
 	M = S4_Simulation_SetMaterial(S, M, name, type, eps);
-	if(NULL == M){
+	if(M < 0){
 		S4L_error(L, "AddMaterial: There was a problem allocating the material named '%s'.", name);
 		return 0;
 	}
@@ -1405,7 +1402,7 @@ static int S4L_Simulation_SetMaterial(lua_State *L){
 	return 0;
 }
 static int S4L_Simulation_AddLayer(lua_State *L){
-	S4_Layer *layer;
+	S4_LayerID layer;
 	const char *name;
 	S4_real thickness;
 	S4_Simulation *S = S4L_get_simulation(L, 1);
@@ -1414,19 +1411,19 @@ static int S4L_Simulation_AddLayer(lua_State *L){
 	thickness = luaL_checknumber(L, 3);
 	const char *matname = luaL_checklstring(L, 4, NULL);
 
-	S4_Material *M = S4_Simulation_GetMaterialByName(S, matname);
-	if(NULL == M){
+	S4_MaterialID M = S4_Simulation_GetMaterialByName(S, matname);
+	if(M < 0){
 		S4L_error(L, "AddLayer: Unknown material '%s'.", matname);
 	}
-	layer = S4_Simulation_SetLayer(S, NULL, name, &thickness, NULL, M);
-	if(NULL == layer){
+	layer = S4_Simulation_SetLayer(S, -1, name, &thickness, -1, M);
+	if(layer < 0){
 		S4L_error(L, "AddLayer: There was a problem allocating the layer named '%s'.", name);
 		return 0;
 	}
 	return 0;
 }
 static int S4L_Simulation_SetLayer(lua_State *L){
-	S4_Layer *layer;
+	S4_LayerID layer;
 	const char *name;
 	S4_Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetLayer: 'S4_Simulation' object expected.");
@@ -1434,57 +1431,57 @@ static int S4L_Simulation_SetLayer(lua_State *L){
 
 	name = luaL_checklstring(L, 2, NULL);
 	layer = S4_Simulation_GetLayerByName(S, name);
-	if(NULL == layer){
+	if(layer < 0){
 		const char *matname = luaL_checklstring(L, 4, NULL);
-		S4_Material *M = S4_Simulation_GetMaterialByName(S, matname);
-		if(NULL == M){
+		S4_MaterialID M = S4_Simulation_GetMaterialByName(S, matname);
+		if(M < 0){
 			S4L_error(L, "SetLayer: Unknown material '%s'.", matname);
 		}
-		layer = S4_Simulation_SetLayer(S, NULL, name, &thickness, NULL, M);
-		if(NULL == layer){
+		layer = S4_Simulation_SetLayer(S, -1, name, &thickness, -1, M);
+		if(layer < 0){
 			S4L_error(L, "SetLayer: There was a problem allocating the layer named '%s'.", name);
 			return 0;
 		}
 	}else{
-		S4_Simulation_SetLayer(S, layer, NULL, &thickness, NULL, NULL);
+		S4_Simulation_SetLayer(S, layer, NULL, &thickness, -1, -1);
 	}
 	return 0;
 }
 static int S4L_Simulation_SetLayerThickness(lua_State *L){
-	S4_Layer *layer;
+	S4_LayerID layer;
 	const char *name;
 	S4_Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetLayerThickness: 'S4_Simulation' object expected.");
 
 	name = luaL_checklstring(L, 2, NULL);
 	layer = S4_Simulation_GetLayerByName(S, name);
-	if(NULL == layer){
+	if(layer < 0){
 		S4L_error(L, "SetLayerThickness: S4_Layer named '%s' not found.", name);
 	}else{
 		S4_real thick = luaL_checknumber(L, 3);
 		if(thick < 0){
 			S4L_error(L, "SetLayerThickness: Thickness must be non-negative.");
 		}
-		S4_Simulation_SetLayer(S, layer, NULL, &thick, NULL, NULL);
+		S4_Simulation_SetLayer(S, layer, NULL, &thick, -1, -1);
 	}
 	return 0;
 }
 
 static int S4L_Simulation_AddLayerCopy(lua_State *L){
-	S4_Layer *layer;
+	S4_LayerID layer;
 	const char *name;
 	S4_Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "AddLayerCopy: 'S4_Simulation' object expected.");
 	name = luaL_checklstring(L, 2, NULL);
 	S4_real thickness = luaL_checknumber(L, 3);
 	const char *copyname = luaL_checklstring(L, 4, NULL);
-	S4_Layer *Lcopy = S4_Simulation_GetLayerByName(S, copyname);
-	if(NULL == Lcopy){
+	S4_LayerID Lcopy = S4_Simulation_GetLayerByName(S, copyname);
+	if(Lcopy < 0){
 		S4L_error(L, "AddLayerCopy: Layer not found: '%s'.", copyname);
 	}
-	layer = S4_Simulation_SetLayer(S, NULL, name, &thickness, Lcopy, NULL);
+	layer = S4_Simulation_SetLayer(S, -1, name, &thickness, Lcopy, -1);
 
-	if(NULL == layer){
+	if(layer < 0){
 		S4L_error(L, "AddLayerCopy: There was a problem allocating the layer named '%s'.", name);
 		return 0;
 	}
@@ -1502,8 +1499,8 @@ static int S4L_Simulation_SetLayerPatternCircle(lua_State *L){
 	int j, ret;
 	const char *layer_name;
 	const char *material_name;
-	S4_Layer *layer;
-	S4_Material *M;
+	S4_LayerID layer;
+	S4_MaterialID M;
 	double center[2];
 	S4_Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetLayerPatternCircle: 'Simulation' object expected.");
@@ -1511,17 +1508,17 @@ static int S4L_Simulation_SetLayerPatternCircle(lua_State *L){
 
 	layer_name = luaL_checklstring(L, 2, NULL);
 	layer = S4_Simulation_GetLayerByName(S, layer_name);
-	if(NULL == layer){
+	if(layer < 0){
 		S4L_error(L, "SetLayerPatternCircle: Layer named '%s' not found.", layer_name);
 		return 0;
 	}
-	if(NULL != layer->copy){
+	if(S4_Layer_IsCopy(S, layer) > 0){
 		S4L_error(L, "SetLayerPatternCircle: Cannot pattern a layer copy.");
 		return 0;
 	}
 	material_name = luaL_checklstring(L, 3, NULL);
 	M = S4_Simulation_GetMaterialByName(S, material_name);
-	if(NULL == M){
+	if(M < 0){
 		S4L_error(L, "SetLayerPatternCircle: Material named '%s' not found.", material_name);
 		return 0;
 	}
@@ -1559,25 +1556,25 @@ static int S4L_Simulation_SetLayerPatternEllipse(lua_State *L){
 	int j, ret;
 	const char *layer_name;
 	const char *material_name;
-	S4_Layer *layer;
-	S4_Material *M;
+	S4_LayerID layer;
+	S4_MaterialID M;
 	double center[2], halfwidths[2];
 	S4_Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetLayerPatternEllipse: 'S4_Simulation' object expected");
 
 	layer_name = luaL_checklstring(L, 2, NULL);
 	layer = S4_Simulation_GetLayerByName(S, layer_name);
-	if(NULL == layer){
+	if(layer < 0){
 		S4L_error(L, "SetLayerPatternEllipse: S4_Layer named '%s' not found.", layer_name);
 		return 0;
 	}
-	if(NULL != layer->copy){
+	if(S4_Layer_IsCopy(S, layer) > 0){
 		S4L_error(L, "SetLayerPatternEllipse: Cannot pattern a layer copy.");
 		return 0;
 	}
 	material_name = luaL_checklstring(L, 3, NULL);
 	M = S4_Simulation_GetMaterialByName(S, material_name);
-	if(NULL == M){
+	if(M < 0){
 		S4L_error(L, "SetLayerPatternEllipse: S4_Material named '%s' not found.", material_name);
 		return 0;
 	}
@@ -1626,26 +1623,26 @@ static int S4L_Simulation_SetLayerPatternRectangle(lua_State *L){
 	int j, ret;
 	const char *layer_name;
 	const char *material_name;
-	S4_Layer *layer;
-	S4_Material *M;
+	S4_LayerID layer;
+	S4_MaterialID M;
 	double center[2], halfwidths[2];
 	S4_Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetLayerPatternRectangle: 'S4_Simulation' object expected.");
 
 	layer_name = luaL_checklstring(L, 2, NULL);
 	layer = S4_Simulation_GetLayerByName(S, layer_name);
-	if(NULL == layer){
+	if(layer < 0){
 		S4L_error(L, "SetLayerPatternRectangle: S4_Layer named '%s' not found.", layer_name);
 		return 0;
 	}
-	if(NULL != layer->copy){
+	if(S4_Layer_IsCopy(S, layer) > 0){
 		S4L_error(L, "SetLayerPatternRectangle: Cannot pattern a layer copy.");
 		return 0;
 	}
 	material_name = luaL_checklstring(L, 3, NULL);
 
 	M = S4_Simulation_GetMaterialByName(S, material_name);
-	if(NULL == M){
+	if(M < 0){
 		S4L_error(L, "SetLayerPatternRectangle: S4_Material named '%s' not found.", material_name);
 		return 0;
 	}
@@ -1696,24 +1693,24 @@ static int S4L_Simulation_SetLayerPatternPolygon(lua_State *L){
 	double *vert;
 	const char *layer_name;
 	const char *material_name;
-	S4_Layer *layer;
-	S4_Material *M;
+	S4_LayerID layer;
+	S4_MaterialID M;
 	S4_Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "SetLayerPatternPolygon: 'S4_Simulation' object expected.");
 
 	layer_name = luaL_checklstring(L, 2, NULL);
 	layer = S4_Simulation_GetLayerByName(S, layer_name);
-	if(NULL == layer){
+	if(layer < 0){
 		S4L_error(L, "SetLayerPatternPolygon: S4_Layer named '%s' not found.", layer_name);
 		return 0;
 	}
-	if(NULL != layer->copy){
+	if(S4_Layer_IsCopy(S, layer) > 0){
 		S4L_error(L, "SetLayerPatternPolygon: Cannot pattern a layer copy.");
 		return 0;
 	}
 	material_name = luaL_checklstring(L, 3, NULL);
 	M = S4_Simulation_GetMaterialByName(S, material_name);
-	if(NULL == M){
+	if(M < 0){
 		S4L_error(L, "SetLayerPatternPolygon: S4_Material named '%s' not found.", material_name);
 		return 0;
 	}
@@ -2077,14 +2074,14 @@ static int S4L_Simulation_GetPoyntingFlux(lua_State *L){
 	S4_real power[4];
 	int ret;
 	const char *layer_name;
-	S4_Layer *layer;
+	S4_LayerID layer;
 	S4_real offset = 0;
 	S4_Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetPoyntingFlux: 'S4_Simulation' object expected.");
 
 	layer_name = luaL_checklstring(L, 2, NULL);
-	layer = Simulation_GetLayerByName(S, layer_name, NULL);
-	if(NULL == layer){
+	layer = S4_Simulation_GetLayerByName(S, layer_name);
+	if(layer < 0){
 		S4L_error(L, "GetPoyntingFlux: S4_Layer named '%s' not found.", layer_name);
 		return 0;
 	}
@@ -2109,18 +2106,18 @@ static int S4L_Simulation_GetPoyntingFluxByOrder(lua_State *L){
 	int *G;
 	int n, i, j, ret;
 	const char *layer_name;
-	S4_Layer *layer;
+	S4_LayerID layer;
 	S4_Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetPoyntingFluxByOrder: 'S4_Simulation' object expected.");
 
 	layer_name = luaL_checklstring(L, 2, NULL);
-	layer = Simulation_GetLayerByName(S, layer_name, NULL);
-	if(NULL == layer){
+	layer = S4_Simulation_GetLayerByName(S, layer_name);
+	if(layer < 0){
 		S4L_error(L, "GetPoyntingFluxByOrder: S4_Layer named '%s' not found.", layer_name);
 		return 0;
 	}
 
-	ret = Simulation_SolveLayer(S, layer);
+	ret = S4_Simulation_SolveLayer(S, layer);
 	if(0 != ret){
 		HandleSolutionErrorCode(L, "GetPoyntingFluxByOrder", ret);
 		return 0;
@@ -2133,7 +2130,7 @@ static int S4L_Simulation_GetPoyntingFluxByOrder(lua_State *L){
 
 	power = (double*)malloc(sizeof(double)*4*n);
 	Simulation_GetPoyntingFluxByG(S,
-		layer,
+		&S->layer[layer],
 		luaL_checknumber(L, 3),
 		power);
 
@@ -2158,18 +2155,18 @@ static int S4L_Simulation_GetAmplitudes(lua_State *L){
 	int *G;
 	int n, i, k, ret;
 	const char *layer_name;
-	S4_Layer *layer;
+	S4_LayerID layer;
 	S4_Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetAmplitudes: 'S4_Simulation' object expected.");
 
 	layer_name = luaL_checklstring(L, 2, NULL);
-	layer = Simulation_GetLayerByName(S, layer_name, NULL);
+	layer = S4_Simulation_GetLayerByName(S, layer_name);
 	if(NULL == layer){
 		S4L_error(L, "GetAmplitudes: S4_Layer named '%s' not found.", layer_name);
 		return 0;
 	}
 
-	ret = Simulation_SolveLayer(S, layer);
+	ret = S4_Simulation_SolveLayer(S, layer);
 	if(0 != ret){
 		HandleSolutionErrorCode(L, "GetAmplitudes", ret);
 		return 0;
@@ -2218,20 +2215,20 @@ static int S4L_Simulation_GetAmplitudes(lua_State *L){
 
 static int S4L_Simulation_GetWaves(lua_State *L){
 	double *waves;
-	int n, n2, i, j, k, ret;
+	int n, n2, i, k, ret;
 	const char *layer_name;
-	S4_Layer *layer;
+	S4_LayerID layer;
 	S4_Simulation *S = S4L_get_simulation(L, 1);
 	luaL_argcheck(L, S != NULL, 1, "GetWaves: 'S4_Simulation' object expected.");
 
 	layer_name = luaL_checklstring(L, 2, NULL);
 	layer = S4_Simulation_GetLayerByName(S, layer_name);
-	if(NULL == layer){
+	if(layer < 0){
 		S4L_error(L, "GetWaves: S4_Layer named '%s' not found.", layer_name);
 		return 0;
 	}
 
-	ret = Simulation_SolveLayer(S, layer);
+	ret = S4_Simulation_SolveLayer(S, layer);
 	if(0 != ret){
 		HandleSolutionErrorCode(L, "GetWaves", ret);
 		return 0;

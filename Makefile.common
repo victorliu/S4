@@ -145,6 +145,8 @@ clean:
 	rm -rf $(OBJDIR)
 
 #### S4v2 extension
-$(OBJDIR)/S4v2.$(SHLIB_EXT): $(OBJDIR)/$(S4_LIBNAME)
-	$(CC) $(LUA_INC) -c S4/ext_lua.c -o $(OBJDIR)/ext_lua.o
-	$(CC) -shared $(OBJDIR)/ext_lua.o -o $@ $(LUA_MODULE_LIB) -L$(OBJDIR) -lS4 $(LA_LIBS) -lstdc++
+$(OBJDIR)/S4v2.$(SHLIB_EXT): $(OBJDIR)/$(S4_LIBNAME) $(OBJDIR)/libS4_lua.a
+	$(CC) -shared $(OBJDIR)/libS4_lua.a -o $@ $(LUA_MODULE_LIB) -L$(OBJDIR) -lS4 $(LA_LIBS) -lstdc++
+$(OBJDIR)/libS4_lua.a: $(OBJDIR)/$(S4_LIBNAME)
+	$(CC) -c $(LUA_INC) S4/ext_lua.c -o $(OBJDIR)/ext_lua.o
+	$(AR) crvs $@ $(OBJDIR)/ext_lua.o

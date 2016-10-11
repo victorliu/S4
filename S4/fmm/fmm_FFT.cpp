@@ -105,9 +105,9 @@ int FMMGetEpsilon_FFT(const S4_Simulation *S, const S4_Layer *L, const int n, st
 			if(nnz < 2){ // just one material
 				const S4_Material *M;
 				if(0 == imat[0]){
-					M = Simulation_GetMaterialByName(S, L->material, NULL);
+					M = &S->material[L->material];
 				}else{
-					M = Simulation_GetMaterialByIndex(S, L->pattern.shapes[imat[0]-1].tag);
+					M = &S->material[L->pattern.shapes[imat[0]-1].tag];
 				}
 				if(0 == M->type){
 					std::complex<double> eps_scalar(M->eps.s[0], M->eps.s[1]);
@@ -142,9 +142,9 @@ int FMMGetEpsilon_FFT(const S4_Simulation *S, const S4_Layer *L, const int n, st
 						if(0 == discval[i]){ continue; }
 						const S4_Material *M;
 						if(0 == i){
-							M = Simulation_GetMaterialByName(S, L->material, NULL);
+							M = &S->material[L->material];
 						}else{
-							M = Simulation_GetMaterialByIndex(S, L->pattern.shapes[i-1].tag);
+							M = &S->material[L->pattern.shapes[i-1].tag];
 						}
 						if(0 == M->type){
 							std::complex<double> eps_scalar(M->eps.s[0], M->eps.s[1]);

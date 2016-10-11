@@ -67,7 +67,7 @@ extern "C" {
 void* S4_malloc(size_t size);
 void S4_free(void *ptr);
 
-struct S4_Material_{
+typedef struct{
 	char *name;    // name of material
 	int type; // 0 = scalar epsilon, 1 = tensor
 	union{
@@ -77,17 +77,17 @@ struct S4_Material_{
 		// [ c d 0 ]
 		// [ 0 0 e ]
 	} eps;
-};
+} S4_Material;
 
 struct LayerModes;
-struct S4_Layer_{
+typedef struct{
 	char *name;       // name of layer
 	double thickness; // thickness of layer
-	char *material;   // name of background material
+	S4_MaterialID material;   // name of background material
 	Pattern pattern;  // See pattern.h
-	char *copy;       // See below.
+	S4_LayerID copy;       // See below.
 	struct LayerModes *modes;
-};
+} S4_Layer;
 // If a layer is a copy, then `copy' is the name of the layer that should
 // be copied, and `material' and `pattern' are inherited, and so they can
 // be arbitrary. For non-copy layers, copy should be NULL.
@@ -97,6 +97,7 @@ struct FieldCache;
 typedef struct Excitation_Planewave_{
 	double hx[2],hy[2]; // re,im components of H_x,H_y field
 	size_t order;
+	int backwards;
 } Excitation_Planewave;
 
 typedef struct Excitation_Dipole_{
@@ -118,7 +119,7 @@ typedef struct Excitation_{
 		Excitation_Exterior exterior; // type 2
 	} sub;
 	int type;
-	char *layer; // name of layer after which excitation is applied
+	S4_Layer *layer; // name of layer after which excitation is applied
 } Excitation;
 
 struct Solution_;

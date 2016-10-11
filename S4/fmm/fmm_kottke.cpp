@@ -110,9 +110,9 @@ int FMMGetEpsilon_Kottke(const S4_Simulation *S, const S4_Layer *L, const int n,
 //fprintf(stderr, "%d\t%d\t0\t0\n", ii[0], ii[1]);
 				const S4_Material *M;
 				if(0 == imat[0]){
-					M = Simulation_GetMaterialByName(S, L->material, NULL);
+					M = &S->material[L->material];
 				}else{
-					M = Simulation_GetMaterialByIndex(S, L->pattern.shapes[imat[0]-1].tag);
+					M = &S->material[L->pattern.shapes[imat[0]-1].tag];
 				}
 				if(0 == M->type){
 					std::complex<double> eps_scalar(M->eps.s[0], M->eps.s[1]);
@@ -151,9 +151,9 @@ int FMMGetEpsilon_Kottke(const S4_Simulation *S, const S4_Layer *L, const int n,
 					for(int i = 0; i < 2; ++i){
 						const S4_Material *M;
 						if(0 == imat[i]){
-							M = Simulation_GetMaterialByName(S, L->material, NULL);
+							M = &S->material[L->material];
 						}else{
-							M = Simulation_GetMaterialByIndex(S, L->pattern.shapes[imat[i]-1].tag);
+							M = &S->material[L->pattern.shapes[imat[i]-1].tag];
 						}
 						if(0 == M->type){
 							std::complex<double> eps_scalar(M->eps.s[0], M->eps.s[1]);
@@ -221,9 +221,9 @@ int FMMGetEpsilon_Kottke(const S4_Simulation *S, const S4_Layer *L, const int n,
 						int j = i-1;
 						const S4_Material *M;
 						if(-1 == j){
-							M = Simulation_GetMaterialByName(S, L->material, NULL);
+							M = &S->material[L->material];
 						}else{
-							M = Simulation_GetMaterialByIndex(S, L->pattern.shapes[j].tag);
+							M = &S->material[L->pattern.shapes[j].tag];
 						}
 						if(0 == M->type){
 							std::complex<double> eps_scalar(M->eps.s[0], M->eps.s[1]);

@@ -47,9 +47,9 @@ int FMMGetEpsilon_ClosedForm(const S4_Simulation *S, const S4_Layer *L, const in
 	for(int i = -1; i < L->pattern.nshapes; ++i){
 		const S4_Material *M;
 		if(-1 == i){
-			M = Simulation_GetMaterialByName(S, L->material, NULL);
+			M = &S->material[L->material];
 		}else{
-			M = Simulation_GetMaterialByIndex(S, L->pattern.shapes[i].tag);
+			M = &S->material[L->pattern.shapes[i].tag];
 		}
 		if(0 == M->type){
 			std::complex<double> eps_temp(M->eps.s[0], M->eps.s[1]);
@@ -167,9 +167,9 @@ int FMMGetEpsilon_ClosedForm(const S4_Simulation *S, const S4_Layer *L, const in
 		for(int i = -1; i < L->pattern.nshapes; ++i){
 			const S4_Material *M;
 			if(-1 == i){
-				M = Simulation_GetMaterialByName(S, L->material, NULL);
+				M = &S->material[L->material];
 			}else{
-				M = Simulation_GetMaterialByIndex(S, L->pattern.shapes[i].tag);
+				M = &S->material[L->pattern.shapes[i].tag];
 			}
 			if(0 == M->type){
 				std::complex<double> eps_temp(M->eps.s[0], M->eps.s[1]);

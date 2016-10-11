@@ -14,13 +14,19 @@
 
 typedef struct{
 	S4_Simulation *S;
-	S4_Layer *L;
+	void *userdata;
+	int externally_owned; // nonzero if we should not call __gc
+} lua_S4_Simulation;
+
+typedef struct{
+	S4_Simulation *S;
+	S4_LayerID L;
 	int Sref;
 } lua_S4_Layer;
 
 typedef struct{
 	S4_Simulation *S;
-	S4_Material *M;
+	S4_MaterialID M;
 	int Sref;
 } lua_S4_Material;
 
@@ -34,6 +40,8 @@ int lua_S4_gettensor(lua_State *L, int arg, S4_real *eps);
 lua_S4_Material* lua_S4_Material_check(lua_State *L, int narg);
 lua_S4_Layer* lua_S4_Layer_check(lua_State *L, int narg);
 S4_Simulation* lua_S4_Simulation_check(lua_State *L, int narg);
+int lua_S4_Simulation_push(lua_State *L, S4_Simulation *S, void *userdata, int ext_owned);
+int lua_S4_Material_push(lua_State *L, S4_Simulation *S, S4_MaterialID M);
 
 int lua_S4_Material__gc(lua_State *L);
 int lua_S4_Layer__gc(lua_State *L);
@@ -258,7 +266,8 @@ lua_S4_Layer* lua_S4_Layer_check(lua_State *L, int narg){
 	return (lua_S4_Layer*)luaL_checkudata(L, narg, LUA_S4_LAYER_TYPENAME);
 }
 S4_Simulation* lua_S4_Simulation_check(lua_State *L, int narg){
-	return *(S4_Simulation**)luaL_checkudata(L, narg, LUA_S4_SIMULATION_TYPENAME);
+	lua_S4_Simulation *pS = (lua_S4_Simulation*)luaL_checkudata(L, narg, LUA_S4_SIMULATION_TYPENAME);
+	return pS->S;
 }
 
 int lua_S4_Material__gc(lua_State *L){
@@ -272,14 +281,66 @@ int lua_S4_Layer__gc(lua_State *L){
 	return 0;
 }
 int lua_S4_Simulation__gc(lua_State *L){
-	S4_Simulation *S = lua_S4_Simulation_check(L, 1);
-	S4_Simulation_Destroy(S);
+	lua_S4_Simulation *pS = (lua_S4_Simulation*)luaL_checkudata(L, 1, LUA_S4_SIMULATION_TYPENAME);
+	if(!pS->externally_owned){
+		S4_Simulation_Destroy(pS->S);
+	}
+	if(NULL != pS->userdata){
+		free(pS->userdata);
+	}
 	return 0;
+}
+int lua_S4_Simulation_push(lua_State *L, S4_Simulation *S, void *userdata, int ext_owned){
+	lua_S4_Simulation *pS;
+	pS = (lua_S4_Simulation*)lua_newuserdata(L, sizeof(lua_S4_Simulation));
+	luaL_getmetatable(L, LUA_S4_SIMULATION_TYPENAME);
+	lua_setmetatable(L, -2);
+	pS->S = S;
+	pS->userdata = userdata;
+	pS->externally_owned = ext_owned;
+	return 1;
+}
+int lua_S4_Material_push(lua_State *L, S4_Simulation *S, S4_MaterialID M){
+	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	lua_S4_Material *SM = (lua_S4_Material*)lua_newuserdata(L, sizeof(lua_S4_Material));
+	SM->S = S;
+	SM->M = M;
+	SM->Sref = ref;
+	luaL_getmetatable(L, LUA_S4_MATERIAL_TYPENAME);
+	lua_setmetatable(L, -2);
+	return 1;
+}
+int lua_S4_Layer_push(lua_State *L, S4_Simulation *S, S4_LayerID pL){
+	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	lua_S4_Layer *SL = (lua_S4_Layer*)lua_newuserdata(L, sizeof(lua_S4_Layer));
+	SL->S = S;
+	SL->L = pL;
+	SL->Sref = ref;
+	luaL_getmetatable(L, LUA_S4_LAYER_TYPENAME);
+	lua_setmetatable(L, -2);
+	return 1;
+}
+int lua_S4_Simulation_Material_check(lua_State *L, int index, S4_Simulation **SMS, S4_MaterialID *SMM){
+	lua_S4_Material* SM = (lua_S4_Material*)luaL_checkudata(L, index, LUA_S4_MATERIAL_TYPENAME);
+	*SMS = SM->S;
+	*SMM = SM->M;
+	return 0;
+}
+int lua_S4_Simulation_Layer_check(lua_State *L, int index, S4_Simulation **SLS, S4_LayerID *SLL){
+	lua_S4_Layer* SL = (lua_S4_Layer*)luaL_checkudata(L, index, LUA_S4_LAYER_TYPENAME);
+	*SLS = SL->S;
+	*SLL = SL->L;
+	return 0;
+}
+int lua_S4_Simulation_getmetatable(lua_State *L){
+	return luaL_getmetatable(L, LUA_S4_SIMULATION_TYPENAME);
+}
+int lua_S4_Layer_getmetatable(lua_State *L){
+	return luaL_getmetatable(L, LUA_S4_LAYER_TYPENAME);
 }
 
 
 int lua_S4_NewSimulation(lua_State *L){
-	S4_Simulation **pS;
 	luaL_checktype(L, 1, LUA_TTABLE);
 	S4_real Lr[4] = { 1, 0, 0, 1 };
 	int nG = 1;
@@ -379,10 +440,7 @@ int lua_S4_NewSimulation(lua_State *L){
 	if(0x3 != argflags){
 		return luaL_argerror(L, 1, "Must specify Lattice and BasisSize");
 	}
-	pS = (S4_Simulation**)lua_newuserdata(L, sizeof(S4_Simulation*));
-	luaL_getmetatable(L, LUA_S4_SIMULATION_TYPENAME);
-	lua_setmetatable(L, -2);
-	*pS = S4_Simulation_New(Lr, nG, G);
+	lua_S4_Simulation_push(L, S4_Simulation_New(Lr, nG, G), NULL, 0);
 	free(G);
 	return 1;
 }
@@ -460,7 +518,7 @@ int lua_S4_Layer_SetName(lua_State *L){
 	const char *prevname;
 	S4_Layer_GetName(SL->S, SL->L, &prevname);
 	lua_pushstring(L, prevname);
-	S4_Simulation_SetLayer(SL->S, SL->L, name, NULL, NULL, NULL);
+	S4_Simulation_SetLayer(SL->S, SL->L, name, NULL, -1, -1);
 	return 1;
 }
 int lua_S4_Layer_GetThickness(lua_State *L){
@@ -475,7 +533,7 @@ int lua_S4_Layer_SetThickness(lua_State *L){
 	S4_real thickness = luaL_checknumber(L, 2);
 	S4_real prevthickness;
 	S4_Layer_GetThickness(SL->S, SL->L, &prevthickness);
-	S4_Simulation_SetLayer(SL->S, SL->L, NULL, &thickness, NULL, NULL);
+	S4_Simulation_SetLayer(SL->S, SL->L, NULL, &thickness, -1, -1);
 	lua_pushnumber(L, prevthickness);
 	return 1;
 }
@@ -483,10 +541,10 @@ int lua_S4_Layer_SetRegion(lua_State *L){
 	int type = S4_REGION_TYPE_INTERVAL;
 	int i, j, nv;
 	S4_real *v = NULL;
-	S4_real center[2], hw[2];
+	S4_real center[2] = {0,0}, hw[2] = {0,0};
 	S4_real angle_frac = 0;
 	unsigned int argflags = 0;
-	S4_Material *M = NULL;
+	S4_MaterialID M = -1;
 
 	lua_S4_Layer *SL = lua_S4_Layer_check(L, 1);
 	luaL_checktype(L, 2, LUA_TTABLE);
@@ -601,13 +659,13 @@ int lua_S4_Layer_SetRegion(lua_State *L){
 				}
 				matname = lua_tostring(L, -1);
 				M = S4_Simulation_GetMaterialByName(SL->S, matname);
-				if(NULL == M){
+				if(M < 0){
 					return luaL_error(L, "Unknown material '%s'", matname);
 				}
 			}else{
 				lua_S4_Material *SM = lua_S4_Material_check(L, -1);
 				M = SM->M;
-				if(NULL == M){
+				if(M < 0){
 					return luaL_error(L, "Invalid material");
 				}
 			}
@@ -850,7 +908,7 @@ int lua_S4_Simulation_AddMaterial(lua_State *L){
 	S4_real eps[18];
 	unsigned int argflags = 0;
 	lua_S4_Material *SM;
-	S4_Material *M;
+	S4_MaterialID M;
 	int type = 0;
 
 	lua_pushnil(L);
@@ -878,28 +936,23 @@ int lua_S4_Simulation_AddMaterial(lua_State *L){
 	if(0 == (argflags & 0x01)){
 		return luaL_argerror(L, 1, "Must specify epsilon");
 	}
-	M = S4_Simulation_SetMaterial(S, NULL, name, type, eps);
-	if(NULL == M){
+	M = S4_Simulation_SetMaterial(S, -1, name, type, eps);
+	if(M < 0){
 		return luaL_argerror(L, 1, "Failed to add material");
 	}
-	SM = (lua_S4_Material*)lua_newuserdata(L, sizeof(lua_S4_Material));
-	SM->S = S;
-	SM->M = M;
 	lua_pushvalue(L, 1);
-	SM->Sref = luaL_ref(L, LUA_REGISTRYINDEX);
-	luaL_getmetatable(L, LUA_S4_MATERIAL_TYPENAME);
-	lua_setmetatable(L, -2);
+	lua_S4_Material_push(L, S, M);
 	return 1;
 }
 int lua_S4_Simulation_AddLayer(lua_State *L){
 	S4_Simulation *S = lua_S4_Simulation_check(L, 1);
 	luaL_checktype(L, 2, LUA_TTABLE);
 	const char *name = NULL;
-	S4_Material *M = NULL;
+	S4_MaterialID M = -1;
 	unsigned int argflags = 0;
 	lua_S4_Layer *SL;
-	S4_Layer *layer = NULL;
-	S4_Layer *copy = NULL;
+	S4_LayerID layer = -1;
+	S4_LayerID copy = -1;
 	S4_real thickness = 0;
 
 	lua_pushnil(L);
@@ -923,13 +976,13 @@ int lua_S4_Simulation_AddLayer(lua_State *L){
 				}
 				matname = lua_tostring(L, -1);
 				M = S4_Simulation_GetMaterialByName(SL->S, matname);
-				if(NULL == M){
+				if(M < 0){
 					return luaL_error(L, "Unknown material '%s'", matname);
 				}
 			}else{
 				lua_S4_Material *SM = lua_S4_Material_check(L, -1);
 				M = SM->M;
-				if(NULL == M){
+				if(M < 0){
 					return luaL_error(L, "Invalid material");
 				}
 			}
@@ -951,13 +1004,13 @@ int lua_S4_Simulation_AddLayer(lua_State *L){
 				}
 				lname = lua_tostring(L, -1);
 				copy = S4_Simulation_GetLayerByName(S, lname);
-				if(NULL == copy){
+				if(copy < 0){
 					return luaL_error(L, "Unknown layer '%s'", lname);
 				}
 			}else{
 				lua_S4_Layer *SL = lua_S4_Layer_check(L, -1);
 				copy = SL->L;
-				if(NULL == L){
+				if(copy < 0){
 					return luaL_error(L, "Invalid layer");
 				}
 			}
@@ -968,28 +1021,22 @@ int lua_S4_Simulation_AddLayer(lua_State *L){
 
 		lua_pop(L, 1);
 	}
-	if(NULL == copy){
+	if(copy < 0){
 		if(0x3 != (argflags & 0x03)){
 			return luaL_argerror(L, 1, "Must specify material and thickness");
 		}
-		layer = S4_Simulation_SetLayer(S, NULL, name, &thickness, NULL, M);
+		layer = S4_Simulation_SetLayer(S, -1, name, &thickness, -1, M);
 	}else{
 		if(0x0 != (argflags & 0x01)){
 			return luaL_argerror(L, 1, "Must not specify material for a layer copy");
 		}
-		layer = S4_Simulation_SetLayer(S, NULL, name, &thickness, copy, NULL);
+		layer = S4_Simulation_SetLayer(S, -1, name, &thickness, copy, -1);
 	}
-	if(NULL == layer){
+	if(layer < 0){
 		return luaL_argerror(L, 1, "Failed to add layer");
 	}
-	SL = (lua_S4_Layer*)lua_newuserdata(L, sizeof(lua_S4_Layer));
-	SL->S = S;
-	SL->L = layer;
 	lua_pushvalue(L, 1);
-	SL->Sref = luaL_ref(L, LUA_REGISTRYINDEX);
-	luaL_getmetatable(L, LUA_S4_LAYER_TYPENAME);
-	lua_setmetatable(L, -2);
-	return 1;
+	return lua_S4_Layer_push(L, S, layer);
 }
 int lua_S4_Simulation_ExcitationPlanewave(lua_State *L){
 	S4_Simulation *S = lua_S4_Simulation_check(L, 1);
