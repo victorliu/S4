@@ -7,7 +7,8 @@ LUA_LIB = -Wl,-Bdynamic -llua -Wl,-Bstatic
 LUA_MODULE_LIB = -DLUA_BUILD_AS_DLL -Wl,-Bdynamic -llua.dll -Wl,-Bstatic
 
 CFLAGS += -O2 -Wall -march=native -fcx-limited-range -fno-exceptions -static
-#CFLAGS += -g -O0 -Wall -march=native -fcx-limited-range -fno-exceptions
+#CFLAGS += -g -O0 -Wall -march=native -fcx-limited-range -fno-exceptions -DENABLE_S4_TRACE
+CXXFLAGS = $(CFLAGS)
 
 CC = gcc
 CXX = g++
