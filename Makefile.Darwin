@@ -1,13 +1,13 @@
 OBJDIR = build
 SHLIB_EXT = so
-SHLIB_FLAGS = -bundle -undefined dynamic_lookup -fpic
+SHLIB_FLAGS = -bundle -undefined dynamic_lookup
 LA_LIBS = -framework Accelerate
 LUA_INC = -Ilua-5.2.4/install/include
 LUA_LIB = -Llua-5.2.4/install/lib -llua
-LUA_MODULE_LIB = $(LUA_LIB)
+LUA_MODULE_LIB =
 
-CFLAGS += -O0 -g -Wall
-CXXFLAGS += -O0 -g -Wall -std=c++11
+CFLAGS += -O2 -Wall
+CXXFLAGS += -O2 -Wall -std=c++11
 
 CC = cc
 CXX = c++
