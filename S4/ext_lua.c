@@ -341,10 +341,12 @@ int lua_S4_Simulation_Layer_check(lua_State *L, int index, S4_Simulation **SLS, 
 	return 0;
 }
 int lua_S4_Simulation_getmetatable(lua_State *L){
-	return luaL_getmetatable(L, LUA_S4_SIMULATION_TYPENAME);
+	luaL_getmetatable(L, LUA_S4_SIMULATION_TYPENAME);
+	return 1;
 }
 int lua_S4_Layer_getmetatable(lua_State *L){
-	return luaL_getmetatable(L, LUA_S4_LAYER_TYPENAME);
+	luaL_getmetatable(L, LUA_S4_LAYER_TYPENAME);
+	return 1;
 }
 
 
@@ -1095,7 +1097,7 @@ int lua_S4_Simulation_GetEpsilon(lua_State *L){
 	int n;
 	S4_Simulation *S = lua_S4_Simulation_check(L, 1);
 	luaL_checktype(L, 2, LUA_TTABLE);
-	
+
 	lua_len(L, 2);
 	n = lua_tointeger(L, -1);
 	lua_pop(L, 1);
