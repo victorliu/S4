@@ -365,7 +365,9 @@ int S4_Simulation_SetFrequency(S4_Simulation *S, const S4_real *freq_complex){
 	if(NULL == S){ return -1; }
 	if(NULL == freq_complex){ return -2; }
 	S4_TRACE("> S4_Simulation_SetFrequency(S=%p, freq=(%f,%f))\n", S, freq_complex[0], freq_complex[1]);
+	S4_Simulation_DestroyLayerModes(S, -1);
 	Simulation_DestroySolution(S);
+	Simulation_InvalidateFieldCache(S);
 	S->omega[0] = 2*M_PI*freq_complex[0];
 	S->omega[1] = 2*M_PI*freq_complex[1];
 	S4_TRACE("< S4_Simulation_SetFrequency\n");
@@ -700,6 +702,11 @@ int S4_Layer_SetRegionHalfwidths(
 	}
 	sh->tag = Mid;
 	switch(type){
+	case S4_REGION_TYPE_INTERVAL:
+		sh->type = RECTANGLE;
+		sh->vtab.rectangle.halfwidth[0] = halfwidths[0];
+		sh->vtab.rectangle.halfwidth[1] = 0;
+		break;
 	case S4_REGION_TYPE_RECTANGLE:
 		sh->type = RECTANGLE;
 		sh->vtab.rectangle.halfwidth[0] = halfwidths[0];
@@ -721,6 +728,7 @@ int S4_Layer_SetRegionHalfwidths(
 		break;
 	default:
 		L->pattern.nshapes--;
+		S4_TRACE("  S4_Layer_SetRegionHalfwidths unknown type: %d\n", type);
 		break;
 	}
 
@@ -798,6 +806,16 @@ void Simulation_DestroyLayerModes(S4_Layer *layer){
 		layer->modes = NULL;
 	}
 }
+void S4_Simulation_DestroyLayerModes(S4_Simulation *S, S4_LayerID id){
+	if(id < 0){
+		for(int i = 0; i < S->n_layers; ++i){
+			Simulation_DestroyLayerModes(&S->layer[i]);
+		}
+	}else if(id < S->n_layers){
+		Simulation_DestroyLayerModes(&S->layer[id]);
+	}
+}
+
 int Simulation_RemoveLayerPatterns(S4_Simulation *S, S4_Layer *layer){
 	S4_TRACE("> Simulation_RemoveLayerPatterns(S=%p, layer=%p) [omega=%f]\n",
 		S, layer, S->omega[0]);
@@ -1110,7 +1128,7 @@ int Simulation_InitSolution(S4_Simulation *S){
 			bool found = false;
 			for(int j = 0; j < S->n_layers; ++j){
 				const S4_Layer *L2 = &(S->layer[j]);
-				if(i == L->copy){
+				if(j == L->copy){
 					if(L2->copy >= 0){
 						S4_TRACE("< Simulation_InitSolution (failed; layer %s is referenced by a copy but is also a copy) [omega=%f]\n", L2->name, S->omega[0]);
 						return 11;
@@ -1769,7 +1787,7 @@ int Simulation_ComputeLayerModes(S4_Simulation *S, S4_Layer *L, LayerModes **lay
 // realistically, can only return an InitSolution code
 int S4_Simulation_GetPowerFlux(S4_Simulation *S, S4_LayerID id, const double *offset, double *powers){
 	S4_TRACE("> S4_Simulation_GetPowerFlux(S=%p, layer=%d, offset=%f, powers=%p) [omega=%f]\n",
-		S, id, *offset, powers, S->omega[0]);
+		S, id, (NULL == offset ? 0 : *offset), powers, S->omega[0]);
 	int ret = 0;
 	if(NULL == S){ ret = -1; }
 	if(id < 0 || id >= S->n_layers){ return -2; }
@@ -3382,7 +3400,7 @@ int S4_Simulation_ExcitationPlanewave(
 	const S4_real kn[3] = {
 		il*kdir[0], il*kdir[1], il*kdir[2]
 	};
-	S4_real uk = kdir[0]*udir[0] + kdir[1]*udir[1] + kdir[2]*udir[2];
+	S4_real uk = kn[0]*udir[0] + kn[1]*udir[1] + kn[2]*udir[2];
 	S4_real un[3] = {
 		udir[0] - uk*kdir[0],
 		udir[1] - uk*kdir[1],
@@ -3400,15 +3418,20 @@ int S4_Simulation_ExcitationPlanewave(
 	// E field is amp_u * u + amp_v * v
 	// H field is amp_u * v - amp_v * u
 
-	S->k[0] = root_eps * kdir[0];
-	S->k[1] = root_eps * kdir[1];
-
+	S4_real k_new[2] = { root_eps * kn[0], root_eps * kn[1] };
+	
+	if(k_new[0] != S->k[0] || k_new[1] != S->k[1]){
+		S4_Simulation_DestroyLayerModes(S, -1);
+		S->k[0] = k_new[0];
+		S->k[1] = k_new[1];
+	}
+	
 	S->exc.sub.planewave.hx[0] = amp_u[0]*vn[0] - amp_v[0]*un[0];
 	S->exc.sub.planewave.hx[1] = amp_u[1]*vn[0] - amp_v[1]*un[0];
 	S->exc.sub.planewave.hy[0] = amp_u[0]*vn[1] - amp_v[0]*un[1];
 	S->exc.sub.planewave.hy[1] = amp_u[1]*vn[1] - amp_v[1]*un[1];
 	S->exc.sub.planewave.order = 0;
-	if(kdir[2] < 0){
+	if(kn[2] < 0){
 		S->exc.sub.planewave.backwards = 1;
 	}
 

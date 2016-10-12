@@ -174,6 +174,7 @@ void Simulation_Clone(const S4_Simulation *S, S4_Simulation *T);
 void Simulation_DestroySolution(S4_Simulation *S);
 void Simulation_DestroyLayerSolutions(S4_Simulation *S);
 void Simulation_DestroyLayerModes(S4_Layer *layer);
+void S4_Simulation_DestroyLayerModes(S4_Simulation *S, S4_LayerID id);
 
 // Destroys the solution belonging to a given simulation and sets
 // S->solution to NULL.
