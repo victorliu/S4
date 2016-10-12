@@ -71,7 +71,10 @@ int lua_S4_Simulation_SetFrequency(lua_State *L);
 int lua_S4_Simulation_GetFrequency(lua_State *L);
 int lua_S4_Simulation_AddMaterial(lua_State *L);
 int lua_S4_Simulation_AddLayer(lua_State *L);
+int lua_S4_Simulation_GetMaterial(lua_State *L);
+int lua_S4_Simulation_GetLayer(lua_State *L);
 int lua_S4_Simulation_ExcitationPlanewave(lua_State *L);
+int lua_S4_Simulation_GetEpsilon(lua_State *L);
 int lua_S4_Layer_GetPowerFlux(lua_State *L);
 //int lua_S4_Layer_GetPowerFluxes(lua_State *L);
 int lua_S4_Layer_GetWaves(lua_State *L);
@@ -115,7 +118,10 @@ int luaopen_S4v2(lua_State *L){
 		{"GetFrequency", lua_S4_Simulation_GetFrequency},
 		{"AddMaterial", lua_S4_Simulation_AddMaterial},
 		{"AddLayer", lua_S4_Simulation_AddLayer},
+		{"GetMaterial", lua_S4_Simulation_GetMaterial},
+		{"GetLayer", lua_S4_Simulation_GetLayer},
 		{"ExcitationPlanewave", lua_S4_Simulation_ExcitationPlanewave},
+		{"GetEpsilon", lua_S4_Simulation_GetEpsilon},
 		{NULL, NULL}
 	};
 
@@ -972,12 +978,8 @@ int lua_S4_Simulation_AddLayer(lua_State *L){
 			name = lua_tostring(L, -1);
 		}else if(0 == strcmp("material", key)){
 			if(lua_isstring(L, -1)){
-				const char *matname;
-				if(!lua_isstring(L, -1)){
-					return luaL_argerror(L, 1, "Invalid format for material");
-				}
-				matname = lua_tostring(L, -1);
-				M = S4_Simulation_GetMaterialByName(SL->S, matname);
+				const char *matname = lua_tostring(L, -1);
+				M = S4_Simulation_GetMaterialByName(S, matname);
 				if(M < 0){
 					return luaL_error(L, "Unknown material '%s'", matname);
 				}
@@ -1040,6 +1042,18 @@ int lua_S4_Simulation_AddLayer(lua_State *L){
 	lua_pushvalue(L, 1);
 	return lua_S4_Layer_push(L, S, layer);
 }
+
+int lua_S4_Simulation_GetMaterial(lua_State *L){
+	S4_Simulation *S = lua_S4_Simulation_check(L, 1);
+	const char *name = luaL_checkstring(L, 2);
+	return lua_S4_Material_push(L, S, S4_Simulation_GetMaterialByName(S, name));
+}
+
+int lua_S4_Simulation_GetLayer(lua_State *L){
+	S4_Simulation *S = lua_S4_Simulation_check(L, 1);
+	const char *name = luaL_checkstring(L, 2);
+	return lua_S4_Layer_push(L, S, S4_Simulation_GetLayerByName(S, name));
+}
 int lua_S4_Simulation_ExcitationPlanewave(lua_State *L){
 	S4_Simulation *S = lua_S4_Simulation_check(L, 1);
 	luaL_checktype(L, 2, LUA_TTABLE);
@@ -1077,6 +1091,32 @@ int lua_S4_Simulation_ExcitationPlanewave(lua_State *L){
 	S4_Simulation_ExcitationPlanewave(S, k, u, cu, cv);
 	return 0;
 }
+int lua_S4_Simulation_GetEpsilon(lua_State *L){
+	int n;
+	S4_Simulation *S = lua_S4_Simulation_check(L, 1);
+	luaL_checktype(L, 2, LUA_TTABLE);
+	
+	lua_len(L, 2);
+	n = lua_tointeger(L, -1);
+	lua_pop(L, 1);
+	if(3 == n){
+		int i;
+		double r[3], eps[2];
+		for(i = 0; i < 3; ++i){
+			lua_pushinteger(L, i+1);
+			lua_gettable(L, 2);
+			r[i] = lua_tonumber(L, -1);
+			lua_pop(L, 1);
+		}
+		Simulation_GetEpsilon(S, r, eps);
+		lua_pushnumber(L, eps[0]);
+		lua_pushnumber(L, eps[1]);
+		return 2;
+	}else{
+		return luaL_argerror(L, 2, "Must specify query point");
+	}
+}
+
 int lua_S4_Layer_GetPowerFlux(lua_State *L){
 	S4_real power[4];
 	int i;
@@ -1098,53 +1138,54 @@ int lua_S4_Layer_GetWaves(lua_State *L){
 	waves = (S4_real*)malloc(sizeof(S4_real)*11*n2);
 	S4_Simulation_GetWaves(SL->S, SL->L, waves);
 
-	lua_createtable(L, n2, 0);
-	for(i = 0; i < n2; ++i){
-		const double *wave = &waves[11*i];
-		lua_pushinteger(L, i+1);
-		/* a wave object is:
-		 *   direction = {kx,ky,kzr,kzi}
-		 *   polarization = {x,y,z}
-		 *   cu = {re,im}
-		 *   cv = {re,im}
-		 */
-		lua_createtable(L, 0, 4);
-		{
-			lua_createtable(L, 4, 0);
-			for(k = 0; k < 4; ++k){
-				lua_pushinteger(L, k+1);
-				lua_pushnumber(L, wave[k]);
-				lua_settable(L, -3);
-			}
-			lua_setfield(L, -2, "k");
+	for(j = 0; j < 2; ++j){
+		lua_createtable(L, n, 0);
+		for(i = 0; i < n; ++i){
+			const double *wave = &waves[11*(i+n*j)];
+			lua_pushinteger(L, i+1);
+			/* a wave object is:
+			 *   direction = {kx,ky,kzr,kzi}
+			 *   polarization = {x,y,z}
+			 *   cu = {re,im}
+			 *   cv = {re,im}
+			 */
+			lua_createtable(L, 0, 4);
+			{
+				lua_createtable(L, 4, 0);
+				for(k = 0; k < 4; ++k){
+					lua_pushinteger(L, k+1);
+					lua_pushnumber(L, wave[k]);
+					lua_settable(L, -3);
+				}
+				lua_setfield(L, -2, "k");
 
-			lua_createtable(L, 3, 0);
-			for(k = 0; k < 3; ++k){
-				lua_pushinteger(L, k+1);
-				lua_pushnumber(L, wave[4+k]);
-				lua_settable(L, -3);
-			}
-			lua_setfield(L, -2, "u");
+				lua_createtable(L, 3, 0);
+				for(k = 0; k < 3; ++k){
+					lua_pushinteger(L, k+1);
+					lua_pushnumber(L, wave[4+k]);
+					lua_settable(L, -3);
+				}
+				lua_setfield(L, -2, "u");
 
-			lua_createtable(L, 2, 0);
-			for(k = 0; k < 2; ++k){
-				lua_pushinteger(L, k+1);
-				lua_pushnumber(L, wave[7+k]);
-				lua_settable(L, -3);
-			}
-			lua_setfield(L, -2, "cu");
+				lua_createtable(L, 2, 0);
+				for(k = 0; k < 2; ++k){
+					lua_pushinteger(L, k+1);
+					lua_pushnumber(L, wave[7+k]);
+					lua_settable(L, -3);
+				}
+				lua_setfield(L, -2, "cu");
 
-			lua_createtable(L, 2, 0);
-			for(k = 0; k < 2; ++k){
-				lua_pushinteger(L, k+1);
-				lua_pushnumber(L, wave[9+k]);
-				lua_settable(L, -3);
+				lua_createtable(L, 2, 0);
+				for(k = 0; k < 2; ++k){
+					lua_pushinteger(L, k+1);
+					lua_pushnumber(L, wave[9+k]);
+					lua_settable(L, -3);
+				}
+				lua_setfield(L, -2, "cv");
 			}
-			lua_setfield(L, -2, "cv");
+			lua_settable(L, -3);
 		}
-		lua_settable(L, -3);
 	}
-
 	free(waves);
-	return 1;
+	return 2;
 }

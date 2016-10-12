@@ -27,7 +27,9 @@ Example:
 * SetLattice/GetLattice
 * SetBases/GetBases
 * SetFrequency/GetFrequency
+* GetMaterial/GetLayer
 * ExcitationPlanewave
+* GetEpsilon
 
 ## Material object methods:
 
@@ -100,6 +102,15 @@ Example:
     S:SetFrequency(1 / wavelength)
     wavelength = 1 / S:GetFrequency()
 
+### Simulation: GetMaterial/GetLayer
+
+Get a material or layer handle ID by name.
+
+Example:
+
+    M = S:GetMaterial('Glass')
+    L = S:GetLayer('Substrate')
+
 ### Simulation: ExcitationPlanewave
 
 Set a planewave excitation source.
@@ -111,6 +122,15 @@ The complex amplitudes are specified by real and imaginary parts.
 Example:
 
     S:ExcitationPlanewave{ k = {0, 0, 1}, u = {0, 1, 0}, cu = {1, 0}, cv = {0, 0} }
+
+### Simulation: GetEpsilon
+
+Returns the dielectric constant at a point in space.
+Currently, the dielectric constant is assumed to be a scalar complex number.
+
+Example:
+
+    eps_real, eps_imag = S:GetEpsilon{x, y, z}
 
 ### Material: SetName/GetName
 
