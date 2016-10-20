@@ -2840,6 +2840,7 @@ int Simulation_GetEpsilon(S4_Simulation *S, const double r[3], double eps[2]){
 		for(i = 0; i < S->n_layers && r[2] > z+S->layer[i].thickness; ++i){
 			z += S->layer[i].thickness;
 		}
+		if(i >= S->n_layers){ i = S->n_layers-1; }
 		L = &(S->layer[i]);
 	}
 	if(NULL == L){
