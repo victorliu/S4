@@ -577,6 +577,8 @@ int lua_S4_Layer_SetRegion(lua_State *L){
 				type = S4_REGION_TYPE_ELLIPSE;
 			}else if(0 == strcmp("rectangle", shapestr)){
 				type = S4_REGION_TYPE_RECTANGLE;
+			}else if(0 == strcmp("polygon", shapestr)){
+				type = S4_REGION_TYPE_POLYGON;
 			}
 			argflags |= 0x01;
 		}else if(0 == strcmp("center", key)){

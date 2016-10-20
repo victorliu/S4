@@ -784,6 +784,7 @@ int S4_Layer_SetRegionVertices(
 			sh->vtab.polygon.vertex[2*i+0] = v[2*i+0];
 			sh->vtab.polygon.vertex[2*i+1] = v[2*i+1];
 		}
+		break;
 	default:
 		L->pattern.nshapes--;
 		break;
