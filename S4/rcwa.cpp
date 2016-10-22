@@ -80,22 +80,22 @@ static void SingularLinearSolve(
 	integer lwork = (integer)dummy.real();
 	std::complex<double> *work = (std::complex<double>*)rcwa_malloc(sizeof(std::complex<double>) * lwork);
 	double *rwork = (double*)rcwa_malloc(sizeof(double) * 6*m);
-	
+
 	zgelss_(m, n, nRHS, a, lda, b, ldb, rwork, rcond, &rank, work, lwork, rwork+m, &info);
-	
+
 	rcwa_free(rwork);
 	rcwa_free(work);
 #else
 	RNP::LinearSolve<'N'>(n, nRHS, a, lda, b, ldb);
 #endif
 }
-	
+
 
 // kp = k-parallel matrix
 // kp = omega^2 - Kappa = omega^2 - [  ky*epsinv*ky -ky*epsinv*kx ]
 //                                  [ -kx*epsinv*ky  kx*epsinv*kx ]
 //    = omega^2 + [ -ky ] [ epsinv ] [ ky -kx ]
-//    
+//
 
 static void MakeKPMatrix(
 	std::complex<double> omega,
@@ -113,11 +113,11 @@ static void MakeKPMatrix(
 		RNP::TBLAS::CopyMatrix<'A'>(n2,n2, kp_existing,n2, kp,ldkp);
 		return;
 	}
-	
+
 	const std::complex<double> omega2 = omega*omega;
 	if(EPSILON2_TYPE_BLKDIAG1_SCALAR == epstype || EPSILON2_TYPE_BLKDIAG2_SCALAR == epstype){
 		RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0.,0., kp,ldkp);
-		
+
 		for(size_t i = 0; i < n; ++i){
 			kp[(0+i)+(0+i)*ldkp] = omega2 - ky[i]*Epsilon_inv[0]*ky[i];
 			kp[(n+i)+(0+i)*ldkp] = kx[i]*Epsilon_inv[0]*ky[i];
@@ -131,7 +131,7 @@ static void MakeKPMatrix(
 		RNP::TBLAS::CopyMatrix<'A'>(n,n, Epsilon_inv, n, &kp[n+0*ldkp], ldkp);
 		RNP::TBLAS::CopyMatrix<'A'>(n,n, Epsilon_inv, n, &kp[0+n*ldkp], ldkp);
 		RNP::TBLAS::CopyMatrix<'A'>(n,n, Epsilon_inv, n, &kp[n+n*ldkp], ldkp);
-		
+
 		for(size_t i = 0; i < n; ++i){
 			RNP::TBLAS::Scale(n2, -ky[i], &kp[0+i*n2], 1);
 		}
@@ -173,7 +173,7 @@ void MultKPMatrix(
 	const size_t ldy
 ){
 	const size_t n2 = 2*n;
-	
+
 	if(NULL != kp){
 		if('N' == trans[0]){
 			if(ncols > 1){
@@ -190,7 +190,7 @@ void MultKPMatrix(
 		}
 		return;
 	}
-	
+
 	const std::complex<double> omega2 = omega*omega;
 	if(EPSILON2_TYPE_BLKDIAG1_SCALAR == Epsilon2_type || EPSILON2_TYPE_BLKDIAG2_SCALAR == Epsilon2_type){
 		const std::complex<double> epsinv(
@@ -223,7 +223,7 @@ void MultKPMatrix(
 				RNP::TBLAS::MultMV<'C'>(n,n, 1.,Epsilon_inv,n, &y[0+0*ldy],1, 0.,&y[n+0*ldy],1);
 			}
 		}
-		
+
 		for(size_t j = 0; j < ncols; ++j){
 			for(size_t i = 0; i < n; ++i){
 				y[(0+i)+j*ldy] = omega2 * a[(0+i)+j*lda] - ky[i]*y[n+i+j*ldy];
@@ -267,9 +267,17 @@ void SolveLayerEigensystem_uniform(
 
 		// Set the \hat{q} vector (diagonal matrix) while we're at it
 		if(0 == omega.imag()){ // Not bandsolving
-			q[i] = std::sqrt(q[i]);
-			if(q[i].imag() < 0){
-				q[i] = -q[i];
+			if(std::abs(q[i].imag()) <= 4*DBL_EPSILON*std::abs(q[i].real())){
+				if(q[i].real() >= 0){
+					q[i] = std::sqrt(q[i].real());
+				}else{
+					q[i] = std::complex<double>(0, std::sqrt(-q[i].real()));
+				}
+			}else{
+				q[i] = std::sqrt(q[i]);
+				if(q[i].imag() < 0){
+					q[i] = -q[i];
+				}
 			}
 		}else{ // performing some kind of bandsolving, need to choose the appropriate branch
 			if(q[i].real() < 0){
@@ -281,13 +289,13 @@ void SolveLayerEigensystem_uniform(
 				q[i] = std::sqrt(q[i]);
 			}
 		}
-		
+
 		/*
 		if(std::complex<double>(0) == q[i]){
 			q[i] = DBL_EPSILON*omega;
 		}
 		*/
-		
+
 		q[i+n] = q[i];
 	}
 #ifdef DUMP_MATRICES
@@ -344,7 +352,7 @@ void SolveLayerEigensystem(
 	}
 	std::complex<double> *op = work;
 	std::complex<double> *eigenwork = op + n2*n2;
-	
+
 	double *rwork = rwork_;
 	if(NULL == rwork_){
 		rwork = (double*)rcwa_malloc(sizeof(double)*2*n2);
@@ -368,7 +376,7 @@ void SolveLayerEigensystem(
 
 	// Fill kp
 	std::complex<double> *kp_use = (NULL != kp ? kp : phi);
-	
+
 	MakeKPMatrix(omega, n, kx, ky, Epsilon_inv, epstype, NULL, kp_use, n2);
 #ifdef DUMP_MATRICES
 	DUMP_STREAM << "kp:" << std::endl;
@@ -378,7 +386,7 @@ void SolveLayerEigensystem(
 	RNP::IO::PrintVector(n2,&kp_use[0+(n2-1)*n2],1, DUMP_STREAM) << std::endl << std::endl;
 # endif
 #endif
-	
+
 
 #ifdef DUMP_MATRICES
 	DUMP_STREAM << "Epsilon2:" << std::endl;
@@ -392,7 +400,7 @@ void SolveLayerEigensystem(
 	// Make the eigenoperator Epsilon2*kp - [kxkx, kxky; kykx, kyky]
 	RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0.,0., op,n2);
 	RNP::TBLAS::MultMM<'N','N'>(n2,n2,n2, 1.,Epsilon2,n2, kp_use,n2, 0.,op,n2);
-	
+
 	for(size_t i = 0; i < n; ++i){
 		op[i+i*n2] -= kx[i]*kx[i];
 	}
@@ -468,7 +476,7 @@ void SolveLayerEigensystem(
 	RNP::IO::PrintVector(n2,phi,1, DUMP_STREAM) << std::endl << std::endl;
 # endif
 #endif
-	
+
 	if(NULL == work_ || lwork < n2*n2+2*n2){
 		rcwa_free(work);
 	}
@@ -517,7 +525,7 @@ void GetSMatrix(
 	if(NULL == iwork){
 		pivots = (size_t*)rcwa_malloc(sizeof(size_t)*n4);
 	}
-	
+
 	RNP::TBLAS::SetMatrix<'A'>(n4,n4, 0.,1., S, n4);
 
 	std::complex<double> *t1 = work;
@@ -530,7 +538,7 @@ void GetSMatrix(
 	for(size_t l = 0; l < nlayers-1; ++l){
 		size_t lp1 = l+1;
 		if(lp1 >= nlayers){ lp1 = l; }
-		
+
 		// Make the interface matrices
 		if((lp1 == l) || (q[l] == q[lp1] && ((NULL != kp[l] && kp[l] == kp[lp1]) || Epsilon_inv[l] == Epsilon_inv[lp1]) && phi[l] == phi[lp1])){
 			// This is a trivial interface, set to identity
@@ -557,7 +565,7 @@ void GetSMatrix(
 			{
 				std::complex<double> *Ml = (std::complex<double>*)rcwa_malloc(sizeof(std::complex<double>)*n4*n4);
 				std::complex<double> *Mlp1 = (std::complex<double>*)rcwa_malloc(sizeof(std::complex<double>)*n4*n4);
-				
+
 				RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0.,0., &Ml[0+0*n4],n4);
 				RNP::TBLAS::CopyMatrix<'A'>(n2,n2, phi[l],n2, &Ml[n2+0*n4],n4);
 				RNP::TBLAS::CopyMatrix<'A'>(n2,n2, phi[l],n2, &Ml[n2+n2*n4],n4);
@@ -570,7 +578,7 @@ void GetSMatrix(
 				for(size_t i = 0; i < n2; ++i){
 					RNP::TBLAS::Scale(n2, -1., &Ml[0+(i+n2)*n4], 1);
 				}
-				
+
 				RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0.,0., &Mlp1[0+0*n4],n4);
 				RNP::TBLAS::CopyMatrix<'A'>(n2,n2, phi[lp1],n2, &Mlp1[n2+0*n4],n4);
 				RNP::TBLAS::CopyMatrix<'A'>(n2,n2, phi[lp1],n2, &Mlp1[n2+n2*n4],n4);
@@ -583,7 +591,7 @@ void GetSMatrix(
 				for(size_t i = 0; i < n2; ++i){
 					RNP::TBLAS::Scale(n2, -1., &Mlp1[0+(i+n2)*n4], 1);
 				}
-				
+
 				//RNP::LinearSolve<'N'>(n4, n4, Ml, n4, Mlp1, n4, NULL, pivots);
 #ifdef DUMP_MATRICES
 			DUMP_STREAM << "M(" << l << ") = " << std::endl;
@@ -599,7 +607,7 @@ void GetSMatrix(
 			RNP::IO::PrintVector(n4,Mlp1,1, DUMP_STREAM) << std::endl << std::endl;
 # endif
 #endif
-				
+
 				rcwa_free(Mlp1);
 				rcwa_free(Ml);
 			}
@@ -675,7 +683,7 @@ void GetSMatrix(
 					}
 				}
 			}
-			
+
 			// Make P in in2
 			if(NULL == phi[lp1]){
 				RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0.,1., in2,n2);
@@ -686,7 +694,7 @@ void GetSMatrix(
 				RNP::TBLAS::CopyMatrix<'A'>(n2,n2, phi[l],n2, t1,n2);
 				RNP::LinearSolve<'N'>(n2, n2, t1, n2, in2, n2, &solve_info, pivots);
 			}
-			
+
 			RNP::TBLAS::CopyMatrix<'A'>(n2,n2, in2,n2, t1,n2); // in2 = P, t1 = P, in1 = Q
 			RNP::TBLAS::Axpy(n2*n2, -1., in1,1, in2,1); // in2 = P-Q, t1 = P, in1 = Q
 			RNP::TBLAS::Axpy(n2*n2, 1., t1,1, in1,1); // in2 = P+Q, t1 = P, in1 = P+Q
@@ -707,7 +715,7 @@ void GetSMatrix(
 		RNP::IO::PrintVector(n2,in2,1, DUMP_STREAM) << std::endl << std::endl;
 # endif
 #endif
-		
+
 		for(size_t i = 0; i < n2; ++i){
 			d1[i] = std::exp(q[l  ][i] * std::complex<double>(0,thickness[l  ]));
 			d2[i] = std::exp(q[lp1][i] * std::complex<double>(0,thickness[lp1]));
@@ -723,7 +731,7 @@ void GetSMatrix(
 		RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0.,1., t2,n2);
 		int solve_info;
 		RNP::LinearSolve<'N'>(n2, n2, t1, n2, t2, n2, &solve_info, pivots); // t2 = (I11 - f_l S12 I21)^{-1}
-		
+
 		RNP::TBLAS::CopyMatrix<'A'>(n2,n2, &S[0+0*n4],n4, t1,n2);
 		for(size_t i = 0; i < n2; ++i){ // t1 = f_l S11
 			RNP::TBLAS::Scale(n2, d1[i], &t1[i+0*n2], n2);
@@ -741,11 +749,11 @@ void GetSMatrix(
 		}
 		RNP::TBLAS::MultMM<'N','N'>(n2,n2,n2, 1.,t2,n2, t1,n2, 0.,&S[0+n2*n4],n4);
 		// S12 done, and t2 can be reused
-		
+
 		RNP::TBLAS::MultMM<'N','N'>(n2,n2,n2, 1.,&S[n2+n2*n4],n4, in2,n2, 0.,t1,n2); // t1 = S22 I21
 		RNP::TBLAS::MultMM<'N','N'>(n2,n2,n2, 1.,t1,n2, &S[0+0*n4],n4, 1.,&S[n2+0*n4],n4);
 		// S21 done, need to keep t1 = S22 I21
-		
+
 		RNP::TBLAS::MultMM<'N','N'>(n2,n2,n2, 1.,&S[n2+n2*n4],n4, in1,n2, 0.,t2,n2); // t2 = S22 I22
 		for(size_t i = 0; i < n2; ++i){ // t2 = S22 I22 f_{l+1}
 			RNP::TBLAS::Scale(n2, d2[i], &t2[0+i*n2], 1);
@@ -791,7 +799,7 @@ int SolveInterior(
 ){
 	if(0 == nlayers){ return-1; }
 	if(which_layer >= nlayers){ return -2; }
-	
+
 	const size_t n2 = 2*n;
 	const size_t n4 = 2*n2;
 	const size_t lwork_GetSMatrix = 4*n*(4*n+1);
@@ -819,7 +827,7 @@ int SolveInterior(
 	std::complex<double> *bl = al+n2;
 	std::complex<double> *temp = S0l;
 	size_t ldtemp = n4;
-	
+
 	int info;
 
 	GetSMatrix(which_layer+1, n, kx, ky, omega,
@@ -859,10 +867,10 @@ int SolveInterior(
 	}else{
 		RNP::TBLAS::Fill(n2, 0., S22bN, 1);
 	}
-	
+
 	// We overwrite the upper left submatrix S11(0,l) since it's not needed anymore
 	// temp is set to S0l for this reason.
-	
+
 	// Compute -S_12(0,l)S_21(l,N)
 	RNP::TBLAS::MultMM<'N','N'>(n2, n2, n2, std::complex<double>(-1.0), &S0l[0+n2*n4], n4,
 		&SlN[n2+0*n4], n4,
@@ -948,7 +956,7 @@ void GetZPoyntingFlux(
 	std::complex<double> *work
 ){
 	const size_t n2 = 2*n;
-	
+
 	std::complex<double> *a2 = work;
 	if(NULL == work){
 		a2 = (std::complex<double> *)rcwa_malloc(sizeof(std::complex<double>) * 4*n2);
@@ -956,7 +964,7 @@ void GetZPoyntingFlux(
 	std::complex<double> *b2 = a2 + n2;
 	std::complex<double> *a3 = b2 + n2;
 	std::complex<double> *b3 = a3 + n2;
-	
+
 	memcpy(a2, ab, sizeof(std::complex<double>) * 2*n2);
 	for(size_t i = 0; i < n2; ++i){ a2[i] /= (omega*q[i]); }
 	for(size_t i = 0; i < n2; ++i){ b2[i] /= (omega*q[i]); }
@@ -971,16 +979,16 @@ void GetZPoyntingFlux(
 	}else{
 		RNP::TBLAS::MultMM<'C','N'>(n2,2,n2, std::complex<double>(1.),phi,n2, a2,n2, std::complex<double>(0.), a3,n2);
 	}
-	
+
 	// At this point a3[n2] is alpha and b3[n2] is beta,
 	// ab[n2] is a and (ab+n2)[n2] is b
-	
+
 	*forward  =  RNP::TBLAS::ConjugateDot(n2, ab     ,1, a3,1).real();
 	*backward = -RNP::TBLAS::ConjugateDot(n2, &ab[n2],1, b3,1).real();
 	std::complex<double> diff = 0.5*(RNP::TBLAS::ConjugateDot(n2, &ab[n2],1, a3,1) - RNP::TBLAS::ConjugateDot(n2, b3,1, ab,1));
 	*forward  += diff;
 	*backward += std::conj(diff);
-	
+
 	if(NULL == work){
 		rcwa_free(a2);
 	}
@@ -1001,7 +1009,7 @@ void GetZPoyntingFluxComponents(
 	std::complex<double> *work
 ){
 	const size_t n2 = 2*n;
-	
+
 	std::complex<double> *a2 = work;
 	if(NULL == work){
 		a2 = (std::complex<double> *)rcwa_malloc(sizeof(std::complex<double>) * 4*n2);
@@ -1009,7 +1017,7 @@ void GetZPoyntingFluxComponents(
 	std::complex<double> *b2 = a2 + n2;
 	std::complex<double> *a3 = b2 + n2;
 	std::complex<double> *b3 = a3 + n2;
-	
+
 	memcpy(a2, ab, sizeof(std::complex<double>) * 2*n2);
 	for(size_t i = 0; i < n2; ++i){ a2[i] /= (omega*q[i]); }
 	for(size_t i = 0; i < n2; ++i){ b2[i] /= (omega*q[i]); }
@@ -1020,14 +1028,14 @@ void GetZPoyntingFluxComponents(
 	}
 	MultKPMatrix("N", omega, n, kx, ky, Epsilon_inv, epstype, kp, 2, a3,n2, a2,n2);
 	// At this point, a2[n2] contains alpha_e, b2[n2] contains beta_e
-	
+
 	if(NULL == phi){
 		RNP::TBLAS::CopyMatrix<'A'>(n2,2, ab,n2, a3,n2);
 	}else{
 		RNP::TBLAS::MultMM<'N','N'>(n2,2,n2, std::complex<double>(1.),phi,n2, ab,n2, std::complex<double>(0.), a3,n2);
 	}
 	// At this point, a3[n2] contains alpha_h, b3[n2] contains beta_h
-	
+
 	for(size_t i = 0; i < n; ++i){
 		forward[i] = 0;
 		backward[i] = 0;
@@ -1040,7 +1048,7 @@ void GetZPoyntingFluxComponents(
 			backward[i] += std::conj(diff);
 		}
 	}
-	
+
 	if(NULL == work){
 		rcwa_free(a2);
 	}
@@ -1060,7 +1068,7 @@ static void GetInPlaneFieldVector(
 ){
 	const size_t n2 = 2*n;
 	const size_t n4 = 2*n2;
-	
+
 	for(size_t i = 0; i < n2; ++i){
 		eh[4*n2+i] = ab[i]/(omega*q[i]);
 		eh[5*n2+i] = -ab[i+n2]/(omega*q[i]);
@@ -1103,18 +1111,18 @@ void GetFieldAtPoint(
 	const std::complex<double> z_zero(0.);
 	const std::complex<double> z_one(1.);
 	const size_t n2 = 2*n;
-	
+
 	std::complex<double> *eh = work;
 	if(NULL == work){
 		eh = (std::complex<double>*)rcwa_malloc(sizeof(std::complex<double>) * 8*n2);
 	}
-	
+
 	GetInPlaneFieldVector(n, kx, ky, omega, q, epsilon_inv, epstype, kp, phi, ab, eh);
 	const std::complex<double> *hx  = &eh[3*n2+0];
 	const std::complex<double> *hy  = &eh[3*n2+n];
 	const std::complex<double> *ney = &eh[4*n2+0];
 	const std::complex<double> *ex  = &eh[4*n2+n];
-	
+
 	std::complex<double> fE[3], fH[3];
 	fE[0] = 0;
 	fE[1] = 0;
@@ -1122,7 +1130,7 @@ void GetFieldAtPoint(
 	fH[0] = 0;
 	fH[1] = 0;
 	fH[2] = 0;
-	
+
 	if(NULL != efield && NULL != epsilon_inv){
 		for(size_t i = 0; i < n; ++i){
 			eh[i] = (ky[i]*hx[i] - kx[i]*hy[i]);
@@ -1134,7 +1142,7 @@ void GetFieldAtPoint(
 			RNP::TBLAS::MultMV<'N'>(n,n, z_one,epsilon_inv,n, eh,1, z_zero,&eh[n],1);
 		}
 	}
-	
+
 	for(size_t i = 0; i < n; ++i){
 		const double theta = (kx[i]*r[0] + ky[i]*r[1]);
 
@@ -1146,7 +1154,7 @@ void GetFieldAtPoint(
 		fH[2] += (kx[i] * -ney[i] - ky[i] * ex[i]) * (phase / omega);
 		fE[2] += eh[n+i] * (phase / omega);
 	}
-	
+
 	if(NULL != efield && NULL != epsilon_inv){
 		efield[0] = fE[0];
 		efield[1] = fE[1];
@@ -1157,7 +1165,7 @@ void GetFieldAtPoint(
 		hfield[1] = fH[1];
 		hfield[2] = fH[2];
 	}
-	
+
 	if(NULL == work){
 		rcwa_free(eh);
 	}
@@ -1184,9 +1192,9 @@ void GetFieldOnGrid(
 	const int nxyoff[2] = { (int)(nxy[0]/2), (int)(nxy[1]/2) };
 	int inxy[2] = { (int)nxy[0], (int)nxy[1] };
 	int inxy_rev[2] = { (int)nxy[1], (int)nxy[0] };
-	
+
 	std::complex<double> *eh = (std::complex<double>*)rcwa_malloc(sizeof(std::complex<double>) * 8*n2);
-	
+
 	GetInPlaneFieldVector(n, kx, ky, omega, q, epsilon_inv, epstype, kp, phi, ab, eh);
 	const std::complex<double> *hx  = &eh[3*n2+0];
 	const std::complex<double> *hy  = &eh[3*n2+n];
@@ -1229,11 +1237,11 @@ void GetFieldOnGrid(
 			from[5][ii+jj*nxy[0]] = eh[n+i] / omega;
 		}
 	}
-	
+
 	for(unsigned i = 0; i < 6; ++i){
 		fft_plan_exec(plan[i]);
 	}
-	
+
 	for(size_t j = 0; j < nxy[1]; ++j){
 		for(size_t i = 0; i < nxy[0]; ++i){
 			hfield[3*(i+j*nxy[0])+0] = to[0][i+j*nxy[0]];
@@ -1244,7 +1252,7 @@ void GetFieldOnGrid(
 			efield[3*(i+j*nxy[0])+2] = to[5][i+j*nxy[0]];
 		}
 	}
-	
+
 	for(unsigned i = 0; i < 6; ++i){
 		fft_plan_destroy(plan[i]);
 		fft_free(to[i]);
@@ -1271,12 +1279,12 @@ void GetZStressTensorIntegral(
 	const size_t n2 = 2*n;
 	const std::complex<double> z_zero(0.);
 	const std::complex<double> z_one(1.);
-	
+
 	std::complex<double> *eh = work;
 	if(NULL == work){
 		eh = (std::complex<double>*)rcwa_malloc(sizeof(std::complex<double>) * 8*n2);
 	}
-	
+
 	GetInPlaneFieldVector(n, kx, ky, omega, q, epsilon_inv, epstype, kp, phi, ab, eh);
 	std::complex<double> *ez  = &eh[1*n2+n];
 	std::complex<double> *dz  = &eh[2*n2+0];
@@ -1287,11 +1295,11 @@ void GetZStressTensorIntegral(
 	const std::complex<double> *ex  = &eh[4*n2+n];
 	std::complex<double> *ndy = &eh[5*n2+0];
 	std::complex<double> *dx  = &eh[5*n2+n];
-	
+
 	integral[0] = 0;
 	integral[1] = 0;
 	integral[2] = 0;
-	
+
 	for(size_t i = 0; i < n; ++i){
 		hz[i] = (kx[i] * -ney[i] - ky[i] * ex[i]) / omega;
 		dz[i] = (ky[i]*hx[i] - kx[i]*hy[i]) / omega;
@@ -1303,7 +1311,7 @@ void GetZStressTensorIntegral(
 		RNP::TBLAS::MultMV<'N'>(n,n, z_one,epsilon_inv,n, dz,1, z_zero,ez,1);
 	}
 	RNP::TBLAS::MultMV<'N'>(n2,n2, z_one,epsilon2,n2, ney,1, z_zero,ndy,1);
-	
+
 	for(size_t i = 0; i < n; ++i){
 		std::complex<double> cdz = std::conj(dz[i]);
 		std::complex<double> cbz = std::conj(hz[i]);
@@ -1319,7 +1327,7 @@ void GetZStressTensorIntegral(
 		integral[2] -= 0.5*hy[i]*std::conj(hy[i]);
 		integral[2] -= 0.5*hx[i]*std::conj(hx[i]);
 	}
-	
+
 	if(NULL == work){
 		rcwa_free(eh);
 	}
@@ -1361,7 +1369,7 @@ void GetLayerVolumeIntegral(
 	}
 	const std::complex<double> z_zero(0.);
 	const std::complex<double> z_one(1.);
-	
+
 	std::complex<double> *Q = work;
 	if(NULL == work){
 		Q = (std::complex<double>*)rcwa_malloc(sizeof(std::complex<double>)*n4*n4);
@@ -1424,7 +1432,7 @@ void GetLayerVolumeIntegral(
 	// Q = M^H * CsC * M = [  S+T -S+T ], S = fie^H * A * fie
 	//                     [ -S+T  S+T ]  T = phi^H * B * phi
 	// integral = int_0^thickness [x(z)^H * Q * x(z)] dz, x(z) = [a*exp(iqz);b*exp(iq(d-z))]
-	
+
 	// Make T
 	if(NULL != phi){
 		RNP::TBLAS::MultMM<'N','N'>(n2,n2,n2, z_one,&Q[n2+n2*n4],n4, phi,n2, z_zero,&Q[0+n2*n4],n4);
@@ -1479,7 +1487,7 @@ void GetLayerVolumeIntegral(
 	// \frac{e^{id/2 (q-q^*)} }{i(s_j q - s_i q^*)} 2 i sin[ d/2 (s_j q - s_i q^*) ]
 	// \frac{d e^{id/2 (q-q^*)} }{d/2 (s_j q - s_i q^*)} sin[ d/2 (s_j q - s_i q^*) ]
 	// d e^{id/2 (q-q^*)} sinc[ d/2 (s_j q - s_i q^*) ], where sinc(x) = sin(x)/x
-	
+
 	*integral = 0;
 	const double d_2 = 0.5*thickness;
 	for(size_t j = 0; j < n4; ++j){
@@ -1522,16 +1530,16 @@ void GetLayerZIntegral(
 	const size_t n2 = 2*n;
 	const size_t n4 = 2*n2;
 	const std::complex<double> iomega(1./omega);
-	
+
 	std::complex<double> *f = work;
 	if(NULL == work){
 		f = (std::complex<double>*)rcwa_malloc(sizeof(std::complex<double>)*12*n4);
 	}
 	std::complex<double> *g = f + 6*n4;
 	RNP::TBLAS::Fill(6*n4, 0., f, 1);
-	
+
 	// We will simultaneously generate f for all 6 components
-	
+
 	// Generate the Fourier phase factors
 	for(size_t i = 0; i < n; ++i){ // this is for ex
 		double theta = (kx[i]*r[0] + ky[i]*r[1]);
@@ -1559,7 +1567,7 @@ void GetLayerZIntegral(
 	for(size_t i = 0; i < n; ++i){ // -hz
 		f[5*n4+1*n+i] = f[n4+i] * iomega * ky[i];
 	}
-	
+
 	// Form M^H C^H * f
 	// M = [ kp.phi.inv(q)   -kp.phi.inv(q) ]
 	//     [     phi                phi     ]
@@ -1581,11 +1589,11 @@ void GetLayerZIntegral(
 			g[i+n2+j*n4] -= t;
 		}
 	}
-	
+
 	for(size_t i = 0; i < 6; ++i){
 		integral[i] = 0;
 	}
-	
+
 	// At this point, each column of g contains a vector v such that
 	// v v^H is a rank-1 matrix that must be integrated over.
 	const double d_2 = 0.5*thickness;
@@ -1603,7 +1611,7 @@ void GetLayerZIntegral(
 			}
 		}
 	}
-	
+
 	if(NULL == work){
 		rcwa_free(f);
 	}
