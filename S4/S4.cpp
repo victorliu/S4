@@ -137,7 +137,15 @@ void Layer_Destroy(S4_Layer *L){
 		return;
 	}
 	free(L->name); L->name = NULL;
-	if(NULL != L->pattern.shapes){ free(L->pattern.shapes); L->pattern.shapes = NULL; }
+	if(NULL != L->pattern.shapes){
+		for(int i = 0; i < L->pattern.nshapes; ++i){
+			if(POLYGON == L->pattern.shapes[i].type && NULL != L->pattern.shapes[i].vtab.polygon.vertex){
+				S4_free(L->pattern.shapes[i].vtab.polygon.vertex);
+			}
+		}
+		free(L->pattern.shapes);
+		L->pattern.shapes = NULL;
+	}
 	if(NULL != L->pattern.parent){ free(L->pattern.parent); L->pattern.parent = NULL; }
 	Simulation_DestroyLayerModes(L);
 	S4_TRACE("< Layer_Destroy\n");
@@ -280,7 +288,7 @@ S4_Simulation* S4_Simulation_Clone(const S4_Simulation *S){
 		const S4_Material *M = &(S->material[i]);
 		S4_Simulation_SetMaterial(T, -1, M->name, M->type, &M->eps.abcde[0]);
 	}
-	
+
 	T->n_layers_alloc = S->n_layers_alloc;
 	T->layer = (S4_Layer*)malloc(sizeof(S4_Layer) * T->n_layers_alloc);
 	for(int i = 0; i < S->n_layers; ++i){
@@ -1992,7 +2000,7 @@ int S4_Simulation_GetWaves(S4_Simulation *S, S4_LayerID id, S4_real *wave){
 		S4_TRACE("< Simulation_GetWaves (failed; ret = %d) [omega=%f]\n", ret, S->omega[0]);
 		return ret;
 	}
-	
+
 	S4_Layer *layer = &S->layer[id];
 
 	const double w = S->omega[0];
@@ -3421,13 +3429,13 @@ int S4_Simulation_ExcitationPlanewave(
 	// H field is amp_u * v - amp_v * u
 
 	S4_real k_new[2] = { root_eps * kn[0], root_eps * kn[1] };
-	
+
 	if(k_new[0] != S->k[0] || k_new[1] != S->k[1]){
 		S4_Simulation_DestroyLayerModes(S, -1);
 		S->k[0] = k_new[0];
 		S->k[1] = k_new[1];
 	}
-	
+
 	S->exc.sub.planewave.hx[0] = amp_u[0]*vn[0] - amp_v[0]*un[0];
 	S->exc.sub.planewave.hx[1] = amp_u[1]*vn[0] - amp_v[1]*un[0];
 	S->exc.sub.planewave.hy[0] = amp_u[0]*vn[1] - amp_v[0]*un[1];
