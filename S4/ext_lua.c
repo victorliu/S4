@@ -740,6 +740,7 @@ int lua_S4_Layer_SetRegion(lua_State *L){
 			return luaL_argerror(L, 1, "Polygon region requires specifying vertices");
 		}
 		S4_Layer_SetRegionVertices(SL->S, SL->L, M, type, nv, v, center, &angle_frac);
+		free(v);
 		return 0;
 	}
 	free(v);
