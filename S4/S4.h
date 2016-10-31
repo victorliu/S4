@@ -125,6 +125,7 @@ S4_error_handler S4_Simulation_SetErrorHandler(
 	S4_Simulation *S, S4_error_handler handler, void *data
 );
 
+unsigned int S4_Lattice_Count(const S4_real *Lr, unsigned int nG);
 int S4_Lattice_Reciprocate(const S4_real *Lr, S4_real *Lk);
 
 /**********************************/

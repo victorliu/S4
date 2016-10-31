@@ -100,15 +100,16 @@ static int Gsel_parallelogramic(unsigned int *NG, const double Lk[4], int *G){
 
 	if(0 == (NGroot % 2)){ NGroot--; }
 	M = NGroot/2;
-
-	for(j = 0; j < NGroot; ++j){
-		for(i = 0; i < NGroot; ++i){
-			G[2*(i+j*NGroot)+0] = i-M;
-			G[2*(i+j*NGroot)+1] = j-M;
+	if(NULL != G){
+		for(j = 0; j < NGroot; ++j){
+			for(i = 0; i < NGroot; ++i){
+				G[2*(i+j*NGroot)+0] = i-M;
+				G[2*(i+j*NGroot)+1] = j-M;
+			}
 		}
+		sort(G, *NG, 2*sizeof(int), &Gcmp, &Lkprod[0]);
 	}
 	*NG = NGroot*NGroot;
-	sort(G, *NG, 2*sizeof(int), &Gcmp, &Lkprod[0]);
 	return 0;
 }
 
@@ -151,9 +152,11 @@ static int Gsel_circular(unsigned int *NG, const double Lk[4], int *G){
 		}
 	}
 	*NG = i;
-	for(i = 0; i < (int)*NG; ++i){
-		G[2*i+0] = Gtemp[2*i+0];
-		G[2*i+1] = Gtemp[2*i+1];
+	if(NULL != G){
+		for(i = 0; i < (int)*NG; ++i){
+			G[2*i+0] = Gtemp[2*i+0];
+			G[2*i+1] = Gtemp[2*i+1];
+		}
 	}
 	free(Gtemp);
 
@@ -164,7 +167,6 @@ int G_select(const int method, unsigned int *NG, const double Lk[4], int *G){
 	if(NULL == NG){ return -2; }
 	if(*NG < 1){ return -2; }
 	if(NULL == Lk){ return -3; }
-	if(NULL == G){ return -4; }
 
 	if(1 == *NG){
 		G[0] = 0;

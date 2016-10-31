@@ -244,6 +244,23 @@ S4_Simulation* S4_Simulation_New(const S4_real *Lr, unsigned int nG, int *G){
 	return S;
 }
 
+unsigned int S4_Lattice_Count(const S4_real *Lr, unsigned int nG){
+	S4_real Lk[4];
+	S4_Lattice_Reciprocate(Lr, Lk);
+	// Get G vectors
+	if(nG <= 1){ return nG; }
+	if(0 != Lr[2] || 0 != Lr[3]){
+		unsigned int NG = nG;
+		G_select(0, &NG, Lk, NULL);
+		return NG;
+	}else{
+		if(0 == (nG % 2)){
+			nG--;
+		}
+		return nG;
+	}
+}
+
 void S4_Simulation_Destroy(S4_Simulation *S){
 	S4_TRACE("> S4_Simulation_Destroy(S=%p) [omega=%f]\n", S, S->omega[0]);
 	if(NULL == S){
@@ -479,6 +496,7 @@ S4_MaterialID S4_Simulation_SetMaterial(
 		switch(type){
 		case S4_MATERIAL_TYPE_SCALAR_REAL:
 			M->eps.s[0] = eps[0];
+			M->eps.s[1] = 0;
 			M->type = 0;
 			break;
 		case S4_MATERIAL_TYPE_SCALAR_COMPLEX:
