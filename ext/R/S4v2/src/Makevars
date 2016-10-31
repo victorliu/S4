@@ -1,0 +1,2 @@
+PKG_CPPFLAGS = -I/Users/vliu/code/S4/S4
+PKG_LIBS = -L/Users/vliu/code/S4/build -lS4

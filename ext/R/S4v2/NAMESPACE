@@ -1,0 +1,2 @@
+useDynLib(S4v2)
+exportPattern("^[[:alpha:]]+")

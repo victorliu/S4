@@ -1,3 +1,0 @@
-PKG_CPPFLAGS += -I/Users/vliu/code/S4/S4
-PKG_CPPFLAGS += -I/Users/vliu/Library/R/3.2/library/Rcpp/include
-PKG_LIBS += -L/Users/vliu/code/S4/build -lS4

@@ -1,3 +1,0 @@
-useDynLib(RCWA)
-exportPattern("^[[:alpha:]]+")
-import(methods, Rcpp)
