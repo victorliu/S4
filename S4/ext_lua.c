@@ -218,7 +218,7 @@ int lua_S4_gettensor(lua_State *L, int arg, S4_real *eps){
 			lua_pushinteger(L, i+1);
 			lua_gettable(L, arg);
 			if(!lua_isnumber(L, -1)){
-				return luaL_error(L, "Invalid format for scalar, complex, or tensor value");
+				return luaL_error(L, "Invalid format for scalar, complex, or tensor value (looks like a complex number)");
 			}
 			eps[i] = lua_tonumber(L, -1);
 			lua_pop(L, 1);
@@ -230,22 +230,22 @@ int lua_S4_gettensor(lua_State *L, int arg, S4_real *eps){
 			lua_pushinteger(L, i+1);
 			lua_gettable(L, arg);
 			if(!lua_istable(L, -1)){
-				return luaL_error(L, "Invalid format for scalar, complex, or tensor value");
+				return luaL_error(L, "Invalid format for scalar, complex, or tensor value (looks like a 3x3 matrix)");
 			}
 			for(j = 0; j < 3; ++j){
 				lua_pushinteger(L, j+1);
-				lua_gettable(L, arg);
+				lua_gettable(L, -2);
 				if(lua_isnumber(L, -1)){
 					eps[(i+j*3)*2+0] = lua_tonumber(L, -1);
 				}else if(lua_istable(L, -1)){
 					if(2 != lua_S4_len(L, -1)){
-						return luaL_error(L, "Invalid format for scalar, complex, or tensor value");
+						return luaL_error(L, "Invalid format for scalar, complex, or tensor value (looks like a 3x3 complex matrix)");
 					}
 					for(k = 0; k < 2; ++k){
 						lua_pushinteger(L, k+1);
-						lua_gettable(L, 2);
+						lua_gettable(L, -2);
 						if(!lua_isnumber(L, -1)){
-							return luaL_error(L, "Invalid format for scalar, complex, or tensor value");
+							return luaL_error(L, "Invalid format for scalar, complex, or tensor value (looks like a 3x3 complex matrix)");
 						}
 						eps[(i+j*3)*2+k] = lua_tonumber(L, -1);
 						lua_pop(L, 1);
@@ -261,6 +261,9 @@ int lua_S4_gettensor(lua_State *L, int arg, S4_real *eps){
 				eps[2], eps[3], eps[8], eps[9],
 				eps[16], eps[17]
 			};
+			for(i = 0; i < 10; ++i){
+				eps[i] = abcde[i];
+			}
 		}
 		return S4_MATERIAL_TYPE_XYTENSOR_COMPLEX;
 	}
