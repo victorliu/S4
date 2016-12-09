@@ -36,12 +36,12 @@ double polygon_area(int n, const double *v){
 	return 0.5*area;
 }
 
-static inline double LeftTurn(const double a[2], const double b[2], const double c[2]){
+static double LeftTurn(const double a[2], const double b[2], const double c[2]){
 	extern double orient2d(double*, double*, double*);
 	return orient2d((double*)a, (double*)b, (double*)c);
 }
 
-static inline int dsign(double x){
+static int dsign(double x){
 	if(0 == x){ return 0; }
 	else if(x > 0){ return 1; }
 	else{ return -1; }
@@ -116,10 +116,10 @@ int convex_polygon_intersection(
 	// "A new linear algorithm for intersecting convex polygons"
 	// Joseph O'Rourke, Chi-Bin Chien, Thomas Olson, and David Naddor
 	// Computer Graphics and Image Processing 19, pp. 384-391 (1982)
-	
+{
 	const int nPi = *ni; *ni = 0;
 	
-	
+{
 	int ip = 1, iq = 1;
 	int ipp = 0, iqp = 0; // prev of ip and iq
 	char inside = ' ';
@@ -255,6 +255,7 @@ int convex_polygon_intersection(
 	}else{
 		return 0;
 	}
+}}
 }
 
 // returns 1 if inside or on boundary, 0 otherwise
@@ -315,7 +316,7 @@ int polygon_triangulate(
 		u = i; //if(nv <= u){ u = 0; } // prev
 		i = u+1; if(nv <= i){ i = 0; } // mid
 		w = i+1; if(nv <= w){ w = 0; } // next
-
+{
 		// Can clip the ear?
 		int can_clip = 1;
 		{
@@ -348,6 +349,7 @@ int polygon_triangulate(
 			t[3*tc+2] = tri[2];
 			++tc;
 		}
+}
 	}
 	return 0;
 }
@@ -375,6 +377,7 @@ double CircularSectorArea(double r, double s){
 	s *= 0.5;
 	// area = asin(s/r)*r*r - s*sqrt(r^2 - s^2)
 	// area = r*s*[ asin(s/r)/(s/r) - sqrt(1-(s/r)^2) ]
+{
 	double x = s/r;
 	if(x < (1./32.)){ // use taylor expansion for stuff in brackets
 		static const double c2 = 2./3.;
@@ -386,6 +389,7 @@ double CircularSectorArea(double r, double s){
 	}else{
 		return r*s*(asin(x)/x - sqrt((1.+x)*(1.-x)));
 	}
+}
 }
 
 double intersection_area_circle_triangle(
@@ -402,6 +406,14 @@ double intersection_area_circle_triangle(
 	int inside = 0; // bitfield of which triangle vertices are in circle, 4th bit is if circle center is in triangle
 	
 	double vert[6];
+	double vert_org[6];
+	double tri_r[3]; // distance from circle center of each vertex of triangle, normalized to radius
+	double seg[6];
+	double side_length[3]; // normalized to radius
+	double seg_dot[3]; // p0.(p1-p0)/r^2
+	double xp[12]; // intersection points
+	int nxp[3]; // number of intersections with each segment
+	int nx = 0;
 	vert[2*0+0] = tri_org[0];
 	vert[2*0+1] = tri_org[1];
 	vert[2*1+0] = (tri_org[0] + tri_u[0]);
@@ -409,7 +421,6 @@ double intersection_area_circle_triangle(
 	vert[2*2+0] = (tri_org[0] + tri_v[0]);
 	vert[2*2+1] = (tri_org[1] + tri_v[1]);
 	
-	double vert_org[6];
 	vert_org[2*0+0] = 0;
 	vert_org[2*0+1] = 0;
 	vert_org[2*1+0] = tri_u[0];
@@ -417,7 +428,6 @@ double intersection_area_circle_triangle(
 	vert_org[2*2+0] = tri_v[0];
 	vert_org[2*2+1] = tri_v[1];
 	
-	double tri_r[3]; // distance from circle center of each vertex of triangle, normalized to radius
 	for(i = 0; i < 3; ++i){
 		tri_r[i] = pythag2(vert[2*i+0], vert[2*i+1]) * iradius;
 		if(tri_r[i] <= 1.0){ inside |= (1<<i); }
@@ -427,7 +437,6 @@ double intersection_area_circle_triangle(
 		return 0.5*fabs(LeftTurn(origin,tri_u,tri_v));
 	}
 
-	double seg[6];
 	seg[2*0+0] = tri_u[0];
 	seg[2*0+1] = tri_u[1];
 	seg[2*1+0] = (tri_v[0] - tri_u[0]);
@@ -435,21 +444,16 @@ double intersection_area_circle_triangle(
 	seg[2*2+0] = -tri_v[0];
 	seg[2*2+1] = -tri_v[1];
 	
-	double side_length[3]; // normalized to radius
 	for(i = 0; i < 3; ++i){
 		side_length[i] = pythag2(seg[2*i+0], seg[2*i+1]) * iradius;
 	}
 	
-	double seg_dot[3]; // p0.(p1-p0)/r^2
 	for(i = 0; i < 3; ++i){
 		seg_dot[i] = (vert[2*i+0]*seg[2*i+0] + vert[2*i+1]*seg[2*i+1]) * iradius2;
 	}
 	
 	// Get intersections of each segment with each circle
 	// segment 0 is org to u, segment 1 is u to v, segment 2 is v to org
-	double xp[12]; // intersection points
-	int nxp[3]; // number of intersections with each segment
-	int nx = 0;
 	for(i = 0; i < 3; ++i){
 		int ip1 = (i+1)%3;
 		int in0 = (inside & (1<<i)) ? 1 : 0;
@@ -537,12 +541,14 @@ double intersection_area_circle_triangle(
 			}
 			// Either the circle is mostly inside with a wedge poking out a side
 			// or the circle is mostly outside with a wedge poking inside
+			{
 			double sector_area = CircularSectorArea(radius, pythag2(xp[2*(2*i+1)+0]-xp[2*2*i+0],xp[2*(2*i+1)+1]-xp[2*2*i+1]));
 			if(inside & (1 << 3)){
 				// Area of circle minus a wedge
 				return M_PI*radius*radius - sector_area;
 			}else{
 				return sector_area;
+			}
 			}
 		}
 	}else if(4 == nx){
@@ -553,7 +559,7 @@ double intersection_area_circle_triangle(
 		// There is no way we can get here
 		return -1;
 	}
-	
+{
 	// At this point we expect to just trace out the intersection shape
 	// The vertices of the intersection shape is either a triangle vertex
 	// or a intersection point on a triangle edge.
@@ -577,7 +583,7 @@ double intersection_area_circle_triangle(
 	if(nv < 3){ // this should not be possible
 		return -1;
 	}
-	
+{
 	// All neighboring points in v which are intersection points should have circular caps added
 	double area = polygon_area(nv, vp);
 	for(i = 0; i < nv; ++i){
@@ -587,6 +593,7 @@ double intersection_area_circle_triangle(
 		}
 	}
 	return area;
+}}
 }
 
 
@@ -608,6 +615,7 @@ int intersection_circle_segment(
 	// circle: x^2 = r^2
 	// (p0 + t(p1-p0))^2 = r^2
 	// t^2(p1-p0)^2 + 2t(p0).(p1-p0) + (p0)^2 - r^2 = 0
+{
 	double isl2 = 1./(s*s);
 	double seg_dot = (seg0[0]*segd[0] + seg0[1]*segd[1]) / (radius*radius);
 	double disc = (seg_dot*seg_dot*isl2 - (r[0]*r[0]-1)) * isl2;
@@ -632,6 +640,7 @@ int intersection_circle_segment(
 		}
 		return c;
 	}
+}
 }
 
 int intersection_polygon_segment(

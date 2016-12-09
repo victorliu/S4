@@ -28,9 +28,10 @@
 #endif
 
 static int isqrt(int u){
+	int a, b;
 	if(u <= 0){ return 0; }
-	int a = 2;
-	int b = u/a;
+	a = 2;
+	b = u/a;
 	while(((a-b) > 1) || ((b-a) > 1)){
 		a = (a+b)/2;
 		b = u/a;

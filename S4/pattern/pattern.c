@@ -33,11 +33,6 @@
 #endif
 
 double Jinc(double x){
-	x *= 2*M_PI;
-	/* return 2*J_1(x)/x; */
-	if(x < 1e-9){ /* J_1(x) ~ x(1-x^2/8)/2 */
-		return 1.-x*x/8.;
-	}
 	static const double a1[] = {
 		 0.1171875,
 		-0.1441955566406250,
@@ -68,6 +63,11 @@ double Jinc(double x){
 		 6.065091351222699e15,
 		-9.833883876590679e17,
 		 1.855045211579828e20};
+	x *= 2*M_PI;
+	/* return 2*J_1(x)/x; */
+	if(x < 1e-9){ /* J_1(x) ~ x(1-x^2/8)/2 */
+		return 1.-x*x/8.;
+	}
 
 	if(x <= 0.0){
 		return 1.0;
@@ -84,15 +84,15 @@ double Jinc(double x){
 		}
 		return j1;
 	}else{
-		int kz;
-		if (x >= 50.0) kz = 8;          /* Can be changed to 10 */
-		else if (x >= 35.0) kz = 10;    /*  "       "        12 */
-		else kz = 12;                   /*  "       "        14 */
 		double cu = sqrt(M_2_PI/x);
 		double t2 = x-0.75*M_PI;
 		double p1 = 1.0;
 		double q1 = 0.375/x;
 		int k;
+		int kz;
+		if (x >= 50.0) kz = 8;          /* Can be changed to 10 */
+		else if (x >= 35.0) kz = 10;    /*  "       "        12 */
+		else kz = 12;                   /*  "       "        14 */
 		for(k=0;k<kz;k++){
 			p1 += a1[k]*pow(x,-2*k-2);
 			q1 += b1[k]*pow(x,-2*k-3);
@@ -197,10 +197,10 @@ static int shape_contains_point(const shape *s, const double x_[2]){
 }
 
 int shape_get_normal(const shape *s, const double x[2], double n[2]){
+	double r[2];
 	if(NULL == s){ return -1; }
 	if(NULL == x){ return -2; }
 	if(NULL == n){ return -3; }
-	double r[2];
 	r[0] = x[0] - s->center[0];
 	r[1] = x[1] - s->center[1];
 
@@ -298,7 +298,7 @@ int shape_get_normal(const shape *s, const double x[2], double n[2]){
 /* Returns intersection area between shape s and the rectangle with
  * bottom left corner p0 and dimensions dp.
  */
-double shape_get_intersection_area_quad(const shape *s, const double p0[2], const double duv[4]){
+double shape_get_intersection_area_quad(const shape *s, const double *p0, const double *duv){
 	/* We will use the strategy of decomposing polygonal shapes into triangles.
 	 * For the ellipse, we will apply a coordinate transformation to make it a circle.
 	 */
@@ -784,6 +784,7 @@ int pattern_get_containment_tree(
 	shape *shapes,
 	int *parent
 ){
+	double *area;
 	int i, j, k;
 	if(0 == nshapes){ return 0; }
 	if(nshapes < 0){ return -1; }
@@ -802,7 +803,7 @@ int pattern_get_containment_tree(
 		}
 	}
 
-	double *area = (double*)malloc(sizeof(double)*nshapes);
+	area = (double*)malloc(sizeof(double)*nshapes);
 	for(i = 0; i < nshapes; ++i){
 		parent[i] = -1;
 		area[i] = shape_area(&shapes[i]);
@@ -896,6 +897,10 @@ int pattern_get_fourier_transform(
 	double f[2]
 ){
 	int i;
+	const int DC = (0 == k_[0] && 0 == k_[1]) ? 1 : 0;
+	double inv_size;
+	double k[2];
+	
 	if(nshapes < 0){ return -1; }
 	if(nshapes > 0 && NULL == shapes){ return -2; }
 	if(NULL == parent){ return -3; }
@@ -914,7 +919,7 @@ int pattern_get_fourier_transform(
 		}
 	}
 
-	const int DC = (0 == k_[0] && 0 == k_[1]) ? 1 : 0;
+	
 	if(DC){
 		f[0] = value[0]; f[1] = value[1];
 	}else{
@@ -924,9 +929,9 @@ int pattern_get_fourier_transform(
 		return 0;
 	}
 
-	double inv_size = 1./unit_cell_size;
+	inv_size = 1./unit_cell_size;
 
-	double k[2];
+	
 	for(i = 0; i < nshapes; ++i){
 		const shape *s = &shapes[i];
 
@@ -1008,18 +1013,20 @@ int pattern_get_fourier_transform(
 		//f += dval*z*phase/area;
 		//f += dval*(z[0]+i*z[1])*(cos(phase_angle)+i*sin(phase_angle)) / area;
 		//f += dval*( z[0]*cos-z[1]*sin + i*(z[1]*cos+z[0]*sin) ) / area;
-		double cpa = cos(phase_angle);
-		double spa = sin(phase_angle);
-		double t[2] = {area, area};
-		if(DC){
-			t[0] *= cpa;
-			t[1] *= spa;
-		}else{
-			t[0] *= ( z[0]*cpa-z[1]*spa );
-			t[1] *= ( z[1]*cpa+z[0]*spa );
+		{
+			double cpa = cos(phase_angle);
+			double spa = sin(phase_angle);
+			double t[2] = {area, area};
+			if(DC){
+				t[0] *= cpa;
+				t[1] *= spa;
+			}else{
+				t[0] *= ( z[0]*cpa-z[1]*spa );
+				t[1] *= ( z[1]*cpa+z[0]*spa );
+			}
+			f[0] += inv_size*(t[0]*dval[0]-t[1]*dval[1]);
+			f[1] += inv_size*(t[0]*dval[1]+t[1]*dval[0]);
 		}
-		f[0] += inv_size*(t[0]*dval[0]-t[1]*dval[1]);
-		f[1] += inv_size*(t[0]*dval[1]+t[1]*dval[0]);
 	}
 	return 0;
 }
@@ -1070,21 +1077,23 @@ int pattern_discretize_cell(
 			double a = 0;
 			const shape *s = &shapes[k];
 			if(RECTANGLE != s->type){ return -2; }
-			const double l = p0 - s->center[0];
-			const double h = s->vtab.rectangle.halfwidth[0];
-			// Rectangle centered at origin with halfwidth h
-			// Pixel left edge at l
-			if(l+du <= -h || l >= h){ continue; } // pixel outside
-			if(l >= -h && l+du <= h){ // pixel entirely contained
-				a = 1.;
-			}else if(l+du >= h){ // pixel intersects right edge of rect
-				a = (h-l) / du;
-			}else{ // pixel intersects right edge of rect
-				a = 1. + (h+l) / du;
-			}
-			if(a > 0){
-				value[k+1] += a;
-				value[parent[k]+1] -= a;
+			{
+				const double l = p0 - s->center[0];
+				const double h = s->vtab.rectangle.halfwidth[0];
+				// Rectangle centered at origin with halfwidth h
+				// Pixel left edge at l
+				if(l+du <= -h || l >= h){ continue; } // pixel outside
+				if(l >= -h && l+du <= h){ // pixel entirely contained
+					a = 1.;
+				}else if(l+du >= h){ // pixel intersects right edge of rect
+					a = (h-l) / du;
+				}else{ // pixel intersects right edge of rect
+					a = 1. + (h+l) / du;
+				}
+				if(a > 0){
+					value[k+1] += a;
+					value[parent[k]+1] -= a;
+				}
 			}
 		}
 	}else{
@@ -1488,7 +1497,7 @@ static double pattern_generate_flow_field_rect(
 	// === Assemble the M matrix and RHS b ===
 	for(i = 0; i < N2; ++i){ b[i] = 0; }
 	for(i = 0; i < N2; ++i){ x[i] = 0; }
-
+{
 	// We index the edges by the cell order of `field', and within that,
 	// the bottom x-edge comes first, then the left y-edge.
 	const double dL[4] = {L[0]/nu,L[1]/nu, L[2]/nv,L[3]/nv};
@@ -1540,7 +1549,7 @@ static double pattern_generate_flow_field_rect(
 	for(i = 0; i < N2; ++i){ fprintf(stderr, " %f\n", b[i]); }
 	*/
 	// === Assemble the constraints and move them to RHS ===
-
+{
 	int found_multiple_xsects = 0;
 	if(0 == type){
 		for(j = 0; j < nv; ++j){
@@ -1559,9 +1568,9 @@ static double pattern_generate_flow_field_rect(
 
 				for(ei = 0; ei < 2; ++ei){ const int nei = 1^ei;
 					double pshifted[2];
+					int row = 2*k+ei;
 					pshifted[0] = p0[0]+0.5*dL[2*ei+0]-0.5*dL[2*nei+0];
 					pshifted[1] = p0[1]+0.5*dL[2*ei+1]-0.5*dL[2*nei+1];
-					int row = 2*k+ei;
 					c = 0; cross = 0;
 
 					c = pattern_generate_flow_field_constraints(
@@ -1590,7 +1599,7 @@ static double pattern_generate_flow_field_rect(
 		M[5*i+0] += x[i];
 		x[i] = b[i];
 	}
-
+}
 
 	/*
 	for(j = 0; j < nv; ++j){
@@ -1610,7 +1619,7 @@ static double pattern_generate_flow_field_rect(
 
 	//fprint_spmatrix(stderr, N2, M, Mcol, 4);
 	sparse_linsolve_d(N2, M, Mcol, 4, b, x, _dxdy);
-
+{
 	// === Reconstruct the vector field ===
 	double max_field = 0;
 	for(j = 0; j < nv; ++j){
@@ -1624,10 +1633,11 @@ static double pattern_generate_flow_field_rect(
 			if(af > max_field){ max_field = af; }
 		}
 	}
-
 	free(iwork);
 	free(work);
 	return max_field;
+
+}}
 }
 
 static double pattern_generate_flow_field_tri(
@@ -1687,19 +1697,23 @@ static double pattern_generate_flow_field_tri(
 	if(sd){
 		dL[4] = dL[2]-dL[0];
 		dL[5] = dL[3]-dL[1];
+		{
 		double Cu = 0.5*(dL[2]*dL[2]+dL[3]*dL[3])/cross2 * -(dL[0]*dL[4] + dL[1]*dL[5]);
 		double Cv = 0.5*(dL[0]*dL[0]+dL[1]*dL[1])/cross2 *  (dL[2]*dL[4] + dL[3]*dL[5]);
 		r_u = 2*hypot((Cu-0.5)*dL[0] +  Cv     *dL[2], (Cu-0.5)*dL[1] +  Cv     *dL[3]);
 		r_v = 2*hypot( Cu     *dL[0] + (Cv-0.5)*dL[2],  Cu     *dL[1] + (Cv-0.5)*dL[3]);
 		r_d = 2*hypot((Cu-0.5)*dL[0] + (Cv-0.5)*dL[2], (Cu-0.5)*dL[1] + (Cv-0.5)*dL[3]);
+		}
 	}else{
 		dL[4] = dL[2]+dL[0];
 		dL[5] = dL[3]+dL[1];
+		{
 		double Cu = 0.5*(dL[4]*dL[4]+dL[5]*dL[5])/cross2 * -(dL[0]*dL[2] + dL[1]*dL[3]);
 		double Cv = 0.5*(dL[0]*dL[0]+dL[1]*dL[1])/cross2 *  (dL[4]*dL[2] + dL[5]*dL[3]);
 		r_u = 2*hypot((Cu-0.5)*dL[0] +  Cv     *dL[4], (Cu-0.5)*dL[1] +  Cv     *dL[5]);
 		r_v = 2*hypot( Cu     *dL[0] + (Cv-0.5)*dL[4],  Cu     *dL[1] + (Cv-0.5)*dL[5]);
 		r_d = 2*hypot((Cu-0.5)*dL[0] + (Cv-0.5)*dL[4], (Cu-0.5)*dL[1] + (Cv-0.5)*dL[5]);
+		}
 	}
 /*
 	const double r_uu = r_u*r_u;
@@ -1709,6 +1723,7 @@ static double pattern_generate_flow_field_tri(
 	const double r_du = r_u*r_d;
 	const double r_dv = r_v*r_d;
 */
+{
 	const double _r_uu = r_u*r_u;
 	const double _r_vv = r_v*r_v;
 	const double _r_dd = r_d*r_d;
@@ -1719,6 +1734,7 @@ static double pattern_generate_flow_field_tri(
 	if(_r_vv > _r_scale){ _r_scale = _r_vv; }
 	if(_r_dd > _r_scale){ _r_scale = _r_dd; }
 	_r_scale = 1./_r_scale;
+{
 	const double r_uu = _r_uu * _r_scale;
 	const double r_vv = _r_vv * _r_scale;
 	const double r_dd = _r_dd * _r_scale;
@@ -1738,7 +1754,7 @@ static double pattern_generate_flow_field_tri(
 	for(i = 0; i < N3; ++i){ b[i] = 0; }
 	for(i = 0; i < N3; ++i){ x[i] = 0; }
 	memset(M, 0, sizeof(double)*N3*11);
-
+{
 	// Neighborhood information
 	const signed char neigh_sd[] = {
 		// if sd
@@ -1982,6 +1998,7 @@ static double pattern_generate_flow_field_tri(
 						p0[0] += dL[0];
 						p0[1] += dL[1];
 					}
+					{
 					int c = pattern_generate_flow_field_constraints_tri(
 						type,
 						nshapes, shapes, parent,
@@ -1989,6 +2006,7 @@ static double pattern_generate_flow_field_tri(
 						&cross[2*ei+0], &cross[2*ei+1]);
 					if(c > 0){
 						icross |= (1<<ei);
+					}
 					}
 				}
 				// We store the alterations to the diagonal of M in x for now
@@ -2038,7 +2056,7 @@ static double pattern_generate_flow_field_tri(
 	sparse_linsolve_d(N3, M, Mcol, 10, b, x, M[0]);
 	//fprintf(stderr, "Ending CG\n");
 	//for(i = 0; i < N3; ++i){ x[i] = b[i]; }
-
+{
 	// === Reconstruct the vector field ===
 	double max_field = 0;
 	for(j = 0; j < nv; ++j){
@@ -2066,6 +2084,7 @@ static double pattern_generate_flow_field_tri(
 	free(iwork);
 	free(work);
 	return max_field;
+}}}}
 }
 int pattern_generate_flow_field(
 	int nshapes,
@@ -2076,6 +2095,7 @@ int pattern_generate_flow_field(
 	int nu, int nv,
 	double *field
 ){
+	int i, j;
 	if(nshapes < 0){ return -1; }
 	if(nshapes != 0 && NULL == shapes){ return -2; }
 	if(NULL == parent){ return -3; }
@@ -2085,7 +2105,6 @@ int pattern_generate_flow_field(
 	if(nv < 1){ return -7; }
 	if(NULL == field){ return -8; }
 
-	int i, j;
 
 	if(0 == nshapes){
 		for(j = 0; j < nv; ++j){
@@ -2096,7 +2115,7 @@ int pattern_generate_flow_field(
 		}
 		return 0;
 	}
-
+{
 	// Determine if we can get away with a simpler Laplacian formulation
 	int lattice_type = 0;
 
@@ -2107,7 +2126,7 @@ int pattern_generate_flow_field(
 	if(fabs(uv / uv_max) < DBL_EPSILON){
 		lattice_type |= 1;
 	}
-
+{
 	double max_field = 1;
 	if(0 != (lattice_type&1)){ // square/rectangular lattice
 		// The u and v direction Laplacians are decoupled
@@ -2131,6 +2150,7 @@ int pattern_generate_flow_field(
 		}
 	}
 	return 0;
+}}
 }
 int Pattern_GenerateFlowField(
 	const Pattern *p,

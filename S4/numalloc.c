@@ -20,11 +20,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 # include <malloc.h>
-void * _aligned_malloc(size_t size, size_t alignment);
+/*void * _aligned_malloc(size_t size, size_t alignment);
 void * _aligned_realloc(void *ptr, size_t size, size_t alignment);
 void _aligned_free(void *ptr);
+*/
 #else
 #include <inttypes.h>
 typedef uintptr_t malloc_aligned_ULONG_PTR;
@@ -34,7 +35,7 @@ typedef uintptr_t malloc_aligned_ULONG_PTR;
 //        The actual size of allocation will be greater than this size.
 // alignment : the alignment boundary
 void *malloc_aligned(size_t size, size_t alignment){
-#ifdef WIN32
+#ifdef _WIN32
 	return (void*)_aligned_malloc(size, alignment);
 #else
 	void *pa, *ptr;
@@ -51,7 +52,7 @@ void *malloc_aligned(size_t size, size_t alignment){
 #endif
 }
 void *realloc_aligned(void *ptr, size_t size, size_t alignment){
-#ifdef WIN32
+#ifdef _WIN32
 	return (void*)_aligned_realloc(ptr, size, alignment);
 #else
 	void *pa;
@@ -68,7 +69,7 @@ void *realloc_aligned(void *ptr, size_t size, size_t alignment){
 
 
 void free_aligned(void *ptr){
-#ifdef WIN32
+#ifdef _WIN32
 	_aligned_free(ptr);
 #else
 	if(ptr){

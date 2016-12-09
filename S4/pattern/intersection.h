@@ -24,7 +24,7 @@
 // shapes, and various other computational geometry functions.
 
 // Computes sqrt(x*x + y*y) in a stable way
-inline double pythag2(double x, double y);
+double pythag2(double x, double y);
 
 // Assumed no self-crossings, no holes, CCW orientation.
 // v is length 2*n, xy-pairs.
