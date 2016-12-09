@@ -474,6 +474,7 @@ void GetFieldOnGrid(
 	int epstype,
 	const std::complex<double> *ab, // length 4*glist.n
 	const size_t nxy[2], // number of points per lattice direction
+	const double *xy0, // origin of grid
 	std::complex<double> *efield,
 	std::complex<double> *hfield
 );

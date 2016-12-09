@@ -2830,7 +2830,7 @@ int Simulation_GetFieldPlane(S4_Simulation *S, int nxy[2], double zz, double *E,
 	GetFieldOnGrid(
 		S->n_G, S->G, S->kx, S->ky, std::complex<double>(S->omega[0],S->omega[1]),
 		Lmodes->q, Lmodes->kp, Lmodes->phi, Lmodes->Epsilon_inv, Lmodes->epstype,
-		ab, snxy,
+		ab, snxy, NULL,
 		reinterpret_cast<std::complex<double>*>(E),
 		reinterpret_cast<std::complex<double>*>(H)
 	);
@@ -3464,5 +3464,92 @@ int S4_Simulation_ExcitationPlanewave(
 	}
 
 	S4_TRACE("< S4_Simulation_ExcitationPlanewave\n");
+	return 0;
+}
+
+int S4_Simulation_GetFieldPlane(S4_Simulation *S, const int nxy[2], const S4_real *xyz0, S4_real *E, S4_real *H){
+	S4_TRACE("> S4_Simulation_GetFieldPlane(S=%p, nxy=%p (%d,%d), r0=(%f,%f,%f), E=%p, H=%p)\n",
+		S, nxy, (NULL == nxy ? 0 : nxy[0]), (NULL == nxy ? 0 : nxy[1]), r0[0], r0[1], r0[2], E, H);
+	if(NULL == S){
+		S4_TRACE("< S4_Simulation_GetFieldPlane (failed; S == NULL)\n");
+		return -1;
+	}
+	if(NULL == nxy){
+		S4_TRACE("< S4_Simulation_GetFieldPlane (failed; nxy == NULL)\n");
+		return -2;
+	}
+	if(NULL == xyz0){
+		S4_TRACE("< S4_Simulation_GetFieldPlane (failed; xyz0 == NULL)\n");
+		return -3;
+	}
+	if(NULL == E && NULL == H){
+		S4_TRACE("< S4_Simulation_GetFieldPlane (early exit; E and H both NULL)\n");
+		return 0;
+	}
+	
+	if(1 == nxy[0] && 1 == nxy[1]){
+		int ret = Simulation_GetField(S, xyz0, E, H);
+		if(0 == ret){
+			std::swap(E[1], E[3]);
+			std::swap(E[2], E[4]);
+			std::swap(E[2], E[3]);
+			std::swap(H[1], H[3]);
+			std::swap(H[2], H[4]);
+			std::swap(H[2], H[3]);
+		}
+		return ret;
+	}
+
+	const size_t n2 = 2*S->n_G;
+	const size_t n4 = 2*n2;
+
+	S4_Layer *L = NULL;
+	double dz = xyz0[2];
+	{
+		double z = 0;
+		int i;
+		for(i = 0; i < S->n_layers && xyz0[2] > z+S->layer[i].thickness; ++i){
+			z += S->layer[i].thickness;
+			if(i+1 == S->n_layers){ break; }
+			dz -= S->layer[i].thickness;
+		}
+		L = &(S->layer[i]);
+	}
+	if(NULL == L){
+		S4_TRACE("< S4_Simulation_GetFieldPlane (failed; no layers found)\n");
+		return 14;
+	}
+//fprintf(stderr, "(%f,%f,%f) in %s: dz = %f\n", r[0], r[1], r[2], L->name, dz);
+
+	LayerModes *Lmodes;
+	std::complex<double> *Lsoln;
+	int ret = Simulation_GetLayerSolution(S, L, &Lmodes, &Lsoln);
+	if(0 != ret){
+		S4_TRACE("< S4_Simulation_GetFieldPlane (failed; Simulation_GetLayerSolution returned %d)\n", ret);
+		return ret;
+	}
+
+	std::complex<double> *ab = (std::complex<double>*)S4_malloc(sizeof(std::complex<double>) * (n4+8*n2));
+	if(NULL == ab){
+		S4_TRACE("< S4_Simulation_GetFieldPlane (failed; allocation failed)\n");
+		return 1;
+	}
+	std::complex<double> *work = ab + n4;
+
+	RNP::TBLAS::Copy(n4, Lsoln,1, ab,1);
+	//RNP::IO::PrintVector(n4, ab, 1);
+	TranslateAmplitudes(S->n_G, Lmodes->q, L->thickness, dz, ab);
+	const size_t snxy[2] = { (size_t)nxy[0], (size_t)nxy[1] };
+	const double xy0[2] = { xyz0[0], xyz0[1] };
+	GetFieldOnGrid(
+		S->n_G, S->G, S->kx, S->ky, std::complex<double>(S->omega[0],S->omega[1]),
+		Lmodes->q, Lmodes->kp, Lmodes->phi, Lmodes->Epsilon_inv, Lmodes->epstype,
+		ab, snxy, xy0,
+		reinterpret_cast<std::complex<double>*>(E),
+		reinterpret_cast<std::complex<double>*>(H)
+	);
+	S4_free(ab);
+
+	S4_TRACE("< S4_Simulation_GetFieldPlane\n");
 	return 0;
 }

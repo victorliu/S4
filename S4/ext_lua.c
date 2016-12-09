@@ -75,6 +75,7 @@ int lua_S4_Simulation_GetMaterial(lua_State *L);
 int lua_S4_Simulation_GetLayer(lua_State *L);
 int lua_S4_Simulation_ExcitationPlanewave(lua_State *L);
 int lua_S4_Simulation_GetEpsilon(lua_State *L);
+int lua_S4_Simulation_GetFields(lua_State *L);
 int lua_S4_Layer_GetPowerFlux(lua_State *L);
 //int lua_S4_Layer_GetPowerFluxes(lua_State *L);
 int lua_S4_Layer_GetWaves(lua_State *L);
@@ -122,6 +123,7 @@ int luaopen_S4v2(lua_State *L){
 		{"GetLayer", lua_S4_Simulation_GetLayer},
 		{"ExcitationPlanewave", lua_S4_Simulation_ExcitationPlanewave},
 		{"GetEpsilon", lua_S4_Simulation_GetEpsilon},
+		{"GetFields", lua_S4_Simulation_GetFields},
 		{NULL, NULL}
 	};
 
@@ -1123,6 +1125,51 @@ int lua_S4_Simulation_GetEpsilon(lua_State *L){
 	}else{
 		return luaL_argerror(L, 2, "Must specify query point");
 	}
+}
+int lua_S4_Simulation_GetFields(lua_State *L){
+	int n = 0;
+	
+	S4_Simulation *S = lua_S4_Simulation_check(L, 1);
+	luaL_checktype(L, 2, LUA_TTABLE);
+	
+	lua_len(L, 2);
+	n = lua_tointeger(L, -1);
+	lua_pop(L, 1);
+	
+	if(3 == n){ // evaluation at a single point
+		static const int n11[2] = { 1, 1 };
+		int i;
+		S4_real r[3];
+		S4_real EH[12];
+		for(i = 0; i < 3; ++i){
+			lua_pushinteger(L, i+1);
+			lua_gettable(L, 2);
+			if(!lua_isnumber(L, -1)){
+				return luaL_argerror(L, 2, "Evaluation point must be numeric");
+			}
+			r[i] = lua_tonumber(L, -1);
+			lua_pop(L, 1);
+		}
+		S4_Simulation_GetFieldPlane(S, n11, r, &EH[0], &EH[6]);
+		
+		for(i = 0; i < 2; ++i){
+			int j;
+			lua_createtable(L, 3, 0);
+			for(j = 0; j < 3; ++j){
+				int k;
+				lua_pushinteger(L, j+1);
+				lua_createtable(L, 2, 0);
+				for(k = 0; k < 2; ++k){
+					lua_pushinteger(L, k+1);
+					lua_pushnumber(L, EH[(3*i+j)*2+k]);
+					lua_settable(L, -3);
+				}
+				lua_settable(L, -3);
+			}
+		}
+		return 2;
+	}
+	return 0;
 }
 
 int lua_S4_Layer_GetPowerFlux(lua_State *L){

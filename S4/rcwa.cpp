@@ -1182,6 +1182,7 @@ void GetFieldOnGrid(
 	int epstype,
 	const std::complex<double> *ab, // length 4*glist.n
 	const size_t nxy[2], // number of points per lattice direction
+	const double *xy0,
 	std::complex<double> *efield,
 	std::complex<double> *hfield
 ){
@@ -1227,6 +1228,7 @@ void GetFieldOnGrid(
 			(nxyoff[0] - (int)nxy[0] < iu && iu <= nxyoff[0]) &&
 			(nxyoff[1] - (int)nxy[1] < iv && iv <= nxyoff[1])
 		){
+			//todo: const std::complex<double> shift_phase(-i 2pi Lk.G.xy0);
 			const int ii = (iu >= 0 ? iu : iu + nxy[0]);
 			const int jj = (iv >= 0 ? iv : iv + nxy[1]);
 			from[0][ii+jj*nxy[0]] = hx[i];

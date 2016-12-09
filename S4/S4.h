@@ -243,7 +243,7 @@ int S4_Simulation_GetPowerFluxes(
 int S4_Simulation_GetWaves(S4_Simulation *S, S4_LayerID layer, S4_real *wave);
 
 int S4_Simulation_GetFieldPlane(
-	S4_Simulation *S, int nxy[2], const S4_real *xyz0,
+	S4_Simulation *S, const int nxy[2], const S4_real *xyz0,
 	S4_real *E, S4_real *H
 );
 
