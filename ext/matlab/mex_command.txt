@@ -1,0 +1,1 @@
+mex -v -I../../S4 S4mex.c ../../vc/S4.lib
