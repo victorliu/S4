@@ -873,18 +873,18 @@ int lua_S4_Simulation_GetBases(lua_State *L){
 	if(0 == Lr[1] && 0 == Lr[2] && 0 == Lr[3]){
 		for(i = 0; i < n; ++i){
 			lua_pushinteger(L, i+1);
+			lua_pushinteger(L, G[2*i+0]);
+			lua_settable(L, -3);
+		}
+	}else{
+		for(i = 0; i < n; ++i){
+			lua_pushinteger(L, i+1);
 			lua_createtable(L, 2, 0);
 			for(j = 0; j < 2; ++j){
 				lua_pushinteger(L, j+1);
 				lua_pushinteger(L, G[2*i+j]);
 				lua_settable(L, -3);
 			}
-			lua_settable(L, -3);
-		}
-	}else{
-		for(i = 0; i < n; ++i){
-			lua_pushinteger(L, i+1);
-			lua_pushinteger(L, G[2*i+0]);
 			lua_settable(L, -3);
 		}
 	}
