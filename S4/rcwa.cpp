@@ -44,8 +44,7 @@
 //# define DUMP_STREAM (omega.real() > 1.91637 ? std::cerr : std::cout)
 # include <IO.h>
 #endif
-# include <IO.h>
-# include <cstdio>
+#include <cstdio>
 
 #include <numalloc.h>
 
@@ -432,7 +431,7 @@ void SolveLayerEigensystem(
 #endif
 	int info = RNP::Eigensystem(n2, op, n2, q, NULL, 1, phi, n2, eigenwork, rwork, eigenlwork);
 	if(0 != info){
-		std::cerr << "Layer eigensystem returned info = " << info << std::endl;
+		fprintf(stderr, "Layer eigensystem returned info = %d\n", info);
 	}
 #ifdef DUMP_MATRICES
 	DUMP_STREAM << "eigen info = " << info << std::endl;
