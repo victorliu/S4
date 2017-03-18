@@ -105,7 +105,10 @@ int luaopen_S4v2(lua_State *L){
 		{"SetRegion", lua_S4_Layer_SetRegion},
 		/* Outputs */
 		{"GetPowerFlux", lua_S4_Layer_GetPowerFlux},
-		//{"GetPowerFluxByOrder", lua_S4_Layer_GetPowerFluxes},
+		//{"GetPowerFluxes", lua_S4_Layer_GetPowerFluxes},
+		//{"GetVolumeIntegral", lua_S4_Layer_GetVolumeIntegral},
+		//{"GetZIntegral", lua_S4_Layer_GetZIntegral},
+		//{"GetStressTensorIntegral", lua_S4_Layer_GetStressTensorIntegral},
 		{"GetWaves", lua_S4_Layer_GetWaves},
 		{NULL, NULL}
 	};
