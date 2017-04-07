@@ -1,0 +1,14 @@
+ifeq ($(OS),Windows_NT)
+	PLAT = mingw64
+	WINDOWS_SOURCES = win32src/gfortran.cpp
+else
+	UNAME_S := $(shell uname -s)
+	ifeq ($(UNAME_S),Linux)
+		PLAT = linux
+	endif
+	ifeq ($(UNAME_S),Darwin)
+		PLAT = macosx
+	endif
+endif
+
+include Makefile.$(PLAT)

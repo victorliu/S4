@@ -8,7 +8,7 @@ LUA_MODULE_LIB =
 
 OPTFLAGS = -O2
 CFLAGS += $(OPTFLAGS) -Wall
-CXXFLAGS += $(OPTFLAGS) -Wall -std=c++11
+CXXFLAGS += $(OPTFLAGS) -Wall -std=c++11 -DHAVE_LAPACK -DHAVE_BLAS
 
 CC = cc
 CXX = c++
