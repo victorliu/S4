@@ -157,20 +157,13 @@ extern "C" {
 
 
 //// Layer methods
-void Layer_Init(S4_Layer *L, const char *name, double thickness, const char *material, const char *copy);
 void Layer_Destroy(S4_Layer *L);
 
 //// Material methods
-void Material_Init(S4_Material *M, const char *name, const double eps[2]);
-void Material_InitTensor(S4_Material *M, const char *name, const double abcde[10]);
 void Material_Destroy(S4_Material *M);
 
 //// Simulation methods
-/*
-void Simulation_Init(S4_Simulation *S, const double *Lr, unsigned int nG, int *G);
-void Simulation_Destroy(S4_Simulation *S);
-void Simulation_Clone(const S4_Simulation *S, S4_Simulation *T);
-*/
+
 void Simulation_DestroySolution(S4_Simulation *S);
 void Simulation_DestroyLayerSolutions(S4_Simulation *S);
 void Simulation_DestroyLayerModes(S4_Layer *layer);
@@ -192,14 +185,6 @@ void S4_Simulation_DestroyLayerModes(S4_Simulation *S, S4_LayerID id);
 //   2 if basis vectors are zero (Lr == 0)
 int Simulation_MakeReciprocalLattice(S4_Simulation *S);
 
-S4_Material* Simulation_AddMaterial(S4_Simulation *S);
-// Adds a blank material to the end of the array in S and returns
-// a pointer to it.
-
-S4_Layer* Simulation_AddLayer(S4_Simulation *S);
-// Adds a blank layer to the end of the array in S and returns
-// a pointer to it.
-
 int Simulation_SetNumG(S4_Simulation *S, int n);
 int Simulation_GetNumG(const S4_Simulation *S, int **G);
 double Simulation_GetUnitCellSize(const S4_Simulation *S);
@@ -212,17 +197,6 @@ S4_Layer* Simulation_GetLayerByName(const S4_Simulation *S, const char *name, in
 // If index is non-NULL, the offset of the material in the list is returned.
 S4_Material* Simulation_GetMaterialByName(const S4_Simulation *S, const char *name, int *index);
 S4_Material* Simulation_GetMaterialByIndex(const S4_Simulation *S, int i);
-
-// Returns -n if the n-th argument is invalid.
-// S and L should be valid pointers, material is the offset into the material list (not bounds checked).
-// angle should be in radians
-// vert should be of length 2*nvert
-int Simulation_AddLayerPatternCircle   (S4_Simulation *S, S4_Layer *layer, int material, const double center[2], double radius);
-int Simulation_AddLayerPatternEllipse  (S4_Simulation *S, S4_Layer *layer, int material, const double center[2], double angle, const double halfwidths[2]);
-int Simulation_AddLayerPatternRectangle(S4_Simulation *S, S4_Layer *layer, int material, const double center[2], double angle, const double halfwidths[2]);
-int Simulation_AddLayerPatternPolygon  (S4_Simulation *S, S4_Layer *layer, int material, const double center[2], double angle, int nvert, const double *vert);
-int Simulation_RemoveLayerPatterns(S4_Simulation *S, S4_Layer *layer);
-int Simulation_ChangeLayerThickness(S4_Simulation *S, S4_Layer *layer, const double *thickness);
 
 // Returns 14 if no layers present
 // exg is length 2*n, pairs of G index (1-based index, negative for backwards modes), and 0,1 polarization (E field x,y)
@@ -266,49 +240,6 @@ int Simulation_InitSolution(S4_Simulation *S);
 
 // Returns a solution error code
 int Simulation_SolveLayer(S4_Simulation *S, S4_Layer *layer);
-
-// Returns a solution error code
-// powers[0] - 0.5 real forw
-// powers[1] - 0.5 real back
-// powers[2] - imag forw
-// powers[3] - imag back
-int Simulation_GetPoyntingFlux(S4_Simulation *S, S4_Layer *layer, double offset, double powers[4]);
-int Simulation_GetPoyntingFluxByG(S4_Simulation *S, S4_Layer *layer, double offset, double *powers);
-
-// Returns a list of S->n_G complex numbers of mode propagation constants
-// q should be length 2*S->n_G
-int Simulation_GetPropagationConstants(S4_Simulation *S, S4_Layer *layer, double *q);
-
-// Returns lists of 2*S->n_G complex numbers of forward and backward amplitudes
-// forw and back should each be length 4*S->n_G
-int Simulation_GetAmplitudes(S4_Simulation *S, S4_Layer *layer, double offset, double *forw, double *back);
-// waves should be size 2*11*S->n_G
-// Each wave is:
-//   { kx, ky, kzr, kzi, ux, uy, uz, cur, cui, cvr, cvi }
-int Simulation_GetWaves(S4_Simulation *S, S4_Layer *layer, double *wave);
-
-// Returns a solution error code
-// Tint is a vector of time averaged stress tensor integral
-int Simulation_GetStressTensorIntegral(S4_Simulation *S, S4_Layer *layer, double offset, double Tint[6]);
-
-// Returns a solution error code
-// which can be 'U', 'E', 'H', 'e'
-// 'E' is epsilon*|E|^2, 'H' is |H|^2, 'e' is |E|^2, 'U' is 'E'+'H'
-int Simulation_GetLayerVolumeIntegral(S4_Simulation *S, S4_Layer *layer, char which, double integral[2]);
-int Simulation_GetLayerZIntegral(S4_Simulation *S, S4_Layer *layer, const double r[2], double integral[6]);
-
-// Outputs a POV-Ray render script of a unit cell of the structure.
-// Return value can be ignored for valid inputs.
-int Simulation_OutputStructurePOVRay(S4_Simulation *S, FILE *fp);
-
-// Outputs a PostScript rendering of the layer pattern to stdout.
-// Return value can be ignored for valid inputs.
-int Simulation_OutputLayerPatternDescription(S4_Simulation *S, S4_Layer *layer, FILE *fp);
-
-// Returns a solution error code
-// Outputs the Fourier reconstruction of the layer pattern to stdout in Gnuplot splot format.
-// The unit cell is discretized into nu and nv cells in the lattice directions.
-int Simulation_OutputLayerPatternRealization(S4_Simulation *S, S4_Layer *layer, int nu, int nv, FILE *fp);
 
 // Returns a solution error code
 // E field is stored as {Exr,Eyr,Ezr,Exi,Eyi,Ezi}
