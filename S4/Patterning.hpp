@@ -6,7 +6,7 @@
 #include <vector>
 //L:MaterialMap{ image = 'foo.png', map = { ["000000"] = mSi } }
 
-class Patterning{
+struct Patterning{
 	// Represents a generic layer patterning
 public:
 	typedef S4_real real_type;
@@ -28,6 +28,10 @@ public:
 	//    [ Lk[1]  Lk[3] ]   [ ik[1] ]
 	//   = ( Lk[0]*ik[0]+Lk[2]*ik[1], Lk[1]*ik[0]+Lk[3]*ik[1] )
 	virtual void FourierSeries(const real_type *Lk, int nik, const int *ik, complex_type *fc) const = 0;
+	
+	// Returns true if the pattern is inversion symmetric for some shift, and optionally returns that shift.
+	// If shift is NULL, then checks for inversion symmetry under zero shift.
+	virtual bool InversionSymmetric(real_type *shift) const{ return false; }
 protected:
 	const complex_type *t2v; // tag to value map
 	int inct2v;
