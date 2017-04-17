@@ -843,285 +843,6 @@ void S4_Simulation_DestroyLayerModes(S4_Simulation *S, S4_LayerID id){
 	}
 }
 
-int Simulation_RemoveLayerPatterns(S4_Simulation *S, S4_Layer *layer){
-	S4_TRACE("> Simulation_RemoveLayerPatterns(S=%p, layer=%p) [omega=%f]\n",
-		S, layer, S->omega[0]);
-	int ret = 0;
-	if(NULL == S){ ret = -1; }
-	if(NULL == layer){ ret = -2; }
-	if(0 != ret){
-		S4_TRACE("< Simulation_RemoveLayerPatterns (failed; ret = %d) [omega=%f]\n", ret, S->omega[0]);
-		return ret;
-	}
-
-	Simulation_DestroySolution(S);
-
-	layer->pattern.nshapes = 0;
-	if(NULL != layer->pattern.shapes){
-		free(layer->pattern.shapes);
-		layer->pattern.shapes = NULL;
-	}
-	if(NULL != layer->pattern.parent){
-		free(layer->pattern.parent);
-		layer->pattern.parent = NULL;
-	}
-	Simulation_DestroyLayerModes(layer);
-
-	S4_TRACE("< Simulation_RemoveLayerPatterns [omega=%f]\n", S->omega[0]);
-	return 0;
-}
-int Simulation_ChangeLayerThickness(S4_Simulation *S, S4_Layer *layer, const double *thick){
-	S4_TRACE("> Simulation_ChangeLayerThickness(S=%p, layer=%p, thick=%g) [omega=%f]\n",
-		S, layer, *thick, S->omega[0]);
-	int ret = 0;
-	if(NULL == S){ ret = -1; }
-	if(NULL == layer){ ret = -2; }
-	if(NULL == thick || thick < 0){ ret = -3; }
-	if(0 != ret){
-		S4_TRACE("< Simulation_RemoveLayerPatterns (failed; ret = %d) [omega=%f]\n", ret, S->omega[0]);
-		return ret;
-	}
-
-	layer->thickness = *thick;
-	Simulation_DestroyLayerSolutions(S);
-
-	S4_TRACE("< Simulation_ChangeLayerThickness [omega=%f]\n", S->omega[0]);
-	return 0;
-}
-int Simulation_SetNumG(S4_Simulation *S, int n){
-	int ret = 0;
-	S4_TRACE("> Simulation_SetNumG(S=%p, n=%d) [omega=%f]\n", S, n, S->omega[0]);
-	if(NULL == S){ ret = -1; }
-	if(n < 1){ ret = -2; }
-	if(0 != ret){
-		S4_TRACE("< Simulation_SetNumG (failed; ret = %d) [omega=%f]\n", ret, S->omega[0]);
-		return ret;
-	}
-
-	Simulation_DestroySolution(S);
-	Simulation_InvalidateFieldCache(S);
-
-	S->n_G = n;
-	S->G = (int*)S4_realloc(S->G, sizeof(int)*2*S->n_G);
-	S->kx = (double*)S4_realloc(S->kx, sizeof(double)*2*S->n_G);
-	S->ky = S->kx + S->n_G;
-
-	if(0 != S->Lr[2] || 0 != S->Lr[3]){
-		unsigned int NG = S->n_G;
-		G_select(S->options.lattice_truncation, &NG, S->Lk, S->G);
-		S->n_G = NG;
-	}else{
-		// 1D lattice
-		S->G[0] = 0; S->G[1] = 0;
-		int remaining = (S->n_G-1)/2;
-		S->n_G = 1+2*remaining;
-		for(int i = 0; i < remaining; ++i){
-			S->G[2+4*i+0] = i+1;
-			S->G[2+4*i+1] = 0;
-			S->G[2+4*i+2] = -(i+1);
-			S->G[2+4*i+3] = 0;
-		}
-	}
-	S4_TRACE("< Simulation_SetNumG [omega=%f]\n", S->omega[0]);
-	return 0;
-}
-int Simulation_GetNumG(const S4_Simulation *S, int **G){
-	int ret = 0;
-	S4_TRACE("> Simulation_GetNumG(S=%p, G=%p) [omega=%f]\n", S, G, S->omega[0]);
-	if(NULL == S){ ret = -1; }
-	if(0 != ret){
-		S4_TRACE("< Simulation_GetNumG (failed; ret = %d) [omega=%f]\n", ret, S->omega[0]);
-		return ret;
-	}
-
-	ret = S->n_G;
-
-	if(NULL != G){
-		*G = S->G;
-	}
-
-	S4_TRACE("< Simulation_GetNumG [omega=%f]\n", S->omega[0]);
-	return ret;
-}
-int Simulation_AddLayerPatternCircle(
-	S4_Simulation *S,
-	S4_Layer *layer, int material,
-	const double center[2],
-	double radius
-){
-	S4_TRACE("> Simulation_AddLayerPatternCircle(S=%p, layer=%p, material=%d, center=%p (%f,%f), radius=%f)\n",
-		S, layer,
-		material,
-		center, (NULL == center ? 0.0 : center[0]), (NULL == center ? 0.0 : center[1]),
-		radius);
-	int ret = 0;
-	if(NULL == S){ ret = -1; }
-	if(NULL == layer){ ret = -2; }
-	if(material < 0){ ret = -3; }
-	if(NULL == center){ ret = -4; }
-	if(radius < 0){ ret = -5; }
-	if(0 != ret){
-		S4_TRACE("< Simulation_AddLayerPatternCircle (failed; ret = %d)\n", ret);
-		return ret;
-	}
-
-	Simulation_DestroyLayerModes(layer);
-	Simulation_DestroySolution(S);
-	Simulation_InvalidateFieldCache(S);
-
-	int n = layer->pattern.nshapes++;
-	layer->pattern.shapes = (shape*)realloc(layer->pattern.shapes, sizeof(shape)*layer->pattern.nshapes);
-	if(NULL == layer->pattern.shapes){ return 1; }
-	shape *sh = &layer->pattern.shapes[n];
-	sh->type = CIRCLE;
-	sh->center[0] = center[0];
-	sh->center[1] = center[1];
-	sh->angle = 0;
-	sh->vtab.circle.radius = radius;
-	sh->tag = material;
-
-	S4_TRACE("< Simulation_AddLayerPatternCircle\n");
-	return 0;
-}
-int Simulation_AddLayerPatternEllipse(
-	S4_Simulation *S,
-	S4_Layer *layer, int material,
-	const double center[2],
-	double angle,
-	const double halfwidths[2]
-){
-	S4_TRACE("> Simulation_AddLayerPatternEllipse(S=%p, layer=%p, material=%d, center=%p (%f,%f), angle=%f, halfwidths=%p (%f,%f))\n",
-		S, layer,
-		material,
-		center, (NULL == center ? 0 : center[0]), (NULL == center ? 0 : center[1]),
-		angle,
-		halfwidths, (NULL == halfwidths ? 0 : halfwidths[0]), (NULL == halfwidths ? 0 : halfwidths[1]));
-	int ret = 0;
-	if(NULL == S){ ret = -1; }
-	if(NULL == layer){ ret = -2; }
-	if(material < 0){ ret = -3; }
-	if(NULL == center){ ret = -4; }
-	if(NULL == halfwidths){ ret = -6; }
-	if(0 != ret){
-		S4_TRACE("< Simulation_AddLayerPatternEllipse (failed; ret = %d)\n", ret);
-		return ret;
-	}
-
-	Simulation_DestroyLayerModes(layer);
-	Simulation_DestroySolution(S);
-	Simulation_InvalidateFieldCache(S);
-
-	int n = layer->pattern.nshapes++;
-	layer->pattern.shapes = (shape*)realloc(layer->pattern.shapes, sizeof(shape)*layer->pattern.nshapes);
-	if(NULL == layer->pattern.shapes){ return 1; }
-	shape *sh = &layer->pattern.shapes[n];
-	sh->type = ELLIPSE;
-
-	sh->center[0] = center[0];
-	sh->center[1] = center[1];
-	sh->angle = angle;
-	sh->vtab.ellipse.halfwidth[0] = halfwidths[0];
-	sh->vtab.ellipse.halfwidth[1] = halfwidths[1];
-	sh->tag = material;
-
-	S4_TRACE("< Simulation_AddLayerPatternEllipse\n");
-	return 0;
-}
-
-int Simulation_AddLayerPatternRectangle(
-	S4_Simulation *S,
-	S4_Layer *layer, int material,
-	const double center[2],
-	double angle,
-	const double halfwidths[2]
-){
-	S4_TRACE("> Simulation_AddLayerPatternRectangle(S=%p, layer=%p, material=%d, center=%p (%f,%f), angle=%f, halfwidths=%p (%f,%f))\n",
-		S, layer,
-		material,
-		center, (NULL == center ? 0 : center[0]), (NULL == center ? 0 : center[1]),
-		angle,
-		halfwidths, (NULL == halfwidths ? 0 : halfwidths[0]), (NULL == halfwidths ? 0 : halfwidths[1]));
-	int ret = 0;
-	if(NULL == S){ ret = -1; }
-	if(NULL == layer){ ret = -2; }
-	if(material < 0){ ret = -3; }
-	if(NULL == center){ ret = -4; }
-	if(NULL == halfwidths){ ret = -6; }
-	if(0 != ret){
-		S4_TRACE("< Simulation_AddLayerPatternRectangle (failed; ret = %d)\n", ret);
-		return ret;
-	}
-
-	Simulation_DestroyLayerModes(layer);
-	Simulation_DestroySolution(S);
-	Simulation_InvalidateFieldCache(S);
-
-	int n = layer->pattern.nshapes++;
-	layer->pattern.shapes = (shape*)realloc(layer->pattern.shapes, sizeof(shape)*layer->pattern.nshapes);
-	if(NULL == layer->pattern.shapes){ return 1; }
-	shape *sh = &layer->pattern.shapes[n];
-	sh->type = RECTANGLE;
-	sh->center[0] = center[0];
-	sh->center[1] = center[1];
-	sh->angle = angle;
-	sh->vtab.rectangle.halfwidth[0] = halfwidths[0];
-	sh->vtab.rectangle.halfwidth[1] = halfwidths[1];
-	sh->tag = material;
-
-	S4_TRACE("< Simulation_AddLayerPatternRectangle\n");
-	return 0;
-}
-int Simulation_AddLayerPatternPolygon(
-	S4_Simulation *S,
-	S4_Layer *layer, int material,
-	const double center[2],
-	double angle,
-	int nvert,
-	const double *vert
-){
-	S4_TRACE("> Simulation_AddLayerPatternPolygon(S=%p, layer=%p, material=%d, center=%p (%f,%f), angle=%f, nvert=%d, vert=%p)\n",
-		S, layer,
-		material,
-		center, (NULL == center ? 0 : center[0]), (NULL == center ? 0 : center[1]),
-		angle,
-		nvert,
-		vert);
-	int ret = 0;
-	if(NULL == S){ ret = -1; }
-	if(NULL == layer){ ret = -2; }
-	if(material < 0){ ret = -3; }
-	if(NULL == center){ ret = -4; }
-	if(nvert < 3){ ret = -6; }
-	if(NULL == vert){ ret = -7; }
-	if(0 != ret){
-		S4_TRACE("< Simulation_AddLayerPatternPolygon (failed; ret = %d)\n", ret);
-		return ret;
-	}
-
-	Simulation_DestroyLayerModes(layer);
-	Simulation_DestroySolution(S);
-	Simulation_InvalidateFieldCache(S);
-
-	int n = layer->pattern.nshapes++;
-	layer->pattern.shapes = (shape*)realloc(layer->pattern.shapes, sizeof(shape)*layer->pattern.nshapes);
-	if(NULL == layer->pattern.shapes){ return 3; }
-	shape *sh = &layer->pattern.shapes[n];
-	sh->type = POLYGON;
-	sh->center[0] = center[0];
-	sh->center[1] = center[1];
-	sh->angle = angle;
-	sh->vtab.polygon.n_vertices = nvert;
-	sh->vtab.polygon.vertex = (double*)S4_malloc(sizeof(double)*nvert*2);
-	for(int i = 0; i < nvert; ++i){
-		sh->vtab.polygon.vertex[2*i+0] = vert[2*i+0];
-		sh->vtab.polygon.vertex[2*i+1] = vert[2*i+1];
-	}
-	sh->tag = material;
-
-	S4_TRACE("< Simulation_AddLayerPatternPolygon\n");
-	return 0;
-}
-
 // Returns:
 // -n if n-th argument is invalid
 // 1  - allocation error
@@ -1861,24 +1582,26 @@ int S4_Simulation_GetPowerFlux(S4_Simulation *S, S4_LayerID id, const double *of
 	return 0;
 }
 
-int Simulation_GetPoyntingFluxByG(S4_Simulation *S, S4_Layer *layer, double offset, double *powers){
+int S4_Simulation_GetPowerFluxes(S4_Simulation *S, S4_LayerID id, const double *offset, double *powers){
 	S4_TRACE("> Simulation_GetPoyntingFluxByG(S=%p, layer=%p, offset=%f, powers=%p) [omega=%f]\n",
 		S, layer, offset, powers, S->omega[0]);
 	int ret = 0;
 	if(NULL == S){ ret = -1; }
-	if(NULL == layer){ ret = -2; }
+	if(id < 0 || id >= S->n_layers){ return -2; }
 	if(NULL == powers){ ret = -4; }
 	if(0 != ret){
-		S4_TRACE("< Simulation_GetPoyntingFluxByG (failed; ret = %d) [omega=%f]\n", ret, S->omega[0]);
+		S4_TRACE("< S4_Simulation_GetPowerFluxes (failed; ret = %d) [omega=%f]\n", ret, S->omega[0]);
 		return ret;
 	}
+	S4_Layer *layer = &S->layer[id];
 
 	LayerModes *Lmodes;
 	std::complex<double> *Lsoln;
+	const double off = (NULL != offset ? *offset : 0);
 
 	ret = Simulation_GetLayerSolution(S, layer, &Lmodes, &Lsoln);
 	if(0 != ret){
-		S4_TRACE("< Simulation_GetPoyntingFluxByG (failed; Simulation_GetLayerSolution returned %d) [omega=%f]\n", ret, S->omega[0]);
+		S4_TRACE("< S4_Simulation_GetPowerFluxes (failed; Simulation_GetLayerSolution returned %d) [omega=%f]\n", ret, S->omega[0]);
 		return ret;
 	}
 
@@ -1888,7 +1611,7 @@ int Simulation_GetPoyntingFluxByG(S4_Simulation *S, S4_Layer *layer, double offs
 
 	std::complex<double> *ab = (std::complex<double> *)S4_malloc(sizeof(std::complex<double>) * (n2+n4+4*n2));
 	if(NULL == ab){
-		S4_TRACE("< Simulation_GetPoyntingFluxByG (failed; allocation failed) [omega=%f]\n", S->omega[0]);
+		S4_TRACE("< S4_Simulation_GetPowerFluxes (failed; allocation failed) [omega=%f]\n", S->omega[0]);
 		return 1;
 	}
 	std::complex<double> *forw = ab + n4;
@@ -1896,18 +1619,18 @@ int Simulation_GetPoyntingFluxByG(S4_Simulation *S, S4_Layer *layer, double offs
 	std::complex<double> *work = back + n;
 
 	memcpy(ab, Lsoln, sizeof(std::complex<double>) * n4);
-	TranslateAmplitudes(n, Lmodes->q, layer->thickness, offset, ab);
+	TranslateAmplitudes(n, Lmodes->q, layer->thickness, off, ab);
 
 	GetZPoyntingFluxComponents(n, S->kx, S->ky, std::complex<double>(S->omega[0],S->omega[1]), Lmodes->q, Lmodes->Epsilon_inv, Lmodes->epstype, Lmodes->kp, Lmodes->phi, ab, forw, back, work);
 	for(int i = 0; i < n; ++i){
-		powers[4*i+0] = forw[i].real();
-		powers[4*i+1] = back[i].real();
-		powers[4*i+2] = forw[i].imag();
-		powers[4*i+3] = back[i].imag();
+		powers[0*n+i] = forw[i].real();
+		powers[1*n+i] = back[i].real();
+		powers[2*n+i] = forw[i].imag();
+		powers[3*n+i] = back[i].imag();
 	}
 
 	S4_free(ab);
-	S4_TRACE("< Simulation_GetPoyntingFluxByG [omega=%f]\n", S->omega[0]);
+	S4_TRACE("< S4_Simulation_GetPowerFluxes [omega=%f]\n", S->omega[0]);
 	return 0;
 }
 
@@ -2965,24 +2688,26 @@ int Simulation_GetSMatrixDeterminant(S4_Simulation *S, double rmant[2], double *
 
 // Returns a solution error code
 // Tint is a vector of time averaged stress tensor integral
-int Simulation_GetStressTensorIntegral(S4_Simulation *S, S4_Layer *layer, double offset, double Tint[6]){
-	S4_TRACE("> Simulation_GetStressTensorIntegral(S=%p, layer=%p, offset=%f, Tint=%p)\n", S, layer, offset, Tint);
+int S4_Simulation_GetStressTensorIntegral(S4_Simulation *S, S4_LayerID id, const double *offset, double Tint[6]){
+	S4_TRACE("> Simulation_GetStressTensorIntegral(S=%p, layer=%d, offset=%f, Tint=%p)\n", S, id, offset, Tint);
 
 	int ret = 0;
 	if(NULL == S){ ret = -1; }
-	if(NULL == layer){ ret = -2; }
+	if(id < 0 || id >= S->n_layers){ return -2; }
 	if(NULL == Tint){ ret = -4; }
 	if(0 != ret){
-		S4_TRACE("< Simulation_GetStressTensorIntegral (failed; ret = %d)\n", ret);
+		S4_TRACE("< S4_Simulation_GetStressTensorIntegral (failed; ret = %d)\n", ret);
 		return ret;
 	}
+	S4_Layer *layer = &S->layer[id];
 
 	LayerModes *Lmodes;
 	std::complex<double> *Lsoln;
+	const double off = (NULL != offset ? *offset : 0);
 
 	ret = Simulation_GetLayerSolution(S, layer, &Lmodes, &Lsoln);
 	if(0 != ret){
-		S4_TRACE("< Simulation_GetStressTensorIntegral (failed; Simulation_GetLayerSolution returned %d)\n", ret);
+		S4_TRACE("< S4_Simulation_GetStressTensorIntegral (failed; Simulation_GetLayerSolution returned %d) [omega=%f]\n", ret, S->omega[0]);
 		return ret;
 	}
 
@@ -2992,13 +2717,13 @@ int Simulation_GetStressTensorIntegral(S4_Simulation *S, S4_Layer *layer, double
 
 	std::complex<double> *ab = (std::complex<double> *)S4_malloc(sizeof(std::complex<double>) * (n4+8*n2));
 	if(NULL == ab){
-		S4_TRACE("< Simulation_GetStressTensorIntegral (failed; allocation failed)\n");
+		S4_TRACE("< S4_Simulation_GetStressTensorIntegral (failed; allocation failed)\n");
 		return 1;
 	}
 	std::complex<double> *work = ab + n4;
 
 	memcpy(ab, Lsoln, sizeof(std::complex<double>) * n4);
-	TranslateAmplitudes(n, Lmodes->q, layer->thickness, offset, ab);
+	TranslateAmplitudes(n, Lmodes->q, layer->thickness, off, ab);
 
 	std::complex<double> integral[3];
 	GetZStressTensorIntegral(
@@ -3014,32 +2739,33 @@ int Simulation_GetStressTensorIntegral(S4_Simulation *S, S4_Layer *layer, double
 
 	S4_free(ab);
 
-	S4_TRACE("< Simulation_GetStressTensorIntegral\n");
+	S4_TRACE("< S4_Simulation_GetStressTensorIntegral\n");
 	return 0;
 }
 
 // Returns a solution error code
 // which can be 'U', 'E', 'H', 'e'
 // 'E' is epsilon*|E|^2, 'H' is |H|^2, 'e' is |E|^2, 'U' is 'E'+'H'
-int Simulation_GetLayerVolumeIntegral(S4_Simulation *S, S4_Layer *layer, char which, double integral[2]){
-	S4_TRACE("> Simulation_GetLayerVolumeIntegral(S=%p, layer=%p, which=%c, integral=%p)\n", S, layer, which, integral);
+int S4_Simulation_GetLayerVolumeIntegral(S4_Simulation *S, S4_LayerID id, int which, double *integral){
+	S4_TRACE("> Simulation_GetLayerVolumeIntegral(S=%p, layer=%d, which=%c, integral=%p)\n", S, id, which, integral);
 
 	int ret = 0;
 	if(NULL == S){ ret = -1; }
-	if(NULL == layer){ ret = -2; }
+	if(id < 0 || id >= S->n_layers){ return -2; }
 	if(which != 'U' && which != 'E' && which != 'H' && which != 'e'){ ret = -3; }
 	if(NULL == integral){ ret = -4; }
 	if(0 != ret){
-		S4_TRACE("< Simulation_GetLayerVolumeIntegral (failed; ret = %d)\n", ret);
+		S4_TRACE("< S4_Simulation_GetLayerVolumeIntegral (failed; ret = %d)\n", ret);
 		return ret;
 	}
+	S4_Layer *layer = &S->layer[id];
 
 	LayerModes *Lmodes;
 	std::complex<double> *Lsoln;
 
 	ret = Simulation_GetLayerSolution(S, layer, &Lmodes, &Lsoln);
 	if(0 != ret){
-		S4_TRACE("< Simulation_GetLayerVolumeIntegral (failed; Simulation_GetLayerSolution returned %d)\n", ret);
+		S4_TRACE("< S4_Simulation_GetLayerVolumeIntegral (failed; Simulation_GetLayerSolution returned %d) [omega=%f]\n", ret, S->omega[0]);
 		return ret;
 	}
 
@@ -3049,7 +2775,7 @@ int Simulation_GetLayerVolumeIntegral(S4_Simulation *S, S4_Layer *layer, char wh
 
 	std::complex<double> *work = (std::complex<double> *)S4_malloc(sizeof(std::complex<double>) * (n4*n4));
 	if(NULL == work){
-		S4_TRACE("< Simulation_GetLayerVolumeIntegral (failed; allocation failed)\n");
+		S4_TRACE("< S4_Simulation_GetLayerVolumeIntegral (failed; allocation failed)\n");
 		return 1;
 	}
 
@@ -3064,30 +2790,31 @@ int Simulation_GetLayerVolumeIntegral(S4_Simulation *S, S4_Layer *layer, char wh
 	integral[0] = zintegral.real();
 	integral[1] = zintegral.imag();
 
-	S4_TRACE("< Simulation_GetLayerVolumeIntegral\n");
+	S4_TRACE("< S4_Simulation_GetLayerVolumeIntegral\n");
 	return 0;
 }
 
 // Returns a solution error code
-int Simulation_GetLayerZIntegral(S4_Simulation *S, S4_Layer *layer, const double r[2], double integral[6]){
-	S4_TRACE("> Simulation_GetLayerZIntegral(S=%p, layer=%p, r=%g,%g, integral=%p)\n", S, layer, r[0], r[1], integral);
+int S4_Simulation_GetLayerZIntegral(S4_Simulation *S, S4_LayerID id, const double r[2], double integral[6]){
+	S4_TRACE("> Simulation_GetLayerZIntegral(S=%p, layer=%d, r=%g,%g, integral=%p)\n", S, id, r[0], r[1], integral);
 
 	int ret = 0;
 	if(NULL == S){ ret = -1; }
-	if(NULL == layer){ ret = -2; }
+	if(id < 0 || id >= S->n_layers){ return -2; }
 	if(NULL == r){ ret = -3; }
 	if(NULL == integral){ ret = -4; }
 	if(0 != ret){
-		S4_TRACE("< Simulation_GetLayerZIntegral (failed; ret = %d)\n", ret);
+		S4_TRACE("< S4_Simulation_GetLayerZIntegral (failed; ret = %d)\n", ret);
 		return ret;
 	}
+	S4_Layer *layer = &S->layer[id];
 
 	LayerModes *Lmodes;
 	std::complex<double> *Lsoln;
 
 	ret = Simulation_GetLayerSolution(S, layer, &Lmodes, &Lsoln);
 	if(0 != ret){
-		S4_TRACE("< Simulation_GetLayerZIntegral (failed; Simulation_GetLayerSolution returned %d)\n", ret);
+		S4_TRACE("< S4_Simulation_GetLayerZIntegral (failed; Simulation_GetLayerSolution returned %d) [omega=%f]\n", ret, S->omega[0]);
 		return ret;
 	}
 
@@ -3097,7 +2824,7 @@ int Simulation_GetLayerZIntegral(S4_Simulation *S, S4_Layer *layer, const double
 
 	std::complex<double> *work = (std::complex<double> *)S4_malloc(sizeof(std::complex<double>) * (12*n4));
 	if(NULL == work){
-		S4_TRACE("< Simulation_GetLayerZIntegral (failed; allocation failed)\n");
+		S4_TRACE("< S4_Simulation_GetLayerZIntegral (failed; allocation failed)\n");
 		return 1;
 	}
 
@@ -3109,7 +2836,7 @@ int Simulation_GetLayerZIntegral(S4_Simulation *S, S4_Layer *layer, const double
 	S4_free(work);
 
 
-	S4_TRACE("< Simulation_GetLayerZIntegral\n");
+	S4_TRACE("< S4_Simulation_GetLayerZIntegral\n");
 	return 0;
 }
 
