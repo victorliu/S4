@@ -112,7 +112,7 @@ clean:
 
 #### Lua extension
 $(OBJDIR)/$(S4_LUA_LIBNAME): $(OBJDIR)/$(S4_LIBNAME) S4/ext_lua.c
-	$(CC) -c $(LUA_INC) S4/ext_lua.c -o $(OBJDIR)/ext_lua.o
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $(LUA_INC) S4/ext_lua.c -o $(OBJDIR)/ext_lua.o
 	$(AR) crvs $@ $(OBJDIR)/ext_lua.o
 $(OBJDIR)/$(S4_LUA_MODNAME): $(OBJDIR)/$(S4_LIBNAME) $(OBJDIR)/$(S4_LUA_LIBNAME) S4/ext_lua.c
-	$(CC) $(SHLIB_FLAGS) $(LUA_INC) S4/ext_lua.c -o $@ $(LUA_MODULE_LIB) -L$(OBJDIR) -lS4 $(LA_LIBS) -lstdc++
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(SHLIB_FLAGS) $(LUA_INC) S4/ext_lua.c -o $@ $(LUA_MODULE_LIB) -L$(OBJDIR) -lS4 $(LA_LIBS) -lstdc++
