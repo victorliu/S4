@@ -230,11 +230,21 @@ int S4_Simulation_SolveLayer(S4_Simulation *S, S4_LayerID L);
 int S4_Simulation_GetPowerFlux(
 	S4_Simulation *S, S4_LayerID layer, const S4_real *offset,
 	S4_real *power
-);
+);/*
+power[0] is forward real,
+power[1] is backward real,
+power[2] is forward imag,
+power[3] is backward imag
+*/
 int S4_Simulation_GetPowerFluxes(
 	S4_Simulation *S, S4_LayerID layer, const S4_real *offset,
 	S4_real *power
-);
+);/*
+power[  0:  n] is forward real,
+power[  n:2*n] is backward real,
+power[2*n:3*n] is forward imag,
+power[3*n:4*n] is backward imag
+*/
 // waves should be size 2*11*S->n_G
 // Each wave is length 11:
 //   { kx, ky, kzr, kzi, ux, uy, uz, cur, cui, cvr, cvi }
@@ -248,7 +258,7 @@ int S4_Simulation_GetFieldPlane(
 );
 
 int S4_Simulation_GetEpsilon(
-	S4_Simulation *S, int nxy[2], const S4_real *xyz0, S4_real *eps
+	S4_Simulation *S, int format, int nxy[2], const S4_real *xyz0, S4_real *eps
 ); // eps is {real,imag}
 
 // Returns a solution error code
