@@ -33,6 +33,7 @@ typedef struct{
 int lua_S4_len(lua_State *L, int arg);
 int lua_S4_isinteger(lua_State *L, int arg);
 int lua_S4_getcomplex(lua_State *L, int arg, S4_real *v);
+int lua_S4_getvec2(lua_State *L, int arg, S4_real *v);
 int lua_S4_getvec3(lua_State *L, int arg, S4_real *v);
 int lua_S4_gettensor(lua_State *L, int arg, S4_real *eps);
 
@@ -61,6 +62,7 @@ int lua_S4_Layer_GetThickness(lua_State *L);
 int lua_S4_Layer_SetThickness(lua_State *L);
 int lua_S4_Layer_ClearRegions(lua_State *L);
 int lua_S4_Layer_SetRegion(lua_State *L);
+int lua_S4_Layer_GetMaterial(lua_State *L);
 
 int lua_S4_Simulation_Clone(lua_State *L);
 int lua_S4_Simulation_SetLattice(lua_State *L);
@@ -77,8 +79,13 @@ int lua_S4_Simulation_ExcitationPlanewave(lua_State *L);
 int lua_S4_Simulation_GetEpsilon(lua_State *L);
 int lua_S4_Simulation_GetFields(lua_State *L);
 int lua_S4_Layer_GetPowerFlux(lua_State *L);
-//int lua_S4_Layer_GetPowerFluxes(lua_State *L);
+int lua_S4_Layer_GetPowerFluxes(lua_State *L);
+int lua_S4_Layer_GetVolumeIntegral(lua_State *L);
+int lua_S4_Layer_GetZIntegral(lua_State *L);
+int lua_S4_Layer_GetStressTensorIntegral(lua_State *L);
 int lua_S4_Layer_GetWaves(lua_State *L);
+
+int lua_S4_ParallelInvoke(lua_State *L);
 
 #ifdef _WIN32
 extern __declspec(dllexport)
@@ -86,6 +93,7 @@ extern __declspec(dllexport)
 int luaopen_S4v2(lua_State *L){
 	static const struct luaL_Reg S4v2_lib[] = {
 		{"NewSimulation", lua_S4_NewSimulation},
+		{"ParallelInvoke", lua_S4_ParallelInvoke},
 		{NULL, NULL}
 	};
 
@@ -103,12 +111,13 @@ int luaopen_S4v2(lua_State *L){
 		{"SetThickness", lua_S4_Layer_SetThickness},
 		{"ClearRegions", lua_S4_Layer_ClearRegions},
 		{"SetRegion", lua_S4_Layer_SetRegion},
+		{"GetMaterial", lua_S4_Layer_GetMaterial},
 		/* Outputs */
 		{"GetPowerFlux", lua_S4_Layer_GetPowerFlux},
-		//{"GetPowerFluxes", lua_S4_Layer_GetPowerFluxes},
-		//{"GetVolumeIntegral", lua_S4_Layer_GetVolumeIntegral},
-		//{"GetZIntegral", lua_S4_Layer_GetZIntegral},
-		//{"GetStressTensorIntegral", lua_S4_Layer_GetStressTensorIntegral},
+		{"GetPowerFluxes", lua_S4_Layer_GetPowerFluxes},
+		{"GetVolumeIntegral", lua_S4_Layer_GetVolumeIntegral},
+		{"GetZIntegral", lua_S4_Layer_GetZIntegral},
+		{"GetStressTensorIntegral", lua_S4_Layer_GetStressTensorIntegral},
 		{"GetWaves", lua_S4_Layer_GetWaves},
 		{NULL, NULL}
 	};
@@ -127,6 +136,7 @@ int luaopen_S4v2(lua_State *L){
 		{"ExcitationPlanewave", lua_S4_Simulation_ExcitationPlanewave},
 		{"GetEpsilon", lua_S4_Simulation_GetEpsilon},
 		{"GetFields", lua_S4_Simulation_GetFields},
+		/*{"GetSMatrix", lua_S4_Simulation_GetSMatrix},*/
 		{NULL, NULL}
 	};
 
@@ -185,6 +195,23 @@ int lua_S4_getcomplex(lua_State *L, int arg, S4_real *v){
 		lua_gettable(L, arg);
 		if(!lua_isnumber(L, -1)){
 			return luaL_error(L, "Expected complex number");
+		}
+		v[i] = lua_tonumber(L, -1);
+		lua_pop(L, 1);
+	}
+	return 0;
+}
+int lua_S4_getvec2(lua_State *L, int arg, S4_real *v){
+	int i;
+	if(arg < 0){ arg += lua_gettop(L)+1; }
+	if(!lua_istable(L, arg) || 2 != lua_S4_len(L, arg)){
+		return luaL_error(L, "Expected 2-vector");
+	}
+	for(i = 0; i < 2; ++i){
+		lua_pushinteger(L, i+1);
+		lua_gettable(L, arg);
+		if(!lua_isnumber(L, -1)){
+			return luaL_error(L, "Expected 2-vector");
 		}
 		v[i] = lua_tonumber(L, -1);
 		lua_pop(L, 1);
@@ -456,7 +483,7 @@ int lua_S4_NewSimulation(lua_State *L){
 		lua_pop(L, 1);
 	}
 	if(0x3 != argflags){
-		return luaL_argerror(L, 1, "Must specify Lattice and BasisSize");
+		return luaL_argerror(L, 1, "Must specify lattice and bases");
 	}
 	lua_S4_Simulation_push(L, S4_Simulation_New(Lr, nG, G), NULL, 0);
 	free(G);
@@ -503,7 +530,6 @@ int lua_S4_Material_GetEpsilon(lua_State *L){
 	return 1;
 }
 int lua_S4_Material_SetEpsilon(lua_State *L){
-	int i, j, k;
 	S4_real eps[18] = { 0 };
 	lua_S4_Material *SM = lua_S4_Material_check(L, 1);
 	int type = lua_S4_gettensor(L, 2, eps);
@@ -557,7 +583,7 @@ int lua_S4_Layer_SetThickness(lua_State *L){
 }
 int lua_S4_Layer_SetRegion(lua_State *L){
 	int type = S4_REGION_TYPE_INTERVAL;
-	int i, j, nv;
+	int i, j, nv = 0;
 	S4_real *v = NULL;
 	S4_real center[2] = {0,0}, hw[2] = {0,0};
 	S4_real angle_frac = 0;
@@ -755,6 +781,12 @@ int lua_S4_Layer_SetRegion(lua_State *L){
 	return luaL_argerror(L, 1, "Unsupported region type");
 }
 
+int lua_S4_Layer_GetMaterial(lua_State *L){
+	lua_S4_Layer *SL = lua_S4_Layer_check(L, 1);
+	// TODO
+	return 0;
+}
+
 int lua_S4_Layer_ClearRegions(lua_State *L){
 	lua_S4_Layer *SL = lua_S4_Layer_check(L, 1);
 	S4_Layer_ClearRegions(SL->S, SL->L);
@@ -928,7 +960,6 @@ int lua_S4_Simulation_AddMaterial(lua_State *L){
 	const char *name = NULL;
 	S4_real eps[18];
 	unsigned int argflags = 0;
-	lua_S4_Material *SM;
 	S4_MaterialID M;
 	int type = 0;
 
@@ -971,7 +1002,6 @@ int lua_S4_Simulation_AddLayer(lua_State *L){
 	const char *name = NULL;
 	S4_MaterialID M = -1;
 	unsigned int argflags = 0;
-	lua_S4_Layer *SL;
 	S4_LayerID layer = -1;
 	S4_LayerID copy = -1;
 	S4_real thickness = 0;
@@ -1106,6 +1136,7 @@ int lua_S4_Simulation_ExcitationPlanewave(lua_State *L){
 }
 int lua_S4_Simulation_GetEpsilon(lua_State *L){
 	int n;
+	int format = 0;
 	S4_Simulation *S = lua_S4_Simulation_check(L, 1);
 	luaL_checktype(L, 2, LUA_TTABLE);
 
@@ -1185,10 +1216,127 @@ int lua_S4_Layer_GetPowerFlux(lua_State *L){
 	}
 	return 4;
 }
+int lua_S4_Layer_GetPowerFluxes(lua_State *L){
+	S4_real *power;
+	int i, j;
+	int n;
+	
+	lua_S4_Layer *SL = lua_S4_Layer_check(L, 1);
+	n = S4_Simulation_GetBases(SL->S, NULL);
+	power = (S4_real*)malloc(sizeof(S4_real)*4*n);
+	S4_Simulation_GetPowerFluxes(SL->S, SL->L, NULL, power);
+	for(i = 0; i < 4; ++i){
+		lua_createtable(L, n, 0);
+		for(j = 0; j < n; ++j){
+			lua_pushinteger(L, j+1);
+			lua_pushnumber(L, power[j+i*n]);
+			lua_settable(L, -3);
+		}
+	}
+	free(power);
+	return 4;
+}
+
+int lua_S4_get_quantity(lua_State *L){
+	char which = 'U';
+	const char *quantity = NULL;
+	if(!lua_isstring(L, -1)){
+		return luaL_argerror(L, 2, "Invalid format for quantity: must be a string");
+	}
+	quantity = lua_tostring(L, -1);
+	if(0 == strcmp("U", quantity)){
+		which = 'U';
+	}else if(0 == strcmp("E", quantity)){
+		which = 'E';
+	}else if(0 == strcmp("e", quantity)){
+		which = 'e';
+	}else if(0 == strcmp("H", quantity)){
+		which = 'H';
+	}else{
+		return luaL_argerror(L, 2, "quantity must be one of: U (energy density), E (electric energy density, eps|E|^2), H (magnetic energy density), e (electric field density |E|^2)");
+	}
+	return which;
+}
+
+int lua_S4_Layer_GetVolumeIntegral(lua_State *L){
+	lua_S4_Layer *SL = lua_S4_Layer_check(L, 1);
+	char which = 'U';
+	int ret = 0;
+	S4_real integral[2];
+
+	if(lua_gettop(L) > 1){
+		lua_pushnil(L);
+		while(0 != lua_next(L, 2)){
+			const char *key;
+			if(!lua_isstring(L, -2)){
+				return luaL_argerror(L, 2, "Expected only named arguments");
+			}
+			key = lua_tostring(L, -2);
+
+			if(0 == strcmp("quantity", key)){
+				which = lua_S4_get_quantity(L);
+			}else{
+				return luaL_error(L, "Unrecognized argument: %s", key);
+			}
+
+			lua_pop(L, 1);
+		}
+	}
+	
+	ret = S4_Simulation_GetLayerVolumeIntegral(SL->S, SL->L, which, integral);
+	if(0 != ret){
+		return luaL_error(L, "Error in Simulation_GetLayerVolumeIntegral: %d", ret);
+	}
+
+	lua_pushnumber(L, integral[0]);
+	lua_pushnumber(L, integral[1]);
+	return 2;
+}
+
+int lua_S4_Layer_GetZIntegral(lua_State *L){
+	lua_S4_Layer *SL = lua_S4_Layer_check(L, 1);
+	int ret = 0;
+	S4_real r[2], integral[6];
+
+	lua_S4_getvec2(L, 2, r);
+	
+	ret = S4_Simulation_GetLayerZIntegral(SL->S, SL->L, r, integral);
+	if(0 != ret){
+		return luaL_error(L, "Error in Simulation_GetLayerZIntegral: %d", ret);
+	}
+
+	lua_pushnumber(L, integral[0]);
+	lua_pushnumber(L, integral[1]);
+	lua_pushnumber(L, integral[2]);
+	lua_pushnumber(L, integral[3]);
+	lua_pushnumber(L, integral[4]);
+	lua_pushnumber(L, integral[5]);
+	return 6;
+}
+
+int lua_S4_Layer_GetStressTensorIntegral(lua_State *L){
+	lua_S4_Layer *SL = lua_S4_Layer_check(L, 1);
+	int ret = 0;
+	S4_real off = 0, integral[6];
+	
+	ret = S4_Simulation_GetStressTensorIntegral(SL->S, SL->L, &off, integral);
+	if(0 != ret){
+		return luaL_error(L, "Error in Simulation_GetStressTensorIntegral: %d", ret);
+	}
+
+	lua_pushnumber(L, integral[0]);
+	lua_pushnumber(L, integral[1]);
+	lua_pushnumber(L, integral[2]);
+	lua_pushnumber(L, integral[3]);
+	lua_pushnumber(L, integral[4]);
+	lua_pushnumber(L, integral[5]);
+	return 6;
+}
+
 int lua_S4_Layer_GetWaves(lua_State *L){
 	lua_S4_Layer *SL = lua_S4_Layer_check(L, 1);
 	S4_real *waves = NULL;
-	int n, i, j, k, ret;
+	int n, i, j, k;
 
 	n = S4_Simulation_GetBases(SL->S, NULL);
 	const int n2 = 2*n;
@@ -1246,4 +1394,34 @@ int lua_S4_Layer_GetWaves(lua_State *L){
 	}
 	free(waves);
 	return 2;
+}
+
+////////////////////// Multithreading routines ////////////////////////
+
+int lua_S4_ParallelInvoke(lua_State *L){
+	unsigned argflags = 0;
+	luaL_checktype(L, 1, LUA_TTABLE);
+	lua_gc(L, LUA_GCCOLLECT, 0);
+	lua_pushnil(L);
+	while(0 != lua_next(L, 1)){
+		const char *key;
+		if(!lua_isstring(L, -2)){
+			return luaL_argerror(L, 1, "Expected only named arguments");
+		}
+		key = lua_tostring(L, -2);
+		if(0 == strcmp("objects", key)){
+			argflags |= 0x1;
+		}else if(0 == strcmp("methodname", key)){
+			argflags |= 0x2;
+		}else if(0 == strcmp("arguments", key)){
+			argflags |= 0x7;
+		}else{
+			return luaL_error(L, "Unrecognized named argument: %s", key);
+		}
+		lua_pop(L, 1);
+	}
+	if(0x7 != argflags){
+		return luaL_argerror(L, 1, "Must specify objects, methodname, and arguments");
+	}
+	return 1;
 }
