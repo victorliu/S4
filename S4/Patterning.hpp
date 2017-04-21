@@ -2,6 +2,7 @@
 #define PATTERNING_HPP_INCLUDED
 
 #include "S4.h"
+#include "Shape.hpp"
 #include <complex>
 #include <vector>
 //L:MaterialMap{ image = 'foo.png', map = { ["000000"] = mSi } }
@@ -11,9 +12,11 @@ struct Patterning{
 public:
 	typedef S4_real real_type;
 	typedef std::complex<real_type> complex_type;
+	static const int UNSUPPORTED_PATTERN_TYPE = -999;
 public:
 	Patterning();
 	virtual ~Patterning(){}
+	virtual Patterning *Clone() const = 0;
 	
 	// For types of patterning in which discrete material regions are used,
 	// this function allows setting the mapping from tags to complex epsilon.
@@ -27,11 +30,15 @@ public:
 	//    [ Lk[0]  Lk[2] ] * [ ik[0] ]
 	//    [ Lk[1]  Lk[3] ]   [ ik[1] ]
 	//   = ( Lk[0]*ik[0]+Lk[2]*ik[1], Lk[1]*ik[0]+Lk[3]*ik[1] )
-	virtual void FourierSeries(const real_type *Lk, int nik, const int *ik, complex_type *fc) const = 0;
+	virtual void FourierSeries(const real_type *Lk, int nik, const int *ik, complex_type *fc, real_type *shift = NULL) const = 0;
 	
 	// Returns true if the pattern is inversion symmetric for some shift, and optionally returns that shift.
 	// If shift is NULL, then checks for inversion symmetry under zero shift.
 	virtual bool InversionSymmetric(real_type *shift) const{ return false; }
+	
+	// These routines return -
+	virtual int SetRegion(const real_type &center, const real_type &halfwidth, int tag = 0){ return UNSUPPORTED_PATTERN_TYPE; }
+	virtual int AddShape(Shape *s, int tag = 0){ return UNSUPPORTED_PATTERN_TYPE; }
 protected:
 	const complex_type *t2v; // tag to value map
 	int inct2v;
@@ -51,127 +58,18 @@ protected:
 	real_type period, iperiod;
 public:
 	PatterningByBreakpoints(const real_type &L);
-	void SetRegion(const real_type &center, const real_type &halfwidth, int tag);
+	PatterningByBreakpoints *Clone() const;
+	int SetRegion(const real_type &center, const real_type &halfwidth, int tag = 0);
+	void FourierSeries(const real_type *Lk, int nik, const int *ik, complex_type *fc, real_type *shift = NULL) const;
 };
 
 class PatterningByShapes : public Patterning{
 public:
-	// Abstract base classes for shapes
-	class Shape{
-		real_type center[2];
-		real_type angle_frac;
-	protected:
-		int parent;
-		int tag;
-		Shape(const real_type *center = NULL, const real_type &angle_frac = 0);
-		friend class PatterningByShapes;
-	public:
-		virtual ~Shape(){}
-		bool Contains(const real_type *p) const;
-		void Center(real_type *center) const;
-		void Normal(const real_type *p, real_type *n) const;
-		void FourierTransform(int nf, const real_type *f, complex_type *fc) const;
-		real_type IntersectTriangle(const real_type *p0, const real_type *u, const real_type *v, real_type *crossuv = NULL) const;
-		
-		// These functions assume center = 0, angle = 0
-		virtual real_type Area() const = 0;
-		virtual bool BaseContains(const real_type *p) const = 0;
-		virtual void BaseCenter(real_type *center) const = 0;
-		virtual void BaseNormal(const real_type *p, real_type *n) const = 0;
-		virtual void BaseFourierTransform(int nf, const real_type *f, complex_type *fc) const = 0;
-		virtual real_type BaseIntersectTriangle(const real_type *p0, const real_type *u, const real_type *v, real_type *crossuv = NULL) const = 0;
-	};
-	class ShapeHalfwidths : public Shape{
-	protected:
-		real_type halfwidth[2];
-		ShapeHalfwidths(const real_type &hx, const real_type &hy, const real_type *center = NULL, const real_type &angle_frac = 0);
-	public:
-		virtual ~ShapeHalfwidths(){}
-		void BaseCenter(real_type *center) const;
-	};
-	class ShapeVertices : public Shape{
-	protected:
-		int n;
-		real_type *v;
-		int incv;
-		ShapeVertices(int n, const real_type *v, int incv, const real_type *center = NULL, const real_type &angle_frac = 0);
-	public:
-		virtual ~ShapeVertices();
-	};
-	
-	class Circle : public ShapeHalfwidths{
-	public:
-		Circle(const real_type &radius, const real_type *center = NULL);
-		
-		real_type Area() const;
-		bool BaseContains(const real_type *p) const;
-		void BaseNormal(const real_type *p, real_type *n) const;
-		void BaseFourierTransform(int nf, const real_type *f, complex_type *fc) const;
-		real_type BaseIntersectTriangle(const real_type *p0, const real_type *u, const real_type *v, real_type *crossuv = NULL) const;
-	};
-	
-	class Ellipse : public ShapeHalfwidths{
-	public:
-		Ellipse(const real_type *halfwidths, const real_type *center = NULL, const real_type &ang = 0);
-		
-		real_type Area() const;
-		bool BaseContains(const real_type *p) const;
-		void BaseNormal(const real_type *p, real_type *n) const;
-		void BaseFourierTransform(int nf, const real_type *f, complex_type *fc) const;
-		real_type BaseIntersectTriangle(const real_type *p0, const real_type *u, const real_type *v, real_type *crossuv = NULL) const;
-	};
-	
-	class Rectangle : public ShapeHalfwidths{
-	public:
-		Rectangle(const real_type *halfwidths, const real_type *center = NULL, const real_type &ang = 0);
-		
-		real_type Area() const;
-		bool BaseContains(const real_type *p) const;
-		void BaseNormal(const real_type *p, real_type *n) const;
-		void BaseFourierTransform(int nf, const real_type *f, complex_type *fc) const;
-		real_type BaseIntersectTriangle(const real_type *p0, const real_type *u, const real_type *v, real_type *crossuv = NULL) const;
-	};
-	
-	class Polygon : public ShapeVertices{
-	public:
-		Polygon(int nv, const real_type *v, const real_type *center = NULL, const real_type &ang = 0);
-		
-		real_type Area() const;
-		bool BaseContains(const real_type *p) const;
-		void BaseCenter(real_type *center) const;
-		void BaseNormal(const real_type *p, real_type *n) const;
-		void BaseFourierTransform(int nf, const real_type *f, complex_type *fc) const;
-		real_type BaseIntersectTriangle(const real_type *p0, const real_type *u, const real_type *v, real_type *crossuv = NULL) const;
-	};
-	
-	class Arcpoly : public ShapeVertices{
-	public:
-		Arcpoly(int narcs, const real_type *v, const real_type *center = NULL, const real_type &ang = 0);
-		
-		real_type Area() const;
-		bool BaseContains(const real_type *p) const;
-		void BaseCenter(real_type *center) const;
-		void BaseNormal(const real_type *p, real_type *n) const;
-		void BaseFourierTransform(int nf, const real_type *f, complex_type *fc) const;
-		real_type BaseIntersectTriangle(const real_type *p0, const real_type *u, const real_type *v, real_type *crossuv = NULL) const;
-	};
-	
-	class QuadraticBezier : public ShapeVertices{
-	public:
-		QuadraticBezier(int nbez, const real_type *v, const real_type *center = NULL, const real_type &ang = 0);
-		
-		real_type Area() const;
-		bool BaseContains(const real_type *p) const;
-		void BaseCenter(real_type *center) const;
-		void BaseNormal(const real_type *p, real_type *n) const;
-		void BaseFourierTransform(int nf, const real_type *f, complex_type *fc) const;
-		real_type BaseIntersectTriangle(const real_type *p0, const real_type *u, const real_type *v, real_type *crossuv = NULL) const;
-	};
-public:
 	PatterningByShapes();
+	PatterningByShapes *Clone() const;
 	~PatterningByShapes();
-	void AddShape(Shape *s, int tag = 0);
-	virtual void FourierSeries(const real_type *Lk, int nik, const int *ik, complex_type *fc) const;
+	int AddShape(Shape *s, int tag = 0);
+	virtual void FourierSeries(const real_type *Lk, int nik, const int *ik, complex_type *fc, real_type *shift = NULL) const;
 protected:
 	std::vector<Shape*> shape;
 };
@@ -180,12 +78,16 @@ class PatterningByMap : public Patterning{
 protected:
 	std::vector<int> tag;
 	int nu, nv;
+public:
+	PatterningByMap *Clone() const;
 };
 
 class PatterningByArray : public Patterning{
 protected:
 	std::vector<complex_type> val;
 	int nu, nv;
+public:
+	PatterningByArray *Clone() const;
 };
 
 #endif // PATTERNING_HPP_INCLUDED

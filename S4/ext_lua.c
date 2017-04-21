@@ -446,7 +446,7 @@ int lua_S4_NewSimulation(lua_State *L){
 				if(nG <= 0){
 					return luaL_argerror(L, 1, "bases must be a positive integer or an explicit basis set");
 				}
-				G = (int*)malloc(sizeof(int) * 2 * nG);
+				G = (int*)S4_malloc(sizeof(int) * 2 * nG);
 				for(i = 0; i < nG; ++i){
 					G[2*i+0] = 0;
 					G[2*i+1] = 0;
@@ -486,7 +486,7 @@ int lua_S4_NewSimulation(lua_State *L){
 		return luaL_argerror(L, 1, "Must specify lattice and bases");
 	}
 	lua_S4_Simulation_push(L, S4_Simulation_New(Lr, nG, G), NULL, 0);
-	free(G);
+	S4_free(G);
 	return 1;
 }
 
@@ -678,7 +678,7 @@ int lua_S4_Layer_SetRegion(lua_State *L){
 			if(nv < 2){
 				return luaL_argerror(L, 2, "Invalid format for vertices");
 			}
-			v = (S4_real*)malloc(sizeof(S4_real) * 2 * nv);
+			v = (S4_real*)S4_malloc(sizeof(S4_real) * 2 * nv);
 			for(i = 0; i < nv; ++i){
 				lua_pushinteger(L, i+1);
 				lua_gettable(L, -2);
@@ -777,7 +777,7 @@ int lua_S4_Layer_SetRegion(lua_State *L){
 		free(v);
 		return 0;
 	}
-	free(v);
+	S4_free(v);
 	return luaL_argerror(L, 1, "Unsupported region type");
 }
 
@@ -867,7 +867,7 @@ int lua_S4_Simulation_SetBases(lua_State *L){
 		int *G;
 		int i, j;
 		n = lua_S4_len(L, 2);
-		G = (int*)malloc(sizeof(int)*2*n);
+		G = (int*)S4_malloc(sizeof(int)*2*n);
 		for(i = 0; i < n; ++i){
 			lua_pushinteger(L, i+1);
 			lua_gettable(L, 2);
@@ -889,7 +889,7 @@ int lua_S4_Simulation_SetBases(lua_State *L){
 			}
 			lua_pop(L, 1);
 		}
-		free(G);
+		S4_free(G);
 		return 0;
 	}else{
 		return luaL_argerror(L, 2, "Invalid format for basis");
@@ -901,7 +901,7 @@ int lua_S4_Simulation_GetBases(lua_State *L){
 	int *G = NULL;
 	S4_real Lr[4];
 	n = S4_Simulation_GetBases(S, G);
-	G = (int*)malloc(sizeof(int)*2*n);
+	G = (int*)S4_malloc(sizeof(int)*2*n);
 	S4_Simulation_GetBases(S, G);
 	S4_Simulation_GetLattice(S, Lr);
 	lua_createtable(L, n, 0);
@@ -923,7 +923,7 @@ int lua_S4_Simulation_GetBases(lua_State *L){
 			lua_settable(L, -3);
 		}
 	}
-	free(G);
+	S4_free(G);
 	return 1;
 }
 int lua_S4_Simulation_SetFrequency(lua_State *L){
@@ -1140,9 +1140,7 @@ int lua_S4_Simulation_GetEpsilon(lua_State *L){
 	S4_Simulation *S = lua_S4_Simulation_check(L, 1);
 	luaL_checktype(L, 2, LUA_TTABLE);
 
-	lua_len(L, 2);
-	n = lua_tointeger(L, -1);
-	lua_pop(L, 1);
+	n = lua_S4_len(L, 2);
 	if(3 == n){
 		int i;
 		double r[3], eps[2];
@@ -1152,7 +1150,8 @@ int lua_S4_Simulation_GetEpsilon(lua_State *L){
 			r[i] = lua_tonumber(L, -1);
 			lua_pop(L, 1);
 		}
-		Simulation_GetEpsilon(S, r, eps);
+		int nxy[2] = { 1, 1 };
+		S4_Simulation_GetEpsilon(S, 0, nxy, r, eps);
 		lua_pushnumber(L, eps[0]);
 		lua_pushnumber(L, eps[1]);
 		return 2;
@@ -1166,9 +1165,7 @@ int lua_S4_Simulation_GetFields(lua_State *L){
 	S4_Simulation *S = lua_S4_Simulation_check(L, 1);
 	luaL_checktype(L, 2, LUA_TTABLE);
 	
-	lua_len(L, 2);
-	n = lua_tointeger(L, -1);
-	lua_pop(L, 1);
+	n = lua_S4_len(L, 2);
 	
 	if(3 == n){ // evaluation at a single point
 		static const int n11[2] = { 1, 1 };
@@ -1223,7 +1220,7 @@ int lua_S4_Layer_GetPowerFluxes(lua_State *L){
 	
 	lua_S4_Layer *SL = lua_S4_Layer_check(L, 1);
 	n = S4_Simulation_GetBases(SL->S, NULL);
-	power = (S4_real*)malloc(sizeof(S4_real)*4*n);
+	power = (S4_real*)S4_malloc(sizeof(S4_real)*4*n);
 	S4_Simulation_GetPowerFluxes(SL->S, SL->L, NULL, power);
 	for(i = 0; i < 4; ++i){
 		lua_createtable(L, n, 0);
@@ -1233,7 +1230,7 @@ int lua_S4_Layer_GetPowerFluxes(lua_State *L){
 			lua_settable(L, -3);
 		}
 	}
-	free(power);
+	S4_free(power);
 	return 4;
 }
 
@@ -1341,7 +1338,7 @@ int lua_S4_Layer_GetWaves(lua_State *L){
 	n = S4_Simulation_GetBases(SL->S, NULL);
 	const int n2 = 2*n;
 
-	waves = (S4_real*)malloc(sizeof(S4_real)*11*n2);
+	waves = (S4_real*)S4_malloc(sizeof(S4_real)*11*n2);
 	S4_Simulation_GetWaves(SL->S, SL->L, waves);
 
 	for(j = 0; j < 2; ++j){
@@ -1392,7 +1389,7 @@ int lua_S4_Layer_GetWaves(lua_State *L){
 			lua_settable(L, -3);
 		}
 	}
-	free(waves);
+	S4_free(waves);
 	return 2;
 }
 

@@ -114,6 +114,10 @@ typedef int (*S4_error_handler)(
 extern "C" {
 #endif
 
+void* S4_malloc(size_t size);
+void S4_free(void *ptr);
+
+
 /********************************************************************/
 /* Simulation object constructor, destructor, and copy constructor. */
 /********************************************************************/
@@ -139,6 +143,7 @@ int S4_Simulation_SetFrequency(S4_Simulation *S, const S4_real *freq_complex);
 int S4_Simulation_GetFrequency(const S4_Simulation *S, S4_real *freq_complex);
 int S4_Simulation_LayerCount(const S4_Simulation *S);
 int S4_Simulation_TotalThickness(const S4_Simulation *S, S4_real *thickness);
+int S4_Simulation_GetLayer(const S4_Simulation *S, const S4_real *z, S4_real *dz);
 
 /******************************/
 /* Material related functions */
@@ -257,9 +262,25 @@ int S4_Simulation_GetFieldPlane(
 	S4_real *E, S4_real *H
 );
 
+#define S4_EPSILON_FORMAT_SCALAR 0x00
+#define S4_EPSILON_FORMAT_TENSOR 0x80
+#define S4_EPSILON_FORMAT_ZZ 0x00
+#define S4_EPSILON_FORMAT_XX 0x01
+#define S4_EPSILON_FORMAT_XY 0x02
+#define S4_EPSILON_FORMAT_YX 0x04
+#define S4_EPSILON_FORMAT_YY 0x08
 int S4_Simulation_GetEpsilon(
 	S4_Simulation *S, int format, int nxy[2], const S4_real *xyz0, S4_real *eps
-); // eps is {real,imag}
+); /*
+For scalar epsilon:
+	eps[2*(i+j*nxy[0])+0] is real
+	eps[2*(i+j*nxy[0])+1] is imag
+where i is in [0, nxy[0]) and j is in [0, nxy[1])
+The location of element (i,j) is at xyz0+Lr*[u;v] for
+	u = i / nxy[0]
+	v = j / nxy[1]
+Tensor epsilon is currently not supported 
+*/
 
 // Returns a solution error code
 // Tint is a vector of time averaged stress tensor integral

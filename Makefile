@@ -35,17 +35,10 @@ S4_LIBOBJS = \
 	$(OBJDIR)/S4k/S4.o \
 	$(OBJDIR)/S4k/rcwa.o \
 	$(OBJDIR)/S4k/fmm_common.o \
-	$(OBJDIR)/S4k/fmm_FFT.o \
-	$(OBJDIR)/S4k/fmm_kottke.o \
-	$(OBJDIR)/S4k/fmm_closed.o \
-	$(OBJDIR)/S4k/fmm_PolBasisNV.o \
-	$(OBJDIR)/S4k/fmm_PolBasisVL.o \
-	$(OBJDIR)/S4k/fmm_PolBasisJones.o \
-	$(OBJDIR)/S4k/fmm_experimental.o \
+	$(OBJDIR)/S4k/GenEpsilon.o \
+	$(OBJDIR)/S4k/Patterning.o \
+	$(OBJDIR)/S4k/Shape.o \
 	$(OBJDIR)/S4k/fft_iface.o \
-	$(OBJDIR)/S4k/pattern.o \
-	$(OBJDIR)/S4k/intersection.o \
-	$(OBJDIR)/S4k/predicates.o \
 	$(OBJDIR)/S4k/numalloc.o \
 	$(OBJDIR)/S4k/gsel.o \
 	$(OBJDIR)/S4k/sort.o \
@@ -65,28 +58,14 @@ $(OBJDIR)/S4k/rcwa.o: S4/rcwa.cpp
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 $(OBJDIR)/S4k/fmm_common.o: S4/fmm/fmm_common.cpp
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
-$(OBJDIR)/S4k/fmm_FFT.o: S4/fmm/fmm_FFT.cpp
+$(OBJDIR)/S4k/GenEpsilon.o: S4/GenEpsilon.cpp
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
-$(OBJDIR)/S4k/fmm_kottke.o: S4/fmm/fmm_kottke.cpp
+$(OBJDIR)/S4k/Patterning.o: S4/Patterning.cpp
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
-$(OBJDIR)/S4k/fmm_closed.o: S4/fmm/fmm_closed.cpp
-	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
-$(OBJDIR)/S4k/fmm_PolBasisNV.o: S4/fmm/fmm_PolBasisNV.cpp
-	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
-$(OBJDIR)/S4k/fmm_PolBasisVL.o: S4/fmm/fmm_PolBasisVL.cpp
-	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
-$(OBJDIR)/S4k/fmm_PolBasisJones.o: S4/fmm/fmm_PolBasisJones.cpp
-	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
-$(OBJDIR)/S4k/fmm_experimental.o: S4/fmm/fmm_experimental.cpp
+$(OBJDIR)/S4k/Shape.o: S4/Shape.cpp
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 $(OBJDIR)/S4k/fft_iface.o: S4/fmm/fft_iface.cpp
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
-$(OBJDIR)/S4k/pattern.o: S4/pattern/pattern.c
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-$(OBJDIR)/S4k/intersection.o: S4/pattern/intersection.c
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-$(OBJDIR)/S4k/predicates.o: S4/pattern/predicates.c
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 $(OBJDIR)/S4k/numalloc.o: S4/numalloc.c
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 $(OBJDIR)/S4k/gsel.o: S4/gsel.c

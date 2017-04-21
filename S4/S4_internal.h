@@ -28,7 +28,8 @@
 #include <complex>
 extern "C" {
 #endif
-#include "pattern/pattern.h"
+//#include "pattern/pattern.h"
+struct Patterning;
 #ifdef __cplusplus
 }
 #endif
@@ -64,9 +65,6 @@ extern "C" {
 # include <stdlib.h>
 #endif
 
-void* S4_malloc(size_t size);
-void S4_free(void *ptr);
-
 typedef struct{
 	char *name;    // name of material
 	int type; // 0 = scalar epsilon, 1 = tensor
@@ -79,12 +77,35 @@ typedef struct{
 	} eps;
 } S4_Material;
 
+/*
+#define S4_TENSOR_REAL   0x0001
+#define S4_TENSOR_POSDEF 0x0002
+#define S4_TENSOR_SCALAR 0x0010
+#define S4_TENSOR_DIAG   0x0020
+#define S4_TENSOR_HERM   0x0040
+#define S4_TENSOR_SYMM   0x0080
+#define S4_TENSOR_ZORTH  0x0100
+
+struct S4_Material{
+	S4_real eps[18];
+	unsigned int flags;
+	std::string name;
+	S4_Material(){
+		eps[ 0] = 1; eps[ 1] = 0; eps[ 2] = 0; eps[ 3] = 0; eps[ 4] = 0; eps[ 5] = 0;
+		eps[ 6] = 0; eps[ 7] = 0; eps[ 8] = 1; eps[ 9] = 0; eps[10] = 0; eps[11] = 0;
+		eps[12] = 0; eps[13] = 0; eps[14] = 0; eps[15] = 0; eps[16] = 1; eps[17] = 0;
+		flags = (S4_TENSOR_REAL | S4_TENSOR_POSDEF | S4_TENSOR_SCALAR | S4_TENSOR_DIAG | S4_TENSOR_HERM | S4_TENSOR_SYMM | S4_TENSOR_ZORTH);
+	}
+};
+*/
+
 struct LayerModes;
 typedef struct{
 	char *name;       // name of layer
 	double thickness; // thickness of layer
 	S4_MaterialID material;   // name of background material
-	Pattern pattern;  // See pattern.h
+	//Pattern pattern;  // See pattern.h
+	struct Patterning *pat;
 	S4_LayerID copy;       // See below.
 	struct LayerModes *modes;
 } S4_Layer;
@@ -133,6 +154,7 @@ struct S4_Simulation_{
 	              // Computed by taking the inverse of Lr as a 2x2 column-major matrix.
 	int n_G;            // Number of G-vectors (Fourier planewave orders).
 	int *G; // length 2*n_G; uv coordinates of Lk
+	int G_max;
 	double *kx, *ky; // each length n_G
 	int n_materials, n_materials_alloc;
 	S4_Material *material; // array of materials

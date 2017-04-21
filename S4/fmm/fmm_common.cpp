@@ -25,8 +25,7 @@
 #include "fmm.h"
 
 #include <limits>
-
-extern "C" double Jinc(double x);
+#include "../SpecialFunction.hpp"
 
 double GetLanczosSmoothingOrder(const S4_Simulation *S){
 	double Lkuv = hypot(
@@ -52,7 +51,7 @@ double GetLanczosSmoothingFactor(double mp1, int power, double f[2]){
 double GetLanczosSmoothingFactor(double mp1, int power, double f[2]){
 	double fr = hypot(f[0],f[1]);
 	//fprintf(stderr, "%f\t%f\t%f\t%f\t%f\n", f[0], f[1], fr, mp1, 2*mp1+1-fr);
-	double j = Jinc(fr/(2*mp1+1));
+	double j = SpecialFunction::FourierJinc(fr/(2*mp1+1));
 	return pow(j, power);
 }
 

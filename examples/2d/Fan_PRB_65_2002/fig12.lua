@@ -1,30 +1,28 @@
+package.cpath = '../../../build;' .. package.cpath
+S4 = require('S4v2')
+
 -- Bottom pane of Fig. 12 in
 -- Shanhui Fan and J. D. Joannopoulos,
 -- "Analysis of guided resonances in photonic crystal slabs",
 -- Phys. Rev. B, Vol. 65, 235112
 
-S = S4.NewSimulation()
-S:SetLattice({1,0}, {0,1})
-S:SetNumG(100)
-S:AddMaterial("Silicon", {12,0}) -- real and imag parts
-S:AddMaterial("Vacuum", {1,0})
+S = S4.NewSimulation{ lattice = {{1,0}, {0,1}}, bases = 100 }
+materials = {}
+materials.Silicon = S:AddMaterial{ epsilon = {12,0} }
+materials.Vacuum  = S:AddMaterial{ epsilon = { 1,0} }
 
-S:AddLayer('AirAbove', 0 , 'Vacuum')
-S:AddLayer('Slab', 0.5, 'Silicon')
-S:SetLayerPatternCircle('Slab', 'Vacuum', {0,0}, 0.2)
-S:AddLayerCopy('AirBelow', 0, 'AirAbove')
+layers = {}
+layers[1] = S:AddLayer{ thickness = 0, material = materials.Vacuum }
+layers[2] = S:AddLayer{ thickness = 0.5, material = materials.Silicon}
+layers[2]:SetRegion{ shape = 'circle', radius = 0.2, center = {0, 0}, material = materials.Vacuum }
+layers[3] = S:AddLayer{ thickness = 0, copy = layers[1] }
 
-S:SetExcitationPlanewave(
-	{0,0}, -- incidence angles
-	{1,0}, -- s-polarization amplitude and phase (in degrees)
-	{0,0}) -- p-polarization amplitude and phase
+S:ExcitationPlanewave{ k = { 0, 0, 1 }, u = { 1, 0, 0 }, cu = { 1, 0 }, cv = { 0, 0 } }
 
---S:UsePolarizationDecomposition()
-
-for freq=0.25,0.27,0.003 do
+for freq = 0.25, 0.6, 0.005 do
 	S:SetFrequency(freq)
-	forward,backward = S:GetPoyntingFlux('AirAbove', 0)
-	forward = S:GetPoyntingFlux('AirBelow', 0)
+	forward, backward = layers[1]:GetPowerFlux()
+	forward = layers[3]:GetPowerFlux()
 	print (freq .. '\t' .. forward .. '\t' .. backward)
 	io.stdout:flush()
 end
