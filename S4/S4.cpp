@@ -143,18 +143,6 @@ void Layer_Destroy(S4_Layer *L){
 	}
 	free(L->name); L->name = NULL;
 	if(NULL != L->pat){ delete L->pat; }
-	/*
-	if(NULL != L->pattern.shapes){
-		for(int i = 0; i < L->pattern.nshapes; ++i){
-			if(POLYGON == L->pattern.shapes[i].type && NULL != L->pattern.shapes[i].vtab.polygon.vertex){
-				S4_free(L->pattern.shapes[i].vtab.polygon.vertex);
-			}
-		}
-		free(L->pattern.shapes);
-		L->pattern.shapes = NULL;
-	}
-	if(NULL != L->pattern.parent){ free(L->pattern.parent); L->pattern.parent = NULL; }
-	*/
 	Simulation_DestroyLayerModes(L);
 	S4_TRACE("< Layer_Destroy\n");
 }
@@ -321,14 +309,6 @@ S4_Simulation* S4_Simulation_Clone(const S4_Simulation *S){
 		S4_LayerID id = S4_Simulation_SetLayer(T, -1, L->name, &L->thickness, L->copy, L->material);
 		S4_Layer *L2 = &T->layer[id];
 		L2->pat = L->pat->Clone();
-		/*
-		// Copy pattern
-		L2->pattern.nshapes = L->pattern.nshapes;
-		L2->pattern.shapes = (shape*)malloc(sizeof(shape)*L->pattern.nshapes);
-		memcpy(L2->pattern.shapes, L->pattern.shapes, sizeof(shape)*L->pattern.nshapes);
-		L2->pattern.parent = NULL;
-		L2->modes = NULL;
-		*/
 	}
 
 	Simulation_CopyExcitation(S, T);
@@ -630,11 +610,6 @@ S4_LayerID S4_Simulation_SetLayer(
 		L->material = -1;
 		L->copy = -1;
 		L->pat = NULL;
-		/*
-		L->pattern.nshapes = 0;
-		L->pattern.shapes = NULL;
-		L->pattern.parent = NULL;
-		*/
 		L->modes = NULL;
 	}else{
 		if(id >= S->n_layers){ return -1; }
@@ -703,18 +678,17 @@ int S4_Layer_ClearRegions(
 	if(id < 0 || id >= S->n_layers){ return -2; }
 	S4_Layer *L = &S->layer[id];
 	if(NULL != L->pat){ delete L->pat; }
-	/*
-	L->pattern.nshapes = 0;
-	if(NULL != L->pattern.shapes){
-		free(L->pattern.shapes);
-		L->pattern.shapes = NULL;
-	}
-	if(NULL != L->pattern.parent){
-		free(L->pattern.parent);
-		L->pattern.parent = NULL;
-	}
-	*/
 	Simulation_DestroyLayerModes(L);
+	return 0;
+}
+
+static int S4_Simulation_InitPatterning(S4_Simulation *S, S4_Layer *L){
+	if(NULL != L->pat){ return 1; }
+	if(0 == S->Lr[2] && 0 == S->Lr[3]){
+		L->pat = new PatterningByIntervals();
+	}else{
+		L->pat = new PatterningByShapes();
+	}
 	return 0;
 }
 
@@ -738,68 +712,31 @@ int S4_Layer_SetRegionHalfwidths(
 		return ret;
 	}
 	S4_Layer *L = &S->layer[Lid];
+	S4_Simulation_InitPatterning(S, L);
 
 	Simulation_DestroyLayerModes(L);
 	Simulation_DestroySolution(S);
 	Simulation_InvalidateFieldCache(S);
-/*
-	int n = L->pattern.nshapes++;
-	L->pattern.shapes = (shape*)realloc(L->pattern.shapes, sizeof(shape)*L->pattern.nshapes);
-	if(NULL == L->pattern.shapes){ return 1; }
-	shape *sh = &L->pattern.shapes[n];
-
-	if(NULL != center){
-		sh->center[0] = center[0];
-		sh->center[1] = center[1];
-	}
-	if(NULL != angle_frac){
-		sh->angle = 2*M_PI*(*angle_frac);
-	}
-	sh->tag = Mid;
-*/
+	
 	ret = -4;
 	switch(type){
 	case S4_REGION_TYPE_INTERVAL:
 		ret = L->pat->SetRegion(center[0], halfwidths[0], Mid);
-		/*
-		sh->type = RECTANGLE;
-		sh->vtab.rectangle.halfwidth[0] = halfwidths[0];
-		sh->vtab.rectangle.halfwidth[1] = 0;
-		*/
 		break;
 	case S4_REGION_TYPE_RECTANGLE:
 		ret = L->pat->AddShape(new Rectangle(halfwidths, center, *angle_frac), Mid);
-		/*
-		sh->type = RECTANGLE;
-		sh->vtab.rectangle.halfwidth[0] = halfwidths[0];
-		sh->vtab.rectangle.halfwidth[1] = halfwidths[1];
-		*/
 		break;
 	case S4_REGION_TYPE_ELLIPSE:
 		if(halfwidths[0] == halfwidths[1]){
-			/*
-			sh->type = CIRCLE;
-			sh->vtab.circle.radius = halfwidths[0];
-			*/
 			ret = L->pat->AddShape(new Circle(halfwidths[0], center), Mid);
 		}else{
 			ret = L->pat->AddShape(new Ellipse(halfwidths, center, *angle_frac), Mid);
-			/*
-			sh->type = ELLIPSE;
-			sh->vtab.ellipse.halfwidth[0] = halfwidths[0];
-			sh->vtab.ellipse.halfwidth[1] = halfwidths[1];
-			*/
 		}
 		break;
 	case S4_REGION_TYPE_CIRCLE:
-		/*
-		sh->type = CIRCLE;
-		sh->vtab.circle.radius = halfwidths[0];
-		*/
 		ret = L->pat->AddShape(new Circle(halfwidths[0], center), Mid);
 		break;
 	default:
-		//L->pattern.nshapes--;
 		S4_TRACE("  S4_Layer_SetRegionHalfwidths unknown type: %d\n", type);
 		break;
 	}
@@ -829,41 +766,18 @@ int S4_Layer_SetRegionVertices(
 		return ret;
 	}
 	S4_Layer *L = &S->layer[Lid];
+	S4_Simulation_InitPatterning(S, L);
 
 	Simulation_DestroyLayerModes(L);
 	Simulation_DestroySolution(S);
 	Simulation_InvalidateFieldCache(S);
-/*
-	int n = L->pattern.nshapes++;
-	L->pattern.shapes = (shape*)realloc(L->pattern.shapes, sizeof(shape)*L->pattern.nshapes);
-	if(NULL == L->pattern.shapes){ return 1; }
-	shape *sh = &L->pattern.shapes[n];
-
-	if(NULL != center){
-		sh->center[0] = center[0];
-		sh->center[1] = center[1];
-	}
-	if(NULL != angle_frac){
-		sh->angle = 2*M_PI* (*angle_frac);
-	}
-	sh->tag = Mid;
-*/
+	
 	ret = -4;
 	switch(type){
 	case S4_REGION_TYPE_POLYGON:
 		ret = L->pat->AddShape(new Polygon(nv, v, center, *angle_frac), Mid);
-		/*
-		sh->type = POLYGON;
-		sh->vtab.polygon.n_vertices = nv;
-		sh->vtab.polygon.vertex = (double*)S4_malloc(sizeof(double)*nv*2);
-		for(int i = 0; i < nv; ++i){
-			sh->vtab.polygon.vertex[2*i+0] = v[2*i+0];
-			sh->vtab.polygon.vertex[2*i+1] = v[2*i+1];
-		}
-		*/
 		break;
 	default:
-		//L->pattern.nshapes--;
 		break;
 	}
 
@@ -955,26 +869,6 @@ int Simulation_InitSolution(S4_Simulation *S){
 		if(!found_ex_layer && L == S->exc.layer){
 			found_ex_layer = true;
 		}
-		/*
-		// check that if we have a 1D pattern, the only shapes are rectangles
-		if(0 == S->Lr[2] && 0 == S->Lr[3]){
-			for(int k = 0; k < L->pattern.nshapes; ++k){
-				if(RECTANGLE != L->pattern.shapes[k].type){
-					return 16;
-				}
-			}
-		}
-		// Initialize the layer pattern
-		if(NULL != L->pattern.parent){
-			free(L->pattern.parent);
-		}
-		L->pattern.parent = (int*)malloc(sizeof(int)*L->pattern.nshapes);
-		int error = Pattern_GetContainmentTree(&L->pattern);
-		if(0 != error){
-			S4_TRACE("< Simulation_InitSolution (failed; Pattern_GetContainmentTree returned %d for layer %s) [omega=%f]\n", error, L->name, S->omega[0]);
-			return error;
-		}
-		*/
 	}
 	if(S->n_layers < 1){
 		S4_TRACE("< Simulation_InitSolution (failed; less than one layer found) [omega=%f]\n", S->omega[0]);
@@ -1438,7 +1332,6 @@ int Simulation_ComputeLayerModes(S4_Simulation *S, S4_Layer *L, LayerModes **lay
 	size_t Epsilon_inv_size = nn;
 	size_t Epsilon2_size = n2n2;
 	pB->epstype = EPSILON2_TYPE_FULL;
-	//if(0 == L->pattern.nshapes){
 	if(NULL == L->pat){
 		const S4_Material *M;
 		if(L->copy < 0){
@@ -1492,7 +1385,7 @@ int Simulation_ComputeLayerModes(S4_Simulation *S, S4_Layer *L, LayerModes **lay
 	//       Apply FFT
 	//   Else
 	//     Apply ClosedForm
-	if(NULL == L->pat/*0 == L->pattern.nshapes*/){
+	if(NULL == L->pat){
 		const S4_Material *M;
 		if(L->copy < 0){
 			//eps_scalar = Simulation_GetEpsilonByName(S, L->material);
@@ -1656,8 +1549,8 @@ int S4_Simulation_GetPowerFlux(S4_Simulation *S, S4_LayerID id, const double *of
 }
 
 int S4_Simulation_GetPowerFluxes(S4_Simulation *S, S4_LayerID id, const double *offset, double *powers){
-	S4_TRACE("> Simulation_GetPoyntingFluxByG(S=%p, layer=%p, offset=%f, powers=%p) [omega=%f]\n",
-		S, layer, offset, powers, S->omega[0]);
+	S4_TRACE("> Simulation_GetPoyntingFluxes(S=%p, layer=%d, offset=%f, powers=%p) [omega=%f]\n",
+		S, id, (NULL == offset ? 0  : *offset), powers, S->omega[0]);
 	int ret = 0;
 	if(NULL == S){ ret = -1; }
 	if(id < 0 || id >= S->n_layers){ return -2; }
@@ -2347,7 +2240,9 @@ int Simulation_GetSMatrixDeterminant(S4_Simulation *S, double rmant[2], double *
 // Returns a solution error code
 // Tint is a vector of time averaged stress tensor integral
 int S4_Simulation_GetStressTensorIntegral(S4_Simulation *S, S4_LayerID id, const double *offset, double Tint[6]){
-	S4_TRACE("> Simulation_GetStressTensorIntegral(S=%p, layer=%d, offset=%f, Tint=%p)\n", S, id, offset, Tint);
+	S4_TRACE("> Simulation_GetStressTensorIntegral(S=%p, layer=%d, offset=%f, Tint=%p)\n",
+		S, id, (NULL == offset ? 0  : *offset), Tint
+	);
 
 	int ret = 0;
 	if(NULL == S){ ret = -1; }
@@ -2854,7 +2749,7 @@ int S4_Simulation_ExcitationPlanewave(
 
 int S4_Simulation_GetFieldPlane(S4_Simulation *S, const int nxy[2], const S4_real *xyz0, S4_real *E, S4_real *H){
 	S4_TRACE("> S4_Simulation_GetFieldPlane(S=%p, nxy=%p (%d,%d), r0=(%f,%f,%f), E=%p, H=%p)\n",
-		S, nxy, (NULL == nxy ? 0 : nxy[0]), (NULL == nxy ? 0 : nxy[1]), r0[0], r0[1], r0[2], E, H);
+		S, nxy, (NULL == nxy ? 0 : nxy[0]), (NULL == nxy ? 0 : nxy[1]), xyz0[0], xyz0[1], xyz0[2], E, H);
 	if(NULL == S){
 		S4_TRACE("< S4_Simulation_GetFieldPlane (failed; S == NULL)\n");
 		return -1;

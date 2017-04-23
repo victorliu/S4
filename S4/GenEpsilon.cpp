@@ -38,30 +38,31 @@
 int GenEpsilon(const S4_Simulation *S, const S4_Layer *L, const int n, std::complex<double> *Epsilon2, std::complex<double> *Epsilon_inv){
 	const int n2 = 2*n;
 	const int *G = S->G;
-	double *ivalues = (double*)S4_malloc(sizeof(double)*(2+10)*(S->n_materials));
-	double *values = ivalues + 2*(S->n_materials);
+	S4_complex *ivalues = (S4_complex*)S4_malloc(sizeof(S4_complex)*2*5*S->n_materials);
+	S4_complex *values = ivalues + 5*S->n_materials;
 
 	S4_TRACE("I  Closed-form epsilon\n");
 
 	// Get all the dielectric tensors
 	bool have_tensor = false;
-	for(int i = 0; i < S->n_materials; ++i){
+	for(int i = -1; i < S->n_materials; ++i){
 		const S4_Material *M;
-		M = &S->material[i];
+		if(i < 0){
+			M = &S->material[L->material];
+		}else{
+			M = &S->material[i];
+		}
 		if(0 == M->type){
-			std::complex<double> eps_temp(M->eps.s[0], M->eps.s[1]);
-			//eps_temp = Simulation_GetEpsilonByIndex(S, L->pattern.shapes[i].tag);
-			values[2*(i+1)+0] = eps_temp.real();
-			values[2*(i+1)+1] = eps_temp.imag();
+			S4_complex eps_temp(M->eps.s[0], M->eps.s[1]);
+			values[i+1] = eps_temp;
 			eps_temp = 1./eps_temp;
-			ivalues[2*(i+1)+0] = eps_temp.real();
-			ivalues[2*(i+1)+1] = eps_temp.imag();
+			ivalues[i+1] = eps_temp;
 		}else{
 			have_tensor = true;
 		}
 	}
 
-	double mp1 = 0;
+	S4_real mp1 = 0;
 	int pwr = S->options.lanczos_smoothing_power;
 	if(S->options.use_Lanczos_smoothing){
 		mp1 = GetLanczosSmoothingOrder(S);
@@ -69,7 +70,7 @@ int GenEpsilon(const S4_Simulation *S, const S4_Layer *L, const int n, std::comp
 		mp1 *= S->options.lanczos_smoothing_width;
 	}
 
-	const double unit_cell_size = Simulation_GetUnitCellSize(S);
+	const S4_real unit_cell_size = Simulation_GetUnitCellSize(S);
 
 	if(!have_tensor){
 		L->pat->SetTagToValueMap((std::complex<double>*)values, 1);
@@ -77,7 +78,7 @@ int GenEpsilon(const S4_Simulation *S, const S4_Layer *L, const int n, std::comp
 		for(int j = 0; j < n; ++j){
 			for(int i = 0; i < n; ++i){
 				int dG[2] = {G[2*i+0]-G[2*j+0],G[2*i+1]-G[2*j+1]};
-				std::complex<double> ft;
+				S4_complex ft;
 				L->pat->FourierSeries(S->Lk, 1, dG, &ft);
 				if(S->options.use_Lanczos_smoothing){
 					double f[2] = {
@@ -126,47 +127,30 @@ int GenEpsilon(const S4_Simulation *S, const S4_Layer *L, const int n, std::comp
 		RNP::TBLAS::SetMatrix<'A'>(n,n, 0.,0., &Epsilon2[0+n*n2],n2);
 		// Epsilon2 has Epsilon's on its diagonal
 	}else{ // have tensor dielectric
-		const int ldv = 2*S->n_materials;
-		for(int i = 0; i < S->n_materials; ++i){
+		const int ldv = 1+S->n_materials;
+		for(int i = -1; i < S->n_materials; ++i){
 			const S4_Material *M;
-			M = &S->material[i];
-			if(0 == M->type){
-				std::complex<double> eps_temp(M->eps.s[0], M->eps.s[1]);
-				values[0*ldv+2*(i+1)+0] = eps_temp.real();
-				values[0*ldv+2*(i+1)+1] = eps_temp.imag();
-				values[1*ldv+2*(i+1)+0] = 0;
-				values[1*ldv+2*(i+1)+1] = 0;
-				values[2*ldv+2*(i+1)+0] = 0;
-				values[2*ldv+2*(i+1)+1] = 0;
-				values[3*ldv+2*(i+1)+0] = eps_temp.real();
-				values[3*ldv+2*(i+1)+1] = eps_temp.imag();
-				values[4*ldv+2*(i+1)+0] = eps_temp.real();
-				values[4*ldv+2*(i+1)+1] = eps_temp.imag();
+			if(i < 0){
+				M = &S->material[L->material];
+				fprintf(stderr, "Layer base material ID = %d\n", L->material);
 			}else{
-				std::complex<double> eps_temp(M->eps.s[0], M->eps.s[1]);
-				// We must transpose the values array here, as well as transpose the tensor
-				/*
-				values[10*(i+1)+0] = M->eps.abcde[0];
-				values[10*(i+1)+1] = M->eps.abcde[1];
-				values[10*(i+1)+2] = M->eps.abcde[4];
-				values[10*(i+1)+3] = M->eps.abcde[5];
-				values[10*(i+1)+4] = M->eps.abcde[2];
-				values[10*(i+1)+5] = M->eps.abcde[3];
-				values[10*(i+1)+6] = M->eps.abcde[6];
-				values[10*(i+1)+7] = M->eps.abcde[7];
-				values[10*(i+1)+8] = M->eps.abcde[8];
-				values[10*(i+1)+9] = M->eps.abcde[9];
-				*/
-				values[0*ldv+2*(i+1)+0] = M->eps.abcde[0];
-				values[0*ldv+2*(i+1)+1] = M->eps.abcde[1];
-				values[1*ldv+2*(i+1)+0] = M->eps.abcde[4];
-				values[1*ldv+2*(i+1)+1] = M->eps.abcde[5];
-				values[2*ldv+2*(i+1)+0] = M->eps.abcde[2];
-				values[2*ldv+2*(i+1)+1] = M->eps.abcde[3];
-				values[3*ldv+2*(i+1)+0] = M->eps.abcde[6];
-				values[3*ldv+2*(i+1)+1] = M->eps.abcde[7];
-				values[4*ldv+2*(i+1)+0] = M->eps.abcde[8];
-				values[4*ldv+2*(i+1)+1] = M->eps.abcde[9];
+				M = &S->material[i];
+			}
+			if(0 == M->type){
+				S4_complex eps_temp(M->eps.s[0], M->eps.s[1]);
+				values[0*ldv+(i+1)] = eps_temp;
+				values[1*ldv+(i+1)] = S4_real(0);
+				values[2*ldv+(i+1)] = S4_real(0);
+				values[3*ldv+(i+1)] = eps_temp;
+				values[4*ldv+(i+1)] = eps_temp;
+			}else{
+				S4_complex eps_temp(M->eps.s[0], M->eps.s[1]);
+				// We must transpose the values array here, as well as transpose the tensor since the abcde is stored row-major, while we will traverse in column major
+				values[0*ldv+i+1] = S4_complex(M->eps.abcde[0], M->eps.abcde[1]);
+				values[1*ldv+i+1] = S4_complex(M->eps.abcde[4], M->eps.abcde[5]);
+				values[2*ldv+i+1] = S4_complex(M->eps.abcde[2], M->eps.abcde[3]);
+				values[3*ldv+i+1] = S4_complex(M->eps.abcde[6], M->eps.abcde[7]);
+				values[4*ldv+i+1] = S4_complex(M->eps.abcde[8], M->eps.abcde[9]);
 			}
 		}
 

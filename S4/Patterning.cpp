@@ -70,7 +70,11 @@ void PatterningByShapes::FourierSeries(
 	real_type *f = (real_type*)malloc(sizeof(real_type) * 2 * nik);
 	complex_type *fc1 = (complex_type*)malloc(sizeof(complex_type) * nik);
 	for(int i = 0; i < nik; ++i){
-		fc[i] = TagToValue(-1);
+		if(0 == ik[2*i+0] && 0 == ik[2*i+1]){
+			fc[i] = TagToValue(-1);
+		}else{
+			fc[i] = S4_real(0);
+		}
 	}
 	for(
 		std::vector<Shape*>::const_iterator si = shape.begin();
@@ -124,6 +128,79 @@ PatterningByShapes* PatterningByShapes::Clone() const{
 	PatterningByShapes *p = new PatterningByShapes();
 	for(std::vector<Shape*>::const_iterator i = shape.begin(); shape.end() != i; ++i){
 		p->AddShape((*i)->Clone(), (*i)->tag);
+	}
+	return p;
+}
+
+/*********************************************************************/
+/*********************** PatterningByIntervals ***********************/
+/*********************************************************************/
+
+PatterningByIntervals::PatterningByIntervals(){}
+
+PatterningByIntervals::~PatterningByIntervals(){
+}
+
+int PatterningByIntervals::SetRegion(const real_type &center, const real_type &halfwidth, int tag){
+	interval.push_back(Interval(center, halfwidth, tag));
+	for(int i = (int)interval.size()-1; i >= 0; --i){
+		if(interval[i].Contains(center)){
+			interval.back().parent = i;
+			break;
+		}
+	}
+	return 0;
+}
+
+void PatterningByIntervals::FourierSeries(
+	const real_type *Lk, int nik, const int *ik, complex_type *fc, real_type *shift
+) const{
+	real_type *f = (real_type*)malloc(sizeof(real_type) * nik);
+	complex_type *fc1 = (complex_type*)malloc(sizeof(complex_type) * nik);
+	for(int i = 0; i < nik; ++i){
+		fc[i] = TagToValue(-1);
+	}
+	for(
+		std::vector<Interval>::const_iterator si = interval.begin();
+		si != interval.end();
+		++si
+	){
+		const Interval &s = (*si);
+		const int itag = s.tag;
+		for(int i = 0; i < nik; ++i){
+			f[i] = Lk[0] * ik[2*i+0];
+		}
+		complex_type deps = TagToValue(itag);
+		const int iparent = s.parent;
+		int iparent_tag = -1;
+		if(iparent >= 0){
+			iparent_tag = interval[iparent].tag;
+		}
+		deps -= TagToValue(iparent_tag);
+		for(int i = 0; i < nik; ++i){
+			fc1[i] = SpecialFunction::FourierSinc(s.halfwidth * f[i]);
+		}
+		
+		for(int i = 0; i < nik; ++i){
+			real_type cs = 1, sn = 0;
+			real_type cen = s.center;
+			if(NULL != shift){ cen -= shift[0]; }
+			if(real_type(0) != cen){
+				const real_type f0 = Lk[0] * ik[2*i+0];
+				SpecialFunction::CosSin2pi(-f0*cen, &cs, &sn);
+			}
+			complex_type shift_phase(cs, sn);
+			fc[i] += deps * shift_phase * fc1[i];
+		}
+	}
+	free(fc1);
+	free(f);
+}
+
+PatterningByIntervals* PatterningByIntervals::Clone() const{
+	PatterningByIntervals *p = new PatterningByIntervals();
+	for(std::vector<Interval>::const_iterator i = interval.begin(); interval.end() != i; ++i){
+		p->SetRegion(i->center, i->halfwidth, i->tag);
 	}
 	return p;
 }
