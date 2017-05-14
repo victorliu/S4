@@ -145,26 +145,14 @@ int GenEpsilon(const S4_Simulation *S, const S4_Layer *L, const int n, std::comp
 			}else{
 				std::complex<double> eps_temp(M->eps.s[0], M->eps.s[1]);
 				// We must transpose the values array here, as well as transpose the tensor
-				/*
-				values[10*(i+1)+0] = M->eps.abcde[0];
-				values[10*(i+1)+1] = M->eps.abcde[1];
-				values[10*(i+1)+2] = M->eps.abcde[4];
-				values[10*(i+1)+3] = M->eps.abcde[5];
-				values[10*(i+1)+4] = M->eps.abcde[2];
-				values[10*(i+1)+5] = M->eps.abcde[3];
-				values[10*(i+1)+6] = M->eps.abcde[6];
-				values[10*(i+1)+7] = M->eps.abcde[7];
-				values[10*(i+1)+8] = M->eps.abcde[8];
-				values[10*(i+1)+9] = M->eps.abcde[9];
-				*/
-				values[0*ldv+2*(i+1)+0] = M->eps.abcde[0];
-				values[0*ldv+2*(i+1)+1] = M->eps.abcde[1];
-				values[1*ldv+2*(i+1)+0] = M->eps.abcde[4];
-				values[1*ldv+2*(i+1)+1] = M->eps.abcde[5];
-				values[2*ldv+2*(i+1)+0] = M->eps.abcde[2];
-				values[2*ldv+2*(i+1)+1] = M->eps.abcde[3];
-				values[3*ldv+2*(i+1)+0] = M->eps.abcde[6];
-				values[3*ldv+2*(i+1)+1] = M->eps.abcde[7];
+				values[0*ldv+2*(i+1)+0] = M->eps.abcde[6];
+				values[0*ldv+2*(i+1)+1] = M->eps.abcde[7];
+				values[1*ldv+2*(i+1)+0] = -M->eps.abcde[2];
+				values[1*ldv+2*(i+1)+1] = -M->eps.abcde[3];
+				values[2*ldv+2*(i+1)+0] = -M->eps.abcde[4];
+				values[2*ldv+2*(i+1)+1] = -M->eps.abcde[5];
+				values[3*ldv+2*(i+1)+0] = M->eps.abcde[0];
+				values[3*ldv+2*(i+1)+1] = M->eps.abcde[1];
 				values[4*ldv+2*(i+1)+0] = M->eps.abcde[8];
 				values[4*ldv+2*(i+1)+1] = M->eps.abcde[9];
 			}
