@@ -152,7 +152,7 @@ int S4_Simulation_GetLayer(const S4_Simulation *S, const S4_real *z, S4_real *dz
 #define S4_MATERIAL_TYPE_SCALAR_COMPLEX   3
 #define S4_MATERIAL_TYPE_XYTENSOR_REAL    4
 #define S4_MATERIAL_TYPE_XYTENSOR_COMPLEX 5
-int S4_Simulation_MaterialCount(S4_Simulation *S);
+int S4_Simulation_MaterialCount(const S4_Simulation *S);
 S4_MaterialID S4_Simulation_SetMaterial(
 	S4_Simulation *S, S4_MaterialID M, const char *name, int type, const S4_real *eps
 );
@@ -169,7 +169,7 @@ int S4_Material_GetEpsilon(
 /***************************/
 /* Layer related functions */
 /***************************/
-int S4_Simulation_LayerCount(S4_Simulation *S);
+
 S4_LayerID S4_Simulation_SetLayer(
 	S4_Simulation *S, S4_LayerID L, const char *name, const S4_real *thickness,
 	S4_LayerID copy, S4_MaterialID material
