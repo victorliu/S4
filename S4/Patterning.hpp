@@ -69,9 +69,33 @@ public:
 	PatterningByShapes *Clone() const;
 	~PatterningByShapes();
 	int AddShape(Shape *s, int tag = 0);
-	virtual void FourierSeries(const real_type *Lk, int nik, const int *ik, complex_type *fc, real_type *shift = NULL) const;
+	void FourierSeries(const real_type *Lk, int nik, const int *ik, complex_type *fc, real_type *shift = NULL) const;
 protected:
 	std::vector<Shape*> shape;
+};
+class PatterningByIntervals : public Patterning{
+public:
+	struct Interval{
+		real_type center;
+		real_type halfwidth;
+		int tag;
+		int parent;
+		Interval(const real_type &center, const real_type &halfwidth, int tag = 0):
+			center(center),
+			halfwidth(halfwidth),
+			tag(tag),
+			parent(-1)
+		{}
+		bool Contains(const real_type &x) const{ return std::abs(x - center) < halfwidth; }
+	};
+	PatterningByIntervals();
+	PatterningByIntervals *Clone() const;
+	~PatterningByIntervals();
+	int SetRegion(const real_type &center, const real_type &halfwidth, int tag = 0);
+	int AddShape(Shape *s, int tag = 0){ return UNSUPPORTED_PATTERN_TYPE; }
+	void FourierSeries(const real_type *Lk, int nik, const int *ik, complex_type *fc, real_type *shift = NULL) const;
+protected:
+	std::vector<Interval> interval;
 };
 
 class PatterningByMap : public Patterning{
