@@ -478,6 +478,10 @@ int S4_Lattice_Reciprocate(const S4_real *Lr, S4_real *Lk){
 	return 0;
 }
 
+int S4_Simulation_MaterialCount(const S4_Simulation *S){
+	if(NULL == S){ return -1; }
+	return S->n_materials;
+}
 S4_MaterialID S4_Simulation_SetMaterial(
 	S4_Simulation *S, S4_MaterialID id, const char *name, int type, const S4_real *eps
 ){
