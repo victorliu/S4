@@ -29,6 +29,11 @@
 #define EPSILON2_TYPE_BLKDIAG2        2
 #define EPSILON2_TYPE_BLKDIAG1_SCALAR 5
 #define EPSILON2_TYPE_BLKDIAG2_SCALAR 6
+#define EPSILON2_TYPE_MASK 0x0F
+
+#define EPSILON2_SYMM_HERM 0x10
+#define EPSILON2_SYMM_REAL 0x20
+#define EPSILON2_SYMM_MASK 0xF0
 
 
 // The rcwa.h/rcwa.cpp files contain the core RCWA and S-Matrix logic.
@@ -123,6 +128,21 @@ void SolveLayerEigensystem(
 	std::complex<double> *phi, // size (2*glist.n)^2
 	std::complex<double> *work = NULL, // length lwork
 	double *rwork = NULL, // length 4*n
+	size_t lwork = 0 // set to -1 for query into work[0], at least 4*n*n+2*n
+);
+
+void SolveLayerEigensystem(
+	double omega,
+	size_t n,
+	const double *kx,
+	const double *ky,
+	const std::complex<double> *Epsilon_inv, // size (glist.n)^2; inv of usual dielectric Fourier coupling matrix
+	const std::complex<double> *Epsilon2, // size (2*glist.n)^2 (dielectric/normal-field matrix)
+	int epstype,
+	std::complex<double> *q, // length 2*glist.n
+	std::complex<double> *kp, // size (2*glist.n)^2 (k-parallel matrix) (optional)
+	std::complex<double> *phi, // size (2*glist.n)^2
+	double *work = NULL, // length 4*n
 	size_t lwork = 0 // set to -1 for query into work[0], at least 4*n*n+2*n
 );
 
