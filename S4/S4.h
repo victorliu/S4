@@ -220,8 +220,8 @@ int S4_Simulation_ExcitationPlanewave(
 	S4_Simulation *S, const S4_real *kdir, const S4_real *udir,
 	const S4_real *amp_u, const S4_real *amp_v
 );
-int S4_Simulation_ExcitationExterior(S4_Simulation *S, int n, const int *exg, const double *ex);
-int S4_Simulation_ExcitationDipole(S4_Simulation *S, const double k[2], const char *layer, const double pos[2], const double moment[6]);
+int S4_Simulation_ExcitationExterior(S4_Simulation *S, int n, const int *exg, const S4_real *ex);
+int S4_Simulation_ExcitationDipole(S4_Simulation *S, const S4_real k[2], const char *layer, const S4_real pos[2], const S4_real moment[6]);
 
 /***********************************/
 /* Solution hint related functions */
