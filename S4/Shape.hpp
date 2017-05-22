@@ -29,6 +29,7 @@ public:
 	
 	// These functions assume center = 0, angle = 0
 	virtual real_type Area() const = 0;
+	virtual bool BaseInversionSymmetric() const = 0;
 	virtual bool BaseContains(const real_type *p) const = 0;
 	virtual void BaseCenter(real_type *center) const = 0;
 	virtual void BaseNormal(const real_type *p, real_type *n) const = 0;
@@ -41,6 +42,7 @@ protected:
 	ShapeHalfwidths(const real_type &hx, const real_type &hy, const real_type *center = NULL, const real_type &angle_frac = 0);
 public:
 	virtual ~ShapeHalfwidths(){}
+	bool BaseInversionSymmetric() const{ return true; }
 	void BaseCenter(real_type *center) const;
 };
 class ShapeVertices : public Shape{
@@ -95,6 +97,7 @@ public:
 	Polygon *Clone() const;
 	
 	real_type Area() const;
+	bool BaseInversionSymmetric() const;
 	bool BaseContains(const real_type *p) const;
 	void BaseCenter(real_type *center) const;
 	void BaseNormal(const real_type *p, real_type *n) const;

@@ -212,8 +212,9 @@ void Rectangle::BaseNormal(const real_type *p, real_type *n) const{
 	}
 }
 void Rectangle::BaseFourierTransform(int nf, const real_type *f, complex_type *fc) const{
+	const real_type area = Area();
 	for(int i = 0; i < nf; ++i){
-		fc[i] = SpecialFunction::FourierSinc(2*halfwidth[0]*f[2*i+0]) * SpecialFunction::FourierSinc(2*halfwidth[1]*f[2*i+1]);
+		fc[i] = area * SpecialFunction::FourierSinc(2*halfwidth[0]*f[2*i+0]) * SpecialFunction::FourierSinc(2*halfwidth[1]*f[2*i+1]);
 	}
 }
 real_type Rectangle::BaseIntersectTriangle(const real_type *p0, const real_type *u, const real_type *v, real_type *crossuv) const{
@@ -241,7 +242,7 @@ ShapeVertices::~ShapeVertices(){
 
 Polygon::Polygon(
 	int nv, const real_type *vxy, const real_type *center, const real_type &ang
-):ShapeVertices(n, vxy, 2, center, ang){
+):ShapeVertices(nv, vxy, 2, center, ang){
 }
 Polygon* Polygon::Clone() const{
 	return new Polygon(n, v, center, angle_frac);
@@ -253,6 +254,16 @@ real_type Polygon::Area() const{
 		a += (v[2*i+0]*v[2*j+1] - v[2*i+1]*v[2*j+0]);
 	}
 	return (real_type(1) / real_type(2))*a;
+}
+
+bool Polygon::BaseInversionSymmetric() const{
+	if(0 != n % 2){ return false; }
+	const int h = n/2;
+	for(int i = 0; i < h; ++i){
+		const int j = n-i-1;
+		if(v[2*i+0] != -v[2*j+0] || v[2*i+1] != -v[2*j+1]){ return false; }
+	}
+	return true;
 }
 bool Polygon::BaseContains(const real_type *x) const{
 	bool c = false;
@@ -306,7 +317,6 @@ void Polygon::BaseFourierTransform(int nf, const real_type *f, complex_type *fc)
 		/* For k != 0,
 		 * S(k) = i/|k|^2 * Sum_{i=0,n-1} z.((v_{i+1}-v_{i}) x k) j0(k.(v_{i+1}-v_{i})/2) e^{ik.(v_{i+1}+v_{i})/2}
 		 */
-		int p,q;
 		real_type num, cs, sn;
 		real_type rc[2], u[2];
 		for(int p = n-1, q = 0; q < n; p = q++){
