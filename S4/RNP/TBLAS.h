@@ -225,6 +225,39 @@ size_t MaximumIndex(size_t n, const T *x, size_t incx){
 
 //// Level 2
 
+template <typename TS, typename TA, typename TL, typename TR>
+void MultDiag(
+	size_t m, size_t n, TA *a, size_t lda,
+	const TS &alpha,
+	const TL *dl, size_t incdl,
+	const TR *dr, size_t incdr
+){
+	if(NULL == dl){
+		for(size_t j = 0; j < n; ++j){
+			Scale(m, alpha*(*dr), a, 1);
+			a += lda;
+			dr += incdr;
+		}
+	}else if(NULL == dr){
+		for(size_t i = 0; i < m; ++i){
+			Scale(n, alpha*(*dl), a, lda);
+			a++;
+			dl += incdl;
+		}
+	}else{
+		for(size_t j = 0; j < n; ++j){
+			const TL *d = dl;
+			TA *aa = a;
+			for(size_t i = 0; i < m; ++i){
+				(*aa) *= alpha * (*d) * (*dr);
+				aa++;
+			}
+			a += lda;
+			dr += incdr;
+		}
+	}
+}
+
 template <char trans>
 struct MultMV{ // zgemv, dgemv, cgemv, sgemv
 	template <class A, class B, class T>
@@ -1642,8 +1675,8 @@ void Conjugate(size_t n, T *x, size_t incx){ // zlacgv, clacgv
 
 template <char uplo='A'>
 struct CopyMatrix{ // zlacpy, dlacpy, clacpy, slacpy
-	template <class T>
-	CopyMatrix(size_t m, size_t n, const T *a, size_t lda, T *b, size_t ldb){
+	template <class S, class T>
+	CopyMatrix(size_t m, size_t n, const S *a, size_t lda, T *b, size_t ldb){
 		if('U' == uplo){
 			for(size_t j = 0; j < n; ++j){
 				size_t ilimit = j+1; if(m < ilimit){ ilimit = m; }
