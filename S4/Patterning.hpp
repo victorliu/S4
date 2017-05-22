@@ -30,9 +30,11 @@ public:
 	//    [ Lk[0]  Lk[2] ] * [ ik[0] ]
 	//    [ Lk[1]  Lk[3] ]   [ ik[1] ]
 	//   = ( Lk[0]*ik[0]+Lk[2]*ik[1], Lk[1]*ik[0]+Lk[3]*ik[1] )
-	virtual void FourierSeries(const real_type *Lk, int nik, const int *ik, complex_type *fc, real_type *shift = NULL) const = 0;
+	virtual void FourierSeries(const real_type *Lk, int nik, const int *ik, complex_type *fc, const real_type *shift = NULL) const = 0;
 	
 	// Returns true if the pattern is inversion symmetric for some shift, and optionally returns that shift.
+	// The shift is the location of the point of inversion symmetry. If the pattern is a single circle located at (x,y),
+	// the shift[0] = x, shift[1] = y.
 	// If shift is NULL, then checks for inversion symmetry under zero shift.
 	virtual bool InversionSymmetric(real_type *shift) const{ return false; }
 	
@@ -60,7 +62,7 @@ public:
 	PatterningByBreakpoints(const real_type &L);
 	PatterningByBreakpoints *Clone() const;
 	int SetRegion(const real_type &center, const real_type &halfwidth, int tag = 0);
-	void FourierSeries(const real_type *Lk, int nik, const int *ik, complex_type *fc, real_type *shift = NULL) const;
+	void FourierSeries(const real_type *Lk, int nik, const int *ik, complex_type *fc, const real_type *shift = NULL) const;
 };
 
 class PatterningByShapes : public Patterning{
@@ -69,7 +71,8 @@ public:
 	PatterningByShapes *Clone() const;
 	~PatterningByShapes();
 	int AddShape(Shape *s, int tag = 0);
-	void FourierSeries(const real_type *Lk, int nik, const int *ik, complex_type *fc, real_type *shift = NULL) const;
+	bool InversionSymmetric(real_type *shift) const;
+	void FourierSeries(const real_type *Lk, int nik, const int *ik, complex_type *fc, const real_type *shift = NULL) const;
 protected:
 	std::vector<Shape*> shape;
 };
@@ -93,7 +96,8 @@ public:
 	~PatterningByIntervals();
 	int SetRegion(const real_type &center, const real_type &halfwidth, int tag = 0);
 	int AddShape(Shape *s, int tag = 0){ return UNSUPPORTED_PATTERN_TYPE; }
-	void FourierSeries(const real_type *Lk, int nik, const int *ik, complex_type *fc, real_type *shift = NULL) const;
+	bool InversionSymmetric(real_type *shift) const;
+	void FourierSeries(const real_type *Lk, int nik, const int *ik, complex_type *fc, const real_type *shift = NULL) const;
 protected:
 	std::vector<Interval> interval;
 };

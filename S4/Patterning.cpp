@@ -64,8 +64,17 @@ int PatterningByShapes::AddShape(Shape *s, int tag){
 	return 0;
 }
 
+bool PatterningByShapes::InversionSymmetric(real_type *shift) const{
+	if(1 == shape.size() && shape[0]->BaseInversionSymmetric()){
+		shift[0] = shape[0]->center[0];
+		shift[1] = shape[0]->center[1];
+		return true;
+	}
+	return false;
+}
+
 void PatterningByShapes::FourierSeries(
-	const real_type *Lk, int nik, const int *ik, complex_type *fc, real_type *shift
+	const real_type *Lk, int nik, const int *ik, complex_type *fc, const real_type *shift
 ) const{
 	real_type *f = (real_type*)malloc(sizeof(real_type) * 2 * nik);
 	complex_type *fc1 = (complex_type*)malloc(sizeof(complex_type) * nik);
@@ -143,7 +152,7 @@ PatterningByIntervals::~PatterningByIntervals(){
 
 int PatterningByIntervals::SetRegion(const real_type &center, const real_type &halfwidth, int tag){
 	interval.push_back(Interval(center, halfwidth, tag));
-	for(int i = (int)interval.size()-1; i >= 0; --i){
+	for(int i = ((int)interval.size())-2; i >= 0; --i){
 		if(interval[i].Contains(center)){
 			interval.back().parent = i;
 			break;
@@ -151,14 +160,26 @@ int PatterningByIntervals::SetRegion(const real_type &center, const real_type &h
 	}
 	return 0;
 }
+bool PatterningByIntervals::InversionSymmetric(real_type *shift) const{
+	if(1 == interval.size()){
+		shift[0] = interval[0].center;
+		shift[1] = 0;
+		return true;
+	}
+	return false;
+}
 
 void PatterningByIntervals::FourierSeries(
-	const real_type *Lk, int nik, const int *ik, complex_type *fc, real_type *shift
+	const real_type *Lk, int nik, const int *ik, complex_type *fc, const real_type *shift
 ) const{
 	real_type *f = (real_type*)malloc(sizeof(real_type) * nik);
 	complex_type *fc1 = (complex_type*)malloc(sizeof(complex_type) * nik);
 	for(int i = 0; i < nik; ++i){
-		fc[i] = TagToValue(-1);
+		if(0 == ik[2*i+0]){
+			fc[i] = TagToValue(-1);
+		}else{
+			fc[i] = S4_real(0);
+		}
 	}
 	for(
 		std::vector<Interval>::const_iterator si = interval.begin();
@@ -178,7 +199,7 @@ void PatterningByIntervals::FourierSeries(
 		}
 		deps -= TagToValue(iparent_tag);
 		for(int i = 0; i < nik; ++i){
-			fc1[i] = SpecialFunction::FourierSinc(s.halfwidth * f[i]);
+			fc1[i] = 2*s.halfwidth*SpecialFunction::FourierSinc(2*s.halfwidth * f[i]);
 		}
 		
 		for(int i = 0; i < nik; ++i){
@@ -249,7 +270,7 @@ int PatterningByBreakpoints::SetRegion(
 }
 
 void PatterningByBreakpoints::FourierSeries(
-	const real_type *Lk, int nik, const int *ik, complex_type *fc, real_type *shift
+	const real_type *Lk, int nik, const int *ik, complex_type *fc, const real_type *shift
 ) const{
 	return;
 }
