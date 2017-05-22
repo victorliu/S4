@@ -23,7 +23,14 @@
 #include <S4.h>
 #include <complex>
 
-int GenEpsilon(const S4_Simulation *S, const S4_Layer *L, const int n, std::complex<double> *Epsilon2, std::complex<double> *Epsilon_inv);
+#define GENEPSILON_REAL 0x1
+#define GENEPSILON_BLK2 0x2
+
+int GenEpsilon(
+	const S4_Simulation *S, const S4_Layer *L,
+	const int n, S4_complex *Epsilon2, S4_complex *Epsilon_inv,
+	S4_real *shift
+);
 
 double GetLanczosSmoothingOrder(const S4_Simulation *S);
 double GetLanczosSmoothingFactor(double order, int power, double f[2]);
