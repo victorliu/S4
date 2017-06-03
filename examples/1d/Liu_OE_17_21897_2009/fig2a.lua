@@ -4,39 +4,25 @@
 -- Optics Express, Vol. 17, No. 24, 2009
 -- A factor of 0.5 due to time averaging is not taken into account here
 
+S4 = require('S4v2')
 
-S = S4.NewSimulation()
-S:SetLattice({1,0}, {0,0}) -- 1D lattice
-S:SetNumG(27)
+S = S4.NewSimulation{ lattice = 1, bases = 27 }
 
 -- Material definition
-S:AddMaterial("Silicon", {12,0}) -- real and imag parts
-S:AddMaterial("Vacuum", {1,0})
+materials = {}
+materials.Vacuum  = S:AddMaterial{ epsilon = 1  }
+materials.Silicon = S:AddMaterial{ epsilon = 12 }
 
-S:AddLayer(
-	'AirAbove', --name
-	0,          --thickness
-	'Vacuum')   --background material
-S:AddLayer('Slab', 0.5, 'Vacuum')
-S:SetLayerPatternRectangle('Slab',        -- which layer to alter
-                           'Silicon',     -- material in rectangle
-	                       {0,0},         -- center
-	                       0,             -- tilt angle (degrees)
-	                       {0.25, 0.5}) -- half-widths
-S:AddLayerCopy('Spacer', 0.5, 'AirAbove')
-S:AddLayer('Slab2', 0.5, 'Vacuum')
-S:SetLayerPatternRectangle('Slab2',       -- which layer to alter
-                           'Silicon',     -- material in rectangle
-	                       {0.15,0},      -- center
-	                       0,             -- tilt angle (degrees)
-	                       {0.25, 0.5}) -- half-widths
-S:AddLayerCopy('AirBelow', 0, 'AirAbove')
+layers = {}
+layers[1] = S:AddLayer{ thickness = 0, material = materials.Vacuum }
+layers[2] = S:AddLayer{ thickness = 0.5, material = materials.Vacuum }
+layers[2]:SetRegion{ material = materials.Silicon, center = 0, halfwidths = 0.25 }
+layers[3] = S:AddLayer{ thickness = 0.5, material = materials.Vacuum }
+layers[4] = S:AddLayer{ thickness = 0.5, material = materials.Vacuum }
+layers[4]:SetRegion{ material = materials.Silicon, center = 0.15, halfwidths = 0.25 }
+layers[4] = S:AddLayer{ thickness = 0, material = materials.Vacuum }
 
--- E polarized along the grating "rods"
-S:SetExcitationPlanewave(
-	{0,0},  -- incidence angles (spherical coordinates: phi in [0,180], theta in [0,360])
-	{0,0},  -- s-polarization amplitude and phase (in degrees)
-	{1,0})  -- p-polarization amplitude and phase
+S:ExcitationPlanewave{ k = {0,0,1}, u = {1,0,0}, cu = {0,0}, cv = {1,0} }
 
 S:SetFrequency(0.57)
 
