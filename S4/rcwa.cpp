@@ -1139,7 +1139,166 @@ int SolveInterior(
 	return 0;
 }
 
+/*
+int SolveAll(
+	size_t nlayers,
+	size_t n, // glist.n
+	const double *kx, const double *ky,
+	std::complex<double> omega,
+	const double *thickness, // list of thicknesses
+	const std::complex<double> **q, // list of q vectors
+	const std::complex<double> **Epsilon_inv, // size (glist.n)^2; inv of usual dielectric Fourier coupling matrix
+	int *epstype,
+	const std::complex<double> **kp,
+	const std::complex<double> **phi,
+	std::complex<double> *ab, // length 4*n*nlayers
+	std::complex<double> *work_, // length lwork
+	size_t *iwork, // length n2
+	size_t lwork // set to -1 for query into work[0], at least 2*(4*n)^2 + 2*(2*n) + 4*n*(4*n+1)
+){
+	const size_t n2 = 2*n;
+	const size_t n22 = n2*n2;
+	// Assume for now that lwork = (n4^2 + n2) * nlayers, and iwork is length n4*nlayers
+	std::complex<double> *work = work_;
+	size_t *ipiv = iwork;
 
+	for(size_t k = 0; k < n2; ++k){
+		work[i] = std::exp(q[0][k] * std::complex<double>(0,thickness[k]));
+	}
+	work += n2;
+	// work is: [ f, Iaa, Iab, P, Q, f, Iaa, Iab, ..., P, Q, f ]
+	for(size_t i = 0, j = 1; j < nlayers; i=j++){
+		// Create a sliding window starting at Iaa
+		std::complex<double> *Iaa = work;
+		std::complex<double> *Iab = Iaa + n2*n2;
+		std::complex<double> *P = Iab + n2*n2;
+		std::complex<double> *Q = P + n2*n2;
+		std::complex<double> *f = Q + n2*n2;
+		// end of sliding window
+		std::complex<double> *T = f + n2; // T occupies future space
+		// Compute phase factors
+		for(size_t k = 0; k < n2; ++k){
+			f[j] = std::exp(q[j][k] * std::complex<double>(0,thickness[k]));
+		}
+		
+		// Generate interface matrix components
+		if((q[i] == q[j] && ((NULL != kp[i] && kp[i] == kp[j]) || Epsilon_inv[i] == Epsilon_inv[j]) && phi[i] == phi[j])){
+			// This is a trivial interface, set to identity
+			RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0.,1., Iaa, n2);
+			RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0.,0., Iab, n2);
+		}else{
+			// The interface matrix is the inverse of the mode-to-field matrix of layer l
+			// times the mode-to-field matrix of layer l+1 (lp1).
+			// The mode-to-field matrix is of the form
+			// [ B -B ] where A = phi
+			// [ A  A ] where B = kp*phi*inv(diag(q)) = G*A/q
+			// So we want
+			// 0.5 * [  iBl  iAl ] [ Blp1 -Blp1 ]
+			//       [ -iBl  iAl ] [ Alp1  Alp1 ]
+			// Multiplying out gives
+			// 0.5 * [ P+Q P-Q ] // where P = iAl*Alp1, and i in front means inverse
+			//       [ P-Q P+Q ] // where Q = iBl*Blp1
+			// Making P is easy, since A is a single matrix.
+			// Making Q is as follows:
+			// Q = iBl*Blp1
+			//   = ql*iAl*iGl * Gl*Alp1*iqlp1
+			// We will only store I11 and I21
+			
+			// Make Bl in t1
+			RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0.,0., T,n2);
+			{
+				if(NULL == phi[i]){
+					if(NULL == kp[i]){
+						MakeKPMatrix(omega, n, kx, ky, Epsilon_inv[i], epstype[i], kp[i], T,n2);
+					}else{
+						RNP::TBLAS::CopyMatrix<'A'>(n2,n2, kp[i],n2, T,n2);
+					}
+				}else{
+					MultKPMatrix("N", omega, n, kx, ky, Epsilon_inv[i], epstype[i], kp[i], n2, phi[i],n2, T,n2);
+				}
+			}
+#ifdef DUMP_MATRICES
+			DUMP_STREAM << "Bl(" << l << ") = " << std::endl;
+# ifdef DUMP_MATRICES_LARGE
+			RNP::IO::PrintMatrix(n2,n2,T,n2, DUMP_STREAM) << std::endl << std::endl;
+# else
+			RNP::IO::PrintVector(n2,T,1, DUMP_STREAM) << std::endl << std::endl;
+# endif
+#endif
+			// Make Blp1 in Iaa
+			RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0.,0., Iaa,n2);
+			{
+				if(NULL == phi[j]){
+					if(NULL == kp[j]){
+						MakeKPMatrix(omega, n, kx, ky, Epsilon_inv[j], epstype[j], kp[j], Iaa,n2);
+					}else{
+						RNP::TBLAS::CopyMatrix<'A'>(n2,n2, kp[j],n2, Iaa,n2);
+					}
+				}else{
+					MultKPMatrix("N", omega, n, kx, ky, Epsilon_inv[j], epstype[j], kp[j], n2, phi[j],n2, Iaa,n2);
+				}
+			}
+#ifdef DUMP_MATRICES
+		DUMP_STREAM << "Bl(" << j << ") = " << std::endl;
+# ifdef DUMP_MATRICES_LARGE
+		RNP::IO::PrintMatrix(n2,n2,Iaa,n2, DUMP_STREAM) << std::endl << std::endl;
+# else
+		RNP::IO::PrintVector(n2,Iaa,1, DUMP_STREAM) << std::endl << std::endl;
+# endif
+#endif
+			int solve_info;
+			// Make Q in in1
+			//RNP::LinearSolve<'N'>(n2, n2, t1, n2, in1, n2, &solve_info, pivots);
+			SingularLinearSolve(n2,n2,n2, T,n2, Iaa,n2, DBL_EPSILON);
+			// Now perform the diagonal scalings
+			for(size_t k = 0; k < n2; ++k){
+				RNP::TBLAS::Scale(n2, q[i][k], &Iaa[k+0*n2], n2);
+			}
+			{
+				double maxel = 0;
+				for(size_t k = 0; k < n2; ++k){
+					double el = std::abs(q[j][k]);
+					if(el > maxel){ maxel = el; }
+				}
+				for(size_t k = 0; k < n2; ++k){
+					double el = std::abs(q[j][k]);
+					if(el < DBL_EPSILON * maxel){
+						RNP::TBLAS::Scale(n2, 0., &Iaa[0+k*n2], 1);
+					}else{
+						RNP::TBLAS::Scale(n2, 1./q[j][k], &Iaa[0+k*n2], 1);
+					}
+				}
+			}
+
+			// Make P in in2
+			if(NULL == phi[j]){
+				RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0.,1., Iab,n2);
+			}else{
+				RNP::TBLAS::CopyMatrix<'A'>(n2,n2, phi[j],n2, Iab,n2);
+			}
+			if(NULL != phi[i]){
+				RNP::TBLAS::CopyMatrix<'A'>(n2,n2, phi[i],n2, T,n2);
+				RNP::LinearSolve<'N'>(n2, n2, T, n2, Iab, n2, &solve_info, pivots);
+			}
+
+			RNP::TBLAS::CopyMatrix<'A'>(n2,n2, Iab,n2, T,n2); // in2 = P, t1 = P, in1 = Q
+			RNP::TBLAS::Axpy(n2*n2, -1., Iaa,1, Iab,1); // in2 = P-Q, t1 = P, in1 = Q
+			RNP::TBLAS::Axpy(n2*n2, 1., T,1, Iaa,1); // in2 = P+Q, t1 = P, in1 = P+Q
+			RNP::TBLAS::Scale(n2*n2, 0.5, Iaa,1);
+			RNP::TBLAS::Scale(n2*n2, 0.5, Iab,1);
+		}
+		if(0 == i){
+			RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0.,-1., P,n2);
+			RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0., 0., Q,n2);
+		}else{
+			LA::LUFactor(n2, n2, P, n2, ipiv);
+			LA::Copy(n2, n2, 0, 1, )
+		}
+		
+		work += (4*n22 + n2);
+		iwork += n2;
+	}
+}*/
 
 void TranslateAmplitudes(
 	size_t n, // glist.n
