@@ -157,12 +157,11 @@ int GenEpsilon(
 				values[3*ldv+(i+1)] = eps_temp;
 				values[4*ldv+(i+1)] = eps_temp;
 			}else{
-				S4_complex eps_temp(M->eps.s[0], M->eps.s[1]);
 				// We must transpose the values array here, as well as transpose the tensor since the abcde is stored row-major, while we will traverse in column major
-				values[0*ldv+i+1] = S4_complex(M->eps.abcde[0], M->eps.abcde[1]);
-				values[1*ldv+i+1] = S4_complex(M->eps.abcde[4], M->eps.abcde[5]);
-				values[2*ldv+i+1] = S4_complex(M->eps.abcde[2], M->eps.abcde[3]);
-				values[3*ldv+i+1] = S4_complex(M->eps.abcde[6], M->eps.abcde[7]);
+				values[0*ldv+i+1] = S4_complex(M->eps.abcde[6], M->eps.abcde[7]);
+				values[1*ldv+i+1] = -S4_complex(M->eps.abcde[2], M->eps.abcde[3]);
+				values[2*ldv+i+1] = -S4_complex(M->eps.abcde[4], M->eps.abcde[5]);
+				values[3*ldv+i+1] = S4_complex(M->eps.abcde[0], M->eps.abcde[1]);
 				values[4*ldv+i+1] = S4_complex(M->eps.abcde[8], M->eps.abcde[9]);
 			}
 		}

@@ -1,4 +1,4 @@
-package.cpath = '../../../build;' .. package.cpath
+package.cpath = '../../../build/?.dll;' .. package.cpath
 S4 = require('S4v2')
 
 -- Bottom pane of Fig. 12 in
