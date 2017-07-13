@@ -41,6 +41,28 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+
+#ifndef LUA_OK
+#define LUA_OK 0
+#endif
+
+#if LUA_VERSION_NUM > 501
+#define LUA_SETFUNCS(L, R) luaL_setfuncs(L, R, 0)
+#else
+#define LUA_SETFUNCS(L, R) luaL_register(L, NULL, R)
+#define lua_rawlen lua_objlen
+#endif
+
+#ifndef luaL_newlibtable
+#define luaL_newlibtable(L,l)	\
+  lua_createtable(L, 0, sizeof(l)/sizeof((l)[0]) - 1)
+#endif
+
+#ifndef luaL_newlib
+#define luaL_newlib(L,l)  \
+  (luaL_newlibtable(L,l), LUA_SETFUNCS(L,l))
+#endif
+
 lua_State *new_S4_lua_state();
 
 void fft_init();
@@ -355,9 +377,7 @@ static void deep_copy_1(lua_State *Lfrom, int index, lua_State *Lto, int level){
 static void deep_copy(int unpack, lua_State *Lfrom, int index, lua_State *Lto){
 	if(unpack){
 		int i, n;
-		lua_len(Lfrom, index);
-		n = lua_tointeger(Lfrom, -1);
-		lua_pop(Lfrom, 1);
+		n = lua_rawlen(Lfrom, index);
 		for(i = 0; i < n; ++i){
 			lua_pushinteger(Lfrom, i+1);
 			lua_gettable(Lfrom, index);
@@ -477,9 +497,7 @@ void* ParallelInvoke_func(void *data){
 
 				// Current stack: ... func S [table of args]
 				if(lua_istable(Lm, -1)){
-					lua_len(Lm, -1);
-					nargs = lua_tointeger(Lm, -1);
-					lua_pop(Lm, 1);
+					nargs = lua_rawlen(Lm, -1);
 
 					deep_copy(1, Lm, lua_gettop(Lm), L);
 				}else{
@@ -541,8 +559,7 @@ int S4L_ParallelInvoke(lua_State *L){
 			lua_pushnil(L);
 			nargs = 0;
 		}else if(lua_istable(L, 3)){
-			lua_len(L, 3); // pushes length onto stack
-			nargs = lua_tointeger(L, -1); lua_pop(L, 1);
+			nargs = lua_rawlen(L, 3);
 		}else{
 			nargs = 1;
 		}
@@ -552,8 +569,7 @@ int S4L_ParallelInvoke(lua_State *L){
 	int nS = 0; // number of S objects
 	{
 		luaL_checktype(L, 1, LUA_TTABLE);
-		lua_len(L, 1); // pushes length onto stack
-		nS = lua_tointeger(L, -1); lua_pop(L, 1);
+		nS = lua_rawlen(L, 1);
 		if(0 == nS){ return 0; }
 		data = (ParallelInvokeData*)malloc(sizeof(ParallelInvokeData) * nS);
 		for(i = 0; i < nS; ++i){
@@ -3096,9 +3112,13 @@ int luaopen_RCWA(lua_State *L){
 lua_State *new_S4_lua_state(){
 	lua_State *L = luaL_newstate(); /* opens Lua */
 
+#if LUA_VERSION_NUM < 502
+	luaopen_RCWA(L);
+	lua_setglobal(L, "S4");
+#else
 	luaL_requiref(L, "S4", &luaopen_RCWA, 1);
 	lua_pop(L, 1);
-
+#endif
 	luaL_openlibs(L); /* opens the standard libraries */
 	return L;
 }
@@ -3142,6 +3162,26 @@ int getopt(int argc, char * const argv[], const char *optstring);
 
 
 #include <signal.h>
+#if LUA_VERSION_NUM < 502
+static int traceback (lua_State *L) {
+  if (!lua_isstring(L, 1))  /* 'message' not a string? */
+    return 1;  /* keep it intact */
+  lua_getfield(L, LUA_GLOBALSINDEX, "debug");
+  if (!lua_istable(L, -1)) {
+    lua_pop(L, 1);
+    return 1;
+  }
+  lua_getfield(L, -1, "traceback");
+  if (!lua_isfunction(L, -1)) {
+    lua_pop(L, 2);
+    return 1;
+  }
+  lua_pushvalue(L, 1);  /* pass error message */
+  lua_pushinteger(L, 2);  /* skip this function and traceback */
+  lua_call(L, 2, 1);  /* call debug.traceback */
+  return 1;
+}
+#else
 static int traceback (lua_State *L) {
   const char *msg = lua_tostring(L, 1);
   if (msg)
@@ -3152,6 +3192,7 @@ static int traceback (lua_State *L) {
   }
   return 1;
 }
+#endif
 static lua_State *globalL = NULL;
 static void lstop (lua_State *L, lua_Debug *ar) {
   (void)ar;  /* unused arg. */
