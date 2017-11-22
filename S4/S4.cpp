@@ -876,7 +876,7 @@ int Simulation_ChangeLayerThickness(S4_Simulation *S, S4_Layer *layer, const dou
 	int ret = 0;
 	if(NULL == S){ ret = -1; }
 	if(NULL == layer){ ret = -2; }
-	if(NULL == thick || thick < 0){ ret = -3; }
+	if(NULL == thick || *thick < 0){ ret = -3; }
 	if(0 != ret){
 		S4_TRACE("< Simulation_RemoveLayerPatterns (failed; ret = %d) [omega=%f]\n", ret, S->omega[0]);
 		return ret;
