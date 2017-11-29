@@ -173,7 +173,18 @@ S4_Simulation* S4_Simulation_New(const S4_real *Lr, unsigned int nG, int *G){
 	}else{
 		memcpy(S->Lr, Lr, sizeof(S4_real) * 4);
 	}
-	S4_Lattice_Reciprocate(S->Lr, S->Lk);
+	int ret = S4_Lattice_Reciprocate(S->Lr, S->Lk);
+	/*
+	if(1 == ret){
+		if(NULL != S->msg){
+			S->msg(S->msgdata, "S4_Lattice_Reciprocate", S4_MSG_ERROR, "Degenerate lattice basis");
+		}
+	}else if(2 == ret){
+		if(NULL != S->msg){
+			S->msg(S->msgdata, "S4_Lattice_Reciprocate", S4_MSG_ERROR, "Both lattice vectors are zero");
+		}
+	}
+	*/
 	if(nG < 1){ nG = 1; }
 	S->n_G = nG;
 	S->G = (int*)S4_malloc(sizeof(int) * 2*nG);
@@ -214,6 +225,9 @@ S4_Simulation* S4_Simulation_New(const S4_real *Lr, unsigned int nG, int *G){
 	S->options.lanczos_smoothing_power = 1;
 
 	S->field_cache = NULL;
+	
+	S->msg = NULL;
+	S->msgdata = NULL;
 
 	if(NULL != G){
 		memcpy(S->G, G, sizeof(int) * 2*S->n_G);
@@ -294,6 +308,9 @@ S4_Simulation* S4_Simulation_Clone(const S4_Simulation *S){
 	S4_Simulation *T = (S4_Simulation*)malloc(sizeof(S4_Simulation));
 	if(NULL == S || NULL == T){
 		S4_TRACE("< S4_Simulation_Clone (failed; S == NULL or T == NULL) [omega=%f]\n", S->omega[0]);
+		if(NULL != S->msg){
+			S->msg(S->msgdata, "S4_Simulation_Clone", S4_MSG_ERROR, "S == NULL or T == NULL");
+		}
 		return NULL;
 	}
 
@@ -328,12 +345,31 @@ S4_Simulation* S4_Simulation_Clone(const S4_Simulation *S){
 	S4_TRACE("< S4_Simulation_Clone [omega=%f]\n", S->omega[0]);
 	return T;
 }
+
+S4_message_handler S4_Simulation_SetMessageHandler(
+	S4_Simulation *S, S4_message_handler handler, void *data
+){
+	if(NULL == S){ return NULL; }
+	S->msg = handler;
+	S->msgdata = data;
+}
+
 int S4_Simulation_SetLattice(S4_Simulation *S, const S4_real *Lr){
 	if(NULL == S){ return -1; }
 	if(NULL == Lr){ return -2; }
 	Simulation_DestroySolution(S);
 	memcpy(S->Lr, Lr, sizeof(S4_real) * 4);
-	return S4_Lattice_Reciprocate(S->Lr, S->Lk);
+	int ret = S4_Lattice_Reciprocate(S->Lr, S->Lk);
+	if(1 == ret){
+		if(NULL != S->msg){
+			S->msg(S->msgdata, "S4_Lattice_Reciprocate", S4_MSG_ERROR, "Degenerate lattice basis");
+		}
+	}else if(2 == ret){
+		if(NULL != S->msg){
+			S->msg(S->msgdata, "S4_Lattice_Reciprocate", S4_MSG_ERROR, "Both lattice vectors are zero");
+		}
+	}
+	return ret;
 }
 int S4_Simulation_GetLattice(const S4_Simulation *S, S4_real *Lr){
 	if(NULL == S){ return -1; }
@@ -376,6 +412,11 @@ int S4_Simulation_SetBases(S4_Simulation *S, unsigned int nG, int *G){
 				S->G[2+4*i+3] = 0;
 			}
 		}
+	}
+	if(NULL != S->msg && nG != (unsigned int)S->n_G){
+		char buffer[64];
+		snprintf(buffer, 64, "Using %u bases", S->n_G);
+		S->msg(S->msgdata, "S4_Simulation_SetBases", S4_MSG_INFO, buffer);
 	}
 	return 0;
 }
@@ -469,6 +510,9 @@ S4_MaterialID S4_Simulation_SetMaterial(
 	}
 	S4_Material *M = NULL;
 	if(id < 0){
+		if(NULL != S->msg){
+			S->msg(S->msgdata, "S4_Simulation_SetMaterial", S4_MSG_INFO, "Adding new material");
+		}
 		if(S->n_materials >= S->n_materials_alloc){
 			 S->n_materials_alloc *= 2;
 			 S->material = (S4_Material*)realloc(S->material, sizeof(S4_Material) * S->n_materials_alloc);
@@ -483,6 +527,9 @@ S4_MaterialID S4_Simulation_SetMaterial(
 		S->n_materials++;
 		newmat = 1;
 	}else{
+		if(NULL != S->msg){
+			S->msg(S->msgdata, "S4_Simulation_SetMaterial", S4_MSG_INFO, "Updating existing material");
+		}
 		if(id >= S->n_materials){ return -1; }
 		M = &S->material[id];
 	}
@@ -532,11 +579,17 @@ S4_MaterialID S4_Simulation_GetMaterialByName(
 ){
 	S4_TRACE("> S4_Simulation_GetMaterialByName(S=%p, name=%p (%s)) [omega=%f]\n",
 		S, name, (NULL == name ? "" : name), S->omega[0]);
+	if(NULL == name || NULL == S){ return -1; }
 	for(int i = 0; i < S->n_materials; ++i){
 		if(0 == strcmp(S->material[i].name, name)){
 			S4_TRACE("< S4_Simulation_GetMaterialByName returning %s [omega=%f]\n", S->material[i].name, S->omega[0]);
 			return i;
 		}
+	}
+	if(NULL != S->msg){
+		char buffer[64];
+		snprintf(buffer, 64, "Material not found: %s", name);
+		S->msg(S->msgdata, "S4_Simulation_GetMaterialByName", S4_MSG_ERROR, buffer);
 	}
 	S4_TRACE("< S4_Simulation_GetMaterialByName (failed; material name not found) [omega=%f]\n", S->omega[0]);
 	return -1;
@@ -591,9 +644,24 @@ S4_LayerID S4_Simulation_SetLayer(
 		return -1;
 	}
 	if(copy < 0 && material < 0){ return -1; }
+	if(copy >= S->n_layers){
+		if(NULL != S->msg){
+			S->msg(S->msgdata, "S4_Simulation_SetLayer", S4_MSG_ERROR, "Attempt to copy non-existent layer");
+		}
+		return -1;
+	}
+	if(copy >= 0 && S->layer[copy].copy >= 0){
+		if(NULL != S->msg){
+			S->msg(S->msgdata, "S4_Simulation_SetLayer", S4_MSG_ERROR, "Attempt to copy a copied layer; de-referencing");
+		}
+		copy = S->layer[copy].copy;
+	}
 	Simulation_DestroySolution(S);
 	S4_Layer *L = NULL;
 	if(id < 0){
+		if(NULL != S->msg){
+			S->msg(S->msgdata, "S4_Simulation_SetLayer", S4_MSG_INFO, "Adding new layer");
+		}
 		if(S->n_layers >= S->n_layers_alloc){
 			S->n_layers_alloc *= 2;
 			S->layer = (S4_Layer*)realloc(S->layer, sizeof(S4_Layer) * S->n_layers_alloc);
@@ -611,6 +679,9 @@ S4_LayerID S4_Simulation_SetLayer(
 		L->pattern.parent = NULL;
 		L->modes = NULL;
 	}else{
+		if(NULL != S->msg){
+			S->msg(S->msgdata, "S4_Simulation_SetLayer", S4_MSG_INFO, "Updating existing layer");
+		}
 		if(id >= S->n_layers){ return -1; }
 		L = &S->layer[id];
 	}
@@ -645,11 +716,17 @@ S4_LayerID S4_Simulation_GetLayerByName(
 ){
 	S4_TRACE("> S4_Simulation_GetLayerByName(S=%p, name=%p (%s)) [omega=%f]\n",
 		S, name, (NULL == name ? "" : name), S->omega[0]);
+	if(NULL == S || NULL == name){ return -1; }
 	for(int i = 0; i < S->n_layers; ++i){
 		if(0 == strcmp(S->layer[i].name, name)){
 			S4_TRACE("< S4_Simulation_GetLayerByName returning %s [omega=%f]\n", S->layer[i].name, S->omega[0]);
 			return i;
 		}
+	}
+	if(NULL != S->msg){
+		char buffer[64];
+		snprintf(buffer, 64, "Layer not found: %s", name);
+		S->msg(S->msgdata, "S4_Simulation_GetLayerByName", S4_MSG_ERROR, buffer);
 	}
 	S4_TRACE("< S4_Simulation_GetLayerByName (failed; material name not found) [omega=%f]\n", S->omega[0]);
 	return -1;
@@ -708,6 +785,35 @@ int S4_Layer_SetRegionHalfwidths(
 		S4_TRACE("< S4_Layer_SetRegionHalfwidths (failed; ret = %d)\n", ret);
 		return ret;
 	}
+	S4_real hw[2] = { halfwidths[0], halfwidths[1] };
+	{
+		S4_real Lr[4];
+		S4_Simulation_GetLattice(S, Lr);
+		int lattice1d = 0;
+		if(0 == Lr[1] && 0 == Lr[2] && 0 == Lr[3]){
+			lattice1d = 1;
+		}
+		if(lattice1d && (0 != hw[1])){
+			if(NULL != S->msg){
+				S->msg(S->msgdata, "S4_Layer_SetRegionHalfwidths", S4_MSG_WARNING, "1D lattice has nonzero second halfwidth; ignoring");
+			}
+			hw[1] = 0;
+		}
+		if(lattice1d && (S4_REGION_TYPE_INTERVAL != type)){
+			if(NULL != S->msg){
+				S->msg(S->msgdata, "S4_Layer_SetRegionHalfwidths", S4_MSG_ERROR, "1D lattice may only have interval regions");
+			}
+			ret = -4;
+			S4_TRACE("< S4_Layer_SetRegionHalfwidths (failed; ret = %d)\n", ret);
+			return ret;
+		}
+		if((hw[0] < 0) || (!lattice1d && hw[1] < 0)){
+			if(NULL != S->msg){
+				S->msg(S->msgdata, "S4_Layer_SetRegionHalfwidths", S4_MSG_WARNING, "Halfwidth is negative; taking absolute value");
+			}
+			hw[0] = -hw[0];
+		}
+	}
 	S4_Layer *L = &S->layer[Lid];
 
 	Simulation_DestroyLayerModes(L);
@@ -730,27 +836,27 @@ int S4_Layer_SetRegionHalfwidths(
 	switch(type){
 	case S4_REGION_TYPE_INTERVAL:
 		sh->type = RECTANGLE;
-		sh->vtab.rectangle.halfwidth[0] = halfwidths[0];
+		sh->vtab.rectangle.halfwidth[0] = hw[0];
 		sh->vtab.rectangle.halfwidth[1] = 0;
 		break;
 	case S4_REGION_TYPE_RECTANGLE:
 		sh->type = RECTANGLE;
-		sh->vtab.rectangle.halfwidth[0] = halfwidths[0];
-		sh->vtab.rectangle.halfwidth[1] = halfwidths[1];
+		sh->vtab.rectangle.halfwidth[0] = hw[0];
+		sh->vtab.rectangle.halfwidth[1] = hw[1];
 		break;
 	case S4_REGION_TYPE_ELLIPSE:
 		if(halfwidths[0] == halfwidths[1]){
 			sh->type = CIRCLE;
-			sh->vtab.circle.radius = halfwidths[0];
+			sh->vtab.circle.radius = hw[0];
 		}else{
 			sh->type = ELLIPSE;
-			sh->vtab.ellipse.halfwidth[0] = halfwidths[0];
-			sh->vtab.ellipse.halfwidth[1] = halfwidths[1];
+			sh->vtab.ellipse.halfwidth[0] = hw[0];
+			sh->vtab.ellipse.halfwidth[1] = hw[1];
 		}
 		break;
 	case S4_REGION_TYPE_CIRCLE:
 		sh->type = CIRCLE;
-		sh->vtab.circle.radius = halfwidths[0];
+		sh->vtab.circle.radius = hw[0];
 		break;
 	default:
 		L->pattern.nshapes--;
@@ -809,6 +915,22 @@ int S4_Layer_SetRegionVertices(
 		for(int i = 0; i < nv; ++i){
 			sh->vtab.polygon.vertex[2*i+0] = v[2*i+0];
 			sh->vtab.polygon.vertex[2*i+1] = v[2*i+1];
+		}
+		{
+			double area2 = 0;
+			int p, q;
+			for(p=n-1, q=0; q < n; p = q++){
+				area2 += v[2*p+0]*v[2*q+1] - v[2*q+0]*v[2*p+1];
+			}
+			if(area2 < 0){
+				if(NULL != S->msg){
+					S->msg(S->msgdata, "S4_Layer_SetRegionVertices", S4_MSG_WARNING, "Polygon has negative orientation; reversing orientation");
+				}
+				for(int i = 0, j = nv-1; i < nv; ++i, --j){
+					sh->vtab.polygon.vertex[2*i+0] = v[2*j+0];
+					sh->vtab.polygon.vertex[2*i+1] = v[2*j+1];
+				}
+			}
 		}
 		break;
 	default:
@@ -1141,6 +1263,9 @@ int Simulation_InitSolution(S4_Simulation *S){
 		return -1;
 	}
 	if(S->n_G < 1){
+		if(NULL != S->msg){
+			S->msg(S->msgdata, "Simulation_InitSolution", S4_MSG_ERROR, "Basis set contains fewer than 1 element");
+		}
 		S4_TRACE("< Simulation_InitSolution (failed; S->n_G < 1) [omega=%f]\n", S->omega[0]);
 		return 9;
 	}
@@ -1203,11 +1328,17 @@ int Simulation_InitSolution(S4_Simulation *S){
 		}
 	}
 	if(S->n_layers < 1){
-		S4_TRACE("< Simulation_InitSolution (failed; less than one layer found) [omega=%f]\n", S->omega[0]);
+		S4_TRACE("< Simulation_InitSolution (failed; fewer than one layer found) [omega=%f]\n", S->omega[0]);
+		if(NULL != S->msg){
+			S->msg(S->msgdata, "Simulation_InitSolution", S4_MSG_ERROR, "Fewer than one layer found");
+		}
 		return 14;
 	}
 	if(!found_ex_layer){
 		S4_TRACE("< Simulation_InitSolution (failed; excitation layer not found) [omega=%f]\n", S->omega[0]);
+		if(NULL != S->msg){
+			S->msg(S->msgdata, "Simulation_InitSolution", S4_MSG_ERROR, "Excitation layer not found");
+		}
 		return 13;
 	}
 
@@ -1219,6 +1350,9 @@ int Simulation_InitSolution(S4_Simulation *S){
 	S->solution->solved = (int*)malloc(sizeof(int) * S->n_layers);
 	if(NULL == S->solution || NULL == S->solution->ab || NULL == S->solution->solved){
 		S4_TRACE("< Simulation_InitSolution (failed; could not allocate S->solution) [omega=%f]\n", S->omega[0]);
+		if(NULL != S->msg){
+			S->msg(S->msgdata, "Simulation_InitSolution", S4_MSG_ERROR, "Could not allocate solution memory");
+		}
 		return 1;
 	}
 	memset(S->solution->solved, 0, sizeof(int) * S->n_layers);

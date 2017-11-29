@@ -148,6 +148,9 @@ struct S4_Simulation_{
 	S4_Options options;
 
 	struct FieldCache *field_cache; // Internal cache of vector field FT when using polarization bases
+	
+	S4_message_handler msg;
+	void *msgdata;
 };
 
 #ifdef __cplusplus

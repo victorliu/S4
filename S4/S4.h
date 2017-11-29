@@ -104,7 +104,11 @@ typedef struct S4_Options_{
 	int lanczos_smoothing_power;
 } S4_Options;
 
-typedef int (*S4_error_handler)(
+#define S4_MSG_ERROR    1
+#define S4_MSG_WARNING  3
+#define S4_MSG_INFO     5
+#define S4_MSG_STATUS   9
+typedef int (*S4_message_handler)(
 	void *data, const char *fname, int level, const char *msg
 );
 
@@ -121,8 +125,8 @@ S4_Simulation* S4_Simulation_New(const S4_real *Lr, unsigned int nG, int *G);
 void S4_Simulation_Destroy(S4_Simulation *S);
 S4_Simulation* S4_Simulation_Clone(const S4_Simulation *S);
 
-S4_error_handler S4_Simulation_SetErrorHandler(
-	S4_Simulation *S, S4_error_handler handler, void *data
+S4_message_handler S4_Simulation_SetMessageHandler(
+	S4_Simulation *S, S4_message_handler handler, void *data
 );
 
 unsigned int S4_Lattice_Count(const S4_real *Lr, unsigned int nG);
