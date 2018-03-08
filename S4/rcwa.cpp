@@ -149,6 +149,50 @@ static void MakeKPMatrix(
 		}
 	}
 }
+static void MakeKPMatrix_real(
+	double omega,
+	size_t n,
+	const double *kx,
+	const double *ky,
+	const std::complex<double> *Epsilon_inv,
+	double *kp_existing,
+	double *kp,
+	const size_t ldkp // leading dimension of kp, >= 2*n
+){
+	const size_t n2 = 2*n;
+	if(NULL != kp_existing){
+		RNP::TBLAS::CopyMatrix<'A'>(n2,n2, kp_existing,n2, kp,ldkp);
+		return;
+	}
+
+	const double omega2 = omega*omega;
+
+	for(size_t j = 0; j < n; ++j){
+		for(size_t i = 0; i < n; ++i){
+			kp[i+j*ldkp] = Epsilon_inv[i+j*n].real();
+		}
+	}
+
+	RNP::TBLAS::CopyMatrix<'A'>(n,n, kp, ldkp, &kp[n+0*ldkp], ldkp);
+	RNP::TBLAS::CopyMatrix<'A'>(n,n, kp, ldkp, &kp[0+n*ldkp], ldkp);
+	RNP::TBLAS::CopyMatrix<'A'>(n,n, kp, ldkp, &kp[n+n*ldkp], ldkp);
+
+	for(size_t i = 0; i < n; ++i){
+		RNP::TBLAS::Scale(n2, -ky[i], &kp[0+i*n2], 1);
+	}
+	for(size_t i = 0; i < n; ++i){
+		RNP::TBLAS::Scale(n2, kx[i], &kp[0+(i+n)*n2], 1);
+	}
+	for(size_t i = 0; i < n; ++i){
+		RNP::TBLAS::Scale(n2, ky[i], &kp[i+0*n2], ldkp);
+	}
+	for(size_t i = 0; i < n; ++i){
+		RNP::TBLAS::Scale(n2, -kx[i], &kp[i+n+0*n2], ldkp);
+	}
+	for(size_t i = 0; i < n2; ++i){
+		kp[i+i*ldkp] += omega2;
+	}
+}
 
 // kp = k-parallel matrix
 // kp = omega^2 - Kappa = omega^2 - [  ky*epsinv*ky -ky*epsinv*kx ]
@@ -314,6 +358,186 @@ void SolveLayerEigensystem_uniform(
 	}
 }
 
+#ifdef HAVE_LAPACK
+void SolveLayerEigensystem_real(
+	double omega,
+	size_t n,
+	const double *kx,
+	const double *ky,
+	const std::complex<double> *Epsilon_inv, // size (glist.n)^2; inv of usual dielectric Fourier coupling matrix
+	const std::complex<double> *Epsilon2, // size (2*glist.n)^2 (dielectric/normal-field matrix)
+	std::complex<double> *q, // length 2*glist.n
+	std::complex<double> *kp, // size (2*glist.n)^2 (k-parallel matrix)
+	std::complex<double> *phi, // size (2*glist.n)^2
+	std::complex<double> *work_,
+	double *rwork_,
+	size_t lwork
+){
+	const size_t n2 = 2*n;
+
+	if((size_t)-1 == lwork){
+		double tmp;
+		RNP::Eigensystem_real(n2, NULL, n2, q, NULL, 1, phi, n2, &tmp, lwork);
+		work_[0] = tmp + n2*n2;
+		return;
+	}else if(0 == lwork){
+		lwork = n2*n2+2*n2;
+	}
+
+	double *work = (double*)work_;
+	size_t eigenlwork;
+	if(NULL == work_ || lwork < n2*n2+4*n2){
+		lwork = (size_t)-1;
+		double tmp;
+		RNP::Eigensystem_real(n2, NULL, n2, q, NULL, 1, phi, n2, &tmp, lwork);
+		eigenlwork = (size_t)tmp;
+		work = (double*)rcwa_malloc(sizeof(double)*(eigenlwork + n2*n2));
+	}else{
+		eigenlwork = lwork - n2*n2;
+	}
+	double *op = work;
+	double *eigenwork = op + n2*n2;
+
+#ifdef DUMP_MATRICES
+	DUMP_STREAM << "kx:" << std::endl;
+	RNP::IO::PrintVector(n,kx,1, DUMP_STREAM) << std::endl;
+	DUMP_STREAM << "ky:" << std::endl;
+	RNP::IO::PrintVector(n,ky,1, DUMP_STREAM) << std::endl << std::endl;
+#endif
+
+#ifdef DUMP_MATRICES
+	DUMP_STREAM << "Epsilon_inv:" << std::endl;
+# ifdef DUMP_MATRICES_LARGE
+	RNP::IO::PrintMatrix(n,n,Epsilon_inv,n, DUMP_STREAM) << std::endl << std::endl;
+# else
+	RNP::IO::PrintVector(n,Epsilon_inv,1, DUMP_STREAM) << std::endl << std::endl;
+# endif
+#endif
+
+	// Fill kp
+	double *kp_use = (double*)(NULL != kp ? kp : phi);
+
+	MakeKPMatrix_real(omega, n, kx, ky, Epsilon_inv, NULL, kp_use, n2);
+#ifdef DUMP_MATRICES
+	DUMP_STREAM << "kp:" << std::endl;
+# ifdef DUMP_MATRICES_LARGE
+	RNP::IO::PrintMatrix(n2,n2,kp_use,n2, DUMP_STREAM) << std::endl << std::endl;
+# else
+	RNP::IO::PrintVector(n2,&kp_use[0+(n2-1)*n2],1, DUMP_STREAM) << std::endl << std::endl;
+# endif
+#endif
+
+
+#ifdef DUMP_MATRICES
+	DUMP_STREAM << "Epsilon2:" << std::endl;
+# ifdef DUMP_MATRICES_LARGE
+	RNP::IO::PrintMatrix(n2,n2,Epsilon2,n2, DUMP_STREAM) << std::endl << std::endl;
+# else
+	RNP::IO::PrintVector(n2,Epsilon2,1, DUMP_STREAM) << std::endl << std::endl;
+# endif
+#endif
+
+	// Make the eigenoperator Epsilon2*kp - [kxkx, kxky; kykx, kyky]
+	for(size_t j = 0; j < n2; ++j){
+		for(size_t i = 0; i < n2; ++i){
+	//		double sum = 0;
+	//		for(size_t k = 0; k < n2; ++k){
+	//			sum += Epsilon2[i+k*n2]*kp_use[k+j*n2];
+	//		}
+			op[i+j*n2] = RNP::TBLAS::Dot(n2, (double*)(&Epsilon2[i]), 2*n2, &kp_use[j*n2], 1);
+		}
+	}
+	//RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0.,0., op,n2);
+	//RNP::TBLAS::MultMM<'N','N'>(n2,n2,n2, 1.,Epsilon2,n2, kp_use,n2, 0.,op,n2);
+
+	for(size_t i = 0; i < n; ++i){
+		op[i+i*n2] -= kx[i]*kx[i];
+	}
+	for(size_t i = 0; i < n; ++i){
+		op[i+n+i*n2] -= ky[i]*kx[i];
+	}
+	for(size_t i = 0; i < n; ++i){
+		op[i+(i+n)*n2] -= kx[i]*ky[i];
+	}
+	for(size_t i = 0; i < n; ++i){
+		op[i+n+(i+n)*n2] -= ky[i]*ky[i];
+	}
+#ifdef DUMP_MATRICES
+	DUMP_STREAM << "op:" << std::endl;
+# ifdef DUMP_MATRICES_LARGE
+	RNP::IO::PrintMatrix(n2,n2,op,n2, DUMP_STREAM) << std::endl << std::endl;
+# else
+	RNP::IO::PrintMatrix(n2,n2,op,n2, DUMP_STREAM) << std::endl << std::endl;
+	//RNP::IO::PrintVector(n2,&op[0+(n2-1)*n2],1, DUMP_STREAM) << std::endl << std::endl;
+# endif
+#endif
+
+#ifdef DUMP_MATRICES
+# ifdef DUMP_MATRICES_LARGE
+	std::complex<double> *op_save = (std::complex<double>*)rcwa_malloc(sizeof(std::complex<double>) * 2*n2*n2);
+	std::complex<double> *op_temp = op_save + n2*n2;
+	for(size_t j = 0; j < n2; ++j){
+		for(size_t i = 0; i < n2; ++i){
+			op_save[i+j*n2] = op[i+j*n2];
+		}
+	}
+# endif
+#endif
+	int info = RNP::Eigensystem_real(n2, op, n2, q, NULL, 1, phi, n2, eigenwork, eigenlwork);
+	if(0 != info){
+		fprintf(stderr, "Layer eigensystem returned info = %d\n", info);
+	}
+#ifdef DUMP_MATRICES
+	DUMP_STREAM << "eigen info = " << info << std::endl;
+# ifdef DUMP_MATRICES_LARGE
+	RNP::TBLAS::Fill(n2*n2, 0., op_temp,1);
+	RNP::TBLAS::MultMM<'N','N'>(n2,n2,n2, 1.,op_save,n2, phi,n2, 0.,op_temp,n2);
+	for(size_t i = 0; i < n2; ++i){
+		RNP::TBLAS::Axpy(n2, -q[i], &phi[0+i*n2],1, &op_temp[0+i*n2],1);
+	}
+	DUMP_STREAM << "eigensystem residual:" << std::endl;
+	RNP::IO::PrintMatrix(n2,n2,op_temp,n2, DUMP_STREAM) << std::endl << std::endl;
+	{
+		for(size_t j = 0; j < n2; ++j){
+			double sum = 0;
+			for(size_t i = 0; i < n2; ++i){
+				sum += fabs(op_temp[i+j*n2].real()) + fabs(op_temp[i+j*n2].imag());
+			}
+			DUMP_STREAM << " residual sum " << j << ": " << sum << std::endl;
+		}
+	}
+	rcwa_free(op_save);
+# endif
+#endif
+
+	for(size_t i = 0; i < n2; ++i){
+		// Set the \hat{q} vector (diagonal matrix) while we're at it
+		q[i] = std::sqrt(q[i]);
+		if(q[i].imag() < 0){
+			q[i] = -q[i];
+		}
+	}
+#ifdef DUMP_MATRICES
+	DUMP_STREAM << "q:" << std::endl;
+	RNP::IO::PrintVector(n2,q,1, DUMP_STREAM) << std::endl << std::endl;
+	DUMP_STREAM << "phi:" << std::endl;
+# ifdef DUMP_MATRICES_LARGE
+	RNP::IO::PrintMatrix(n2,n2,phi,n2, DUMP_STREAM) << std::endl << std::endl;
+# else
+	RNP::IO::PrintVector(n2,phi,1, DUMP_STREAM) << std::endl << std::endl;
+# endif
+#endif
+
+	if(NULL == work_ || lwork < n2*n2+4*n2){
+		rcwa_free(work);
+	}
+	
+	// Re-make kp in complex arithmetic for future use
+	std::complex<double> *kp_use_actual = (NULL != kp ? kp : phi);
+	MakeKPMatrix(omega, n, kx, ky, Epsilon_inv, EPSILON2_TYPE_FULL, NULL, kp_use_actual, n2);
+}
+#endif // HAVE_LAPACK
+
 void SolveLayerEigensystem(
 	std::complex<double> omega,
 	size_t n,
@@ -331,7 +555,8 @@ void SolveLayerEigensystem(
 ){
 	const size_t n2 = 2*n;
 	
-	bool isreal = true;
+#ifdef HAVE_LAPACK
+	bool isreal = (n > 10);
 	for(size_t j = 0; j < n && isreal; ++j){
 		for(size_t i = 0; i < n; ++i){
 			if(0 != Epsilon_inv[i+j*n].imag()){
@@ -355,7 +580,7 @@ void SolveLayerEigensystem(
 		);
 		return;
 	}
-	
+#endif
 
 	if((size_t)-1 == lwork){
 		double dum;

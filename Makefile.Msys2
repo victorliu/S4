@@ -1,13 +1,13 @@
 OBJDIR = build
 SHLIB_EXT = dll
 SHLIB_FLAGS = -shared -fpic
-LA_LIBS = -L$(HOME)/code/OpenBLAS -lopenblas_haswell-r0.2.16.dev -lgfortran -lquadmath
+LA_LIBS = -L$(HOME)/code/OpenBLAS -lopenblas -lgfortran -lquadmath
 LUA_INC = 
 LUA_LIB = -Wl,-Bdynamic -llua -Wl,-Bstatic
 LUA_MODULE_LIB = -DLUA_BUILD_AS_DLL -Wl,-Bdynamic -llua.dll -Wl,-Bstatic
 
-CFLAGS += -O2 -Wall -march=native -fcx-limited-range -fno-exceptions -static
-#CFLAGS += -g -O0 -Wall -march=native -fcx-limited-range -fno-exceptions -DENABLE_S4_TRACE -DDUMP_MATRICES
+CFLAGS += -DHAVE_BLAS -DHAVE_LAPACK -O2 -Wall -march=native -fcx-limited-range -fno-exceptions -static
+#CFLAGS += -g -O0 -DHAVE_BLAS -DHAVE_LAPACK -Wall -march=native -fcx-limited-range -fno-exceptions -DENABLE_S4_TRACE -DDUMP_MATRICES -DDUMP_MATRICES_LARGE
 CXXFLAGS = $(CFLAGS)
 
 CC = gcc
