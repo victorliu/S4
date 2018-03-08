@@ -330,9 +330,36 @@ void SolveLayerEigensystem(
 	size_t lwork
 ){
 	const size_t n2 = 2*n;
+	
+	bool isreal = true;
+	for(size_t j = 0; j < n && isreal; ++j){
+		for(size_t i = 0; i < n; ++i){
+			if(0 != Epsilon_inv[i+j*n].imag()){
+				isreal = false;
+				break;
+			}
+		}
+	}
+	for(size_t j = 0; j < n2 && isreal; ++j){
+		for(size_t i = 0; i < n2; ++i){
+			if(0 != Epsilon2[i+j*n2].imag()){
+				isreal = false;
+				break;
+			}
+		}
+	}
+	if(isreal && 0 == omega.imag() && EPSILON2_TYPE_FULL == epstype){
+		SolveLayerEigensystem_real(
+			omega.real(), n, kx, ky, Epsilon_inv, Epsilon2,
+			q, kp, phi, work_, rwork_, lwork
+		);
+		return;
+	}
+	
 
 	if((size_t)-1 == lwork){
-		RNP::Eigensystem(n2, NULL, n2, q, NULL, 1, phi, n2, work_, NULL, lwork);
+		double dum;
+		RNP::Eigensystem(n2, NULL, n2, q, NULL, 1, phi, n2, work_, &dum, lwork);
 		work_[0] += n2*n2;
 		return;
 	}else if(0 == lwork){
