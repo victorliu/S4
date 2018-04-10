@@ -262,6 +262,24 @@ void GetSMatrix( // appends the layers to an existing S matrix
 	size_t lwork = 0 // set to -1 for query into work[0], at least 4*n*(4*n+1)
 );
 
+
+int SolveAll(
+	size_t nlayers,
+	size_t n, // glist.n
+	const double *kx, const double *ky,
+	std::complex<double> omega,
+	const double *thickness, // list of thicknesses
+	const std::complex<double> **q, // list of q vectors
+	const std::complex<double> **Epsilon_inv, // size (glist.n)^2; inv of usual dielectric Fourier coupling matrix
+	int *epstype,
+	const std::complex<double> **kp,
+	const std::complex<double> **phi,
+	std::complex<double> *ab, // length 2*n*nlayers
+	std::complex<double> *work_ = NULL, // length lwork
+	size_t *iwork = NULL, // length n2*nlayers
+	size_t lwork = 0 // set to -1 for query into iwork[0], at least 6*n2^2*nlayers
+);
+
 // Purpose
 // =======
 // Given input amplitudes to a layer stack, computes the mode
