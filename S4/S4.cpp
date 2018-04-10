@@ -3614,10 +3614,10 @@ int S4_Simulation_ExcitationPlanewave(
 		S->k[1] = k_new[1];
 	}
 
-	S->exc.sub.planewave.hx[0] = amp_u[0]*vn[0] - amp_v[0]*un[0];
-	S->exc.sub.planewave.hx[1] = amp_u[1]*vn[0] - amp_v[1]*un[0];
-	S->exc.sub.planewave.hy[0] = amp_u[0]*vn[1] - amp_v[0]*un[1];
-	S->exc.sub.planewave.hy[1] = amp_u[1]*vn[1] - amp_v[1]*un[1];
+	S->exc.sub.planewave.hx[0] = root_eps*(amp_u[0]*vn[0] - amp_v[0]*un[0]);
+	S->exc.sub.planewave.hx[1] = root_eps*(amp_u[1]*vn[0] - amp_v[1]*un[0]);
+	S->exc.sub.planewave.hy[0] = root_eps*(amp_u[0]*vn[1] - amp_v[0]*un[1]);
+	S->exc.sub.planewave.hy[1] = root_eps*(amp_u[1]*vn[1] - amp_v[1]*un[1]);
 	S->exc.sub.planewave.order = 0;
 	if(kn[2] < 0){
 		S->exc.sub.planewave.backwards = 1;
