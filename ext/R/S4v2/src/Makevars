@@ -1,2 +1,2 @@
 PKG_CPPFLAGS = -I../../../../S4
-PKG_LIBS = -L../../../../build -lS4 -lstdc++
+PKG_LIBS = -L../../../../build -lS4 -lstdc++ -llapack -lblas

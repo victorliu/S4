@@ -159,12 +159,16 @@ int luaopen_S4v2(lua_State *L){
 }
 
 int lua_S4_len(lua_State *L, int arg){
+#if LUA_VERSION_NUM < 502
+	return lua_objlen(L, arg);
+#else
 	int n;
 	if(arg < 0){ arg += lua_gettop(L)+1; }
 	lua_len(L, -1);
 	n = lua_tointeger(L, -1);
 	lua_pop(L, 1);
 	return n;
+#endif
 }
 int lua_S4_isinteger(lua_State *L, int arg){
 	lua_Number x;
@@ -1109,9 +1113,7 @@ int lua_S4_Simulation_GetEpsilon(lua_State *L){
 	S4_Simulation *S = lua_S4_Simulation_check(L, 1);
 	luaL_checktype(L, 2, LUA_TTABLE);
 
-	lua_len(L, 2);
-	n = lua_tointeger(L, -1);
-	lua_pop(L, 1);
+	n = lua_S4_len(L, 2);
 	if(3 == n){
 		int i;
 		double r[3], eps[2];
@@ -1135,9 +1137,7 @@ int lua_S4_Simulation_GetFields(lua_State *L){
 	S4_Simulation *S = lua_S4_Simulation_check(L, 1);
 	luaL_checktype(L, 2, LUA_TTABLE);
 	
-	lua_len(L, 2);
-	n = lua_tointeger(L, -1);
-	lua_pop(L, 1);
+	n = lua_S4_len(L, 2);
 	
 	if(3 == n){ // evaluation at a single point
 		static const int n11[2] = { 1, 1 };

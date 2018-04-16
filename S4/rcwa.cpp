@@ -90,6 +90,149 @@ static void SingularLinearSolve(
 }
 
 
+template <typename T>
+static void Swap(int n, T* x, int incx, T* y, int incy){
+	while(n --> 0){
+		std::swap(*x, *y);
+		x += incx; y += incy;
+	}
+}
+
+template <typename A, typename T>
+static void Axpy(int n, const A &alpha, const T *x, int incx, T *y, int incy){
+	while(n --> 0){
+		*y += alpha*(*x);
+		x += incx;
+		y += incy;
+	}
+}
+template <typename A, typename T>
+static void Axpy(int m, int n, const A &alpha, const T *a, int lda, T *b, int ldb){
+	for(int j = 0; j < n; ++j){
+		Axpy(m, alpha, a, 1, b, 1);
+		a += lda;
+		b += ldb;
+	}
+}
+template <typename S, typename T>
+static void Scale(int n, const S &s, T *v, int incv = 1){
+	while(n --> 0){
+		*v *= s;
+		v += incv;
+	}
+}
+
+template <typename T>
+static void Copy(int n, const T *src, int incsrc, T *dst, int incdst){
+	if(1 == incsrc && 1 == incdst){
+		memcpy(dst, src, sizeof(T)*n);
+	}else{
+		for(int j = 0; j < n; ++j){
+			*dst = *src;
+			src += incsrc;
+			dst += incdst;
+		}
+	}
+}
+template <typename T>
+static void Copy(int m, int n, const T *src, int ldsrc, T *dst, int lddst){
+	if(m == ldsrc && m == lddst){
+		memcpy(dst, src, sizeof(T)*m*n);
+	}else{
+		for(int j = 0; j < n; ++j){
+			memcpy(dst, src, sizeof(T)*m);
+			src += ldsrc;
+			dst += lddst;
+		}
+	}
+}
+template <typename A, typename T>
+static void SetMatrix(int m, int n, const A &diag, const A &offdiag, T *a, int lda){
+	for(int j = 0; j < n; ++j){
+		int i;
+		T *p = a;
+		for(i = 0; i < j; ++i){
+			*p++ = offdiag;
+		}
+		*p++ = diag;
+		for(i++ ; i < m; ++i){
+			*p++ = offdiag;
+		}
+		a += lda;
+	}
+}
+template <typename T>
+static void ZeroMatrix(int m, int n, T *a, int lda){
+	if(m == lda){
+		memset(a, 0, sizeof(T)*m*n);
+	}else{
+		for(int j = 0; j < n; ++j){
+			memset(a, 0, sizeof(T)*m);
+			a += lda;
+		}
+	}
+}
+extern "C" void zgemv_(
+	const char *trans, const int &m, const int &n, const std::complex<double> &alpha,
+	const std::complex<double> *a, const int &lda, const std::complex<double> *x, const int &incx,
+	const std::complex<double> &beta, std::complex<double> *y, const int &incy
+);
+extern "C" void zgemm_(
+	const char *transa, const char *transb, const int &m, const int &n, const int &k,
+	const std::complex<double> &alpha, const std::complex<double> *a, const int &lda,
+	const std::complex<double> *b, const int &ldb,
+	const std::complex<double> &beta, std::complex<double> *c, const int &ldc
+);
+extern "C" void zgetrf_(
+	const int &m, const int &n, std::complex<double> *a, const int &lda, int *ipiv, int *info
+);
+extern "C" void zgetrs_(
+	const char *trans, const int &n, const int &nrhs, const std::complex<double> *a, const int &lda,
+	const int *ipiv, std::complex<double> *b, const int &ldb, int *info
+);
+extern "C" void zgetri_(
+	const int &n, const std::complex<double> *a, const int &lda,
+	const int *ipiv, std::complex<double> *work, const int &lwork, int *info
+);
+static int Invert(size_t n, std::complex<double> *a, size_t lda, std::complex<double> *work, size_t lwork, size_t *iwork){
+	int info;
+	zgetrf_(n, n, a, lda, (int*)iwork, &info);
+	zgetri_(n, a, lda, (int*)iwork, work, lwork, &info);
+	return info;
+}
+
+static void Mult(size_t n, const double &alpha, const std::complex<double> *a, size_t lda, std::complex<double> *b, size_t ldb, const double &beta, std::complex<double> *c, size_t ldc){
+	zgemm_("N","N", n, n, n, alpha, a, lda, b, ldb, beta, c, ldc);
+}
+static void Mult(size_t n, size_t m, const double &alpha, const std::complex<double> *a, size_t lda, std::complex<double> *b, const double &beta, std::complex<double> *c){
+	zgemv_("N", n, m, alpha, a, lda, b, 1, beta, c, 1);
+}
+static int LUFactor(size_t n, std::complex<double> *a, size_t lda, size_t *ipiv){
+	int info = 0;
+	zgetrf_(n, n, a, lda, (int*)ipiv, &info); // A = P*L*U
+	return info;
+}
+static int LUSolve(size_t n, size_t nRHS, const std::complex<double> *a, size_t lda, const size_t *ipiv, std::complex<double> *b, size_t ldb){
+	int info;
+	zgetrs_("N", n, nRHS, a, lda, (const int*)ipiv, b, ldb, &info);
+	return info;
+}
+static void PrintMatrix(const char *name, size_t m, size_t n, const std::complex<double> *a, size_t lda){
+	printf("%s = [\n", name);
+	for(size_t i = 0; i < m; ++i){
+		for(size_t j = 0; j < n; ++j){
+			const std::complex<double> &val = a[i+j*lda];
+			if(val.imag() < 0){
+				printf(" % 18.16e-% 18.16ei", val.real(), -val.imag());
+			}else{
+				printf(" % 18.16e+% 18.16ei", val.real(), val.imag());
+			}
+		}
+		printf("\n");
+	}
+	printf("];\n");
+}
+
 // kp = k-parallel matrix
 // kp = omega^2 - Kappa = omega^2 - [  ky*epsinv*ky -ky*epsinv*kx ]
 //                                  [ -kx*epsinv*ky  kx*epsinv*kx ]
@@ -1029,6 +1172,504 @@ void GetSMatrix(
 	}
 }
 
+
+int SolveAll(
+	size_t nlayers,
+	size_t n, // glist.n
+	const double *kx, const double *ky,
+	std::complex<double> omega,
+	const double *thickness, // list of thicknesses
+	const std::complex<double> **q, // list of q vectors
+	const std::complex<double> **Epsilon_inv, // size (glist.n)^2; inv of usual dielectric Fourier coupling matrix
+	int *epstype,
+	const std::complex<double> **kp,
+	const std::complex<double> **phi,
+	std::complex<double> *ab, // length 2*n*nlayers
+	std::complex<double> *work_, // length lwork
+	size_t *iwork, // length n2*nlayers
+	size_t lwork // set to -1 for query into iwork[0], at least 6*n2^2*nlayers
+){
+	const size_t n2 = 2*n;
+	const size_t n4 = 2*n2;
+	const size_t n22 = n2*n2;
+	const size_t minwork = 6*n22*nlayers;
+	if((size_t)-1 == lwork){
+		iwork[0] = minwork;
+		return 0;
+	}
+	typedef std::complex<double> doublecomplex;
+	doublecomplex *work = work_;
+	if(0 == lwork && NULL == work_){
+		work = (doublecomplex*)rcwa_malloc(sizeof(doublecomplex) * minwork);
+		if(NULL == work){
+printf("Could not allocate %d\n", (int)minwork); fflush(stdout);
+			return 1;
+		}
+	}else if(lwork < minwork){
+		// error: not enough workspace
+		return -15;
+	}
+	
+	// Set up temporaries
+	doublecomplex *t1 = work;
+	doublecomplex *t2 = t1 + n22;
+	doublecomplex *in1 = t2 + n22;
+	doublecomplex *in2 = in1 + n22;
+	
+	for(size_t ip = 0, iq = 1; iq < nlayers; ip=iq++){
+		// Set pointers to current row of matrices
+		doublecomplex *row = work+6*n22*iq;
+		
+		// Precondition for current loop iteration:
+		//   Qprev from previous iteration was formed correctly
+		
+		/*
+		// Assemble interface T-matrix
+		//   Assemble mode-to-field operator for p in row
+		if(0 == p){
+			// TODO: Generate mode-to-field operator for p
+			
+			// Factor and invert P
+			if(layer p is uniform){
+			}else if(layer p is z-uncoupled){
+			}else{
+				LUFactor(n4, n4, row, n4, ipiv);
+				LUInvert(n4, n4, row, n4, ipiv);
+			}
+		}else{ // Mode-to-field operator for p was generated and factored in previous iteration
+			// Only invert P (in-place)
+			if(layer p is uniform){
+			}else if(layer p is z-uncoupled){
+			}else{
+				LUInvert(n4, n4, row, n4, ipiv);
+			}
+		}
+		//   Assemble mode-to-field operator for q in rownext
+		// TODO: Generate mode-to-field operator for q
+		if(layer q is uniform){
+		}else if(layer q is z-uncoupled){
+		}else{
+			LUFactor(n4, n4, rownext, n4, ipiv);
+		}
+		// In-place multiply q into p
+		LUMultRight(n4, n4, rownext, n4, ipiv);
+		*/
+		
+		// Make the interface matrices
+		if((ip == iq) || (q[ip] == q[iq] && ((NULL != kp[ip] && kp[ip] == kp[iq]) || Epsilon_inv[ip] == Epsilon_inv[iq]) && phi[ip] == phi[iq])){
+			// This is a trivial interface, set to identity
+			RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0.,1., in1, n2);
+			RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0.,0., in2, n2);
+		}else{
+			// The interface matrix is the inverse of the mode-to-field matrix of layer l
+			// times the mode-to-field matrix of layer l+1 (lp1).
+			// The mode-to-field matrix is of the form
+			// [ B -B ] where A = phi
+			// [ A  A ] where B = kp*phi*inv(diag(q)) = G*A/q
+			// So we want
+			// 0.5 * [  iBl  iAl ] [ Blp1 -Blp1 ]
+			//       [ -iBl  iAl ] [ Alp1  Alp1 ]
+			// Multiplying out gives
+			// 0.5 * [ P+Q P-Q ] // where P = iAl*Alp1, and i in front means inverse
+			//       [ P-Q P+Q ] // where Q = iBl*Blp1
+			// Making P is easy, since A is a single matrix.
+			// Making Q is as follows:
+			// Q = iBl*Blp1
+			//   = ql*iAl*iGl * Gl*Alp1*iqlp1
+			// We will only store I11 and I21
+			/*
+			{
+				std::complex<double> *Ml = (std::complex<double>*)rcwa_malloc(sizeof(std::complex<double>)*n4*n4);
+				std::complex<double> *Mlp1 = (std::complex<double>*)rcwa_malloc(sizeof(std::complex<double>)*n4*n4);
+
+				RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0.,0., &Ml[0+0*n4],n4);
+				RNP::TBLAS::CopyMatrix<'A'>(n2,n2, phi[l],n2, &Ml[n2+0*n4],n4);
+				RNP::TBLAS::CopyMatrix<'A'>(n2,n2, phi[l],n2, &Ml[n2+n2*n4],n4);
+				RNP::TBLAS::CopyMatrix<'A'>(n2,n2, phi[l],n2, &Ml[0+n2*n4],n4);
+				for(size_t i = 0; i < n2; ++i){
+					RNP::TBLAS::Scale(n2, 1./q[l][i], &Ml[0+(i+n2)*n4], 1);
+				}
+				RNP::TBLAS::MultMM<'N','N'>(n2,n2,n2, 1.,kp[l],n2, &Ml[0+n2*n4],n4, 0.,&Ml[0+0*n4],n4);
+				RNP::TBLAS::CopyMatrix<'A'>(n2,n2, &Ml[0+0*n4],n4, &Ml[0+n2*n4],n4);
+				for(size_t i = 0; i < n2; ++i){
+					RNP::TBLAS::Scale(n2, -1., &Ml[0+(i+n2)*n4], 1);
+				}
+
+				RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0.,0., &Mlp1[0+0*n4],n4);
+				RNP::TBLAS::CopyMatrix<'A'>(n2,n2, phi[lp1],n2, &Mlp1[n2+0*n4],n4);
+				RNP::TBLAS::CopyMatrix<'A'>(n2,n2, phi[lp1],n2, &Mlp1[n2+n2*n4],n4);
+				RNP::TBLAS::CopyMatrix<'A'>(n2,n2, phi[lp1],n2, &Mlp1[0+n2*n4],n4);
+				for(size_t i = 0; i < n2; ++i){
+					RNP::TBLAS::Scale(n2, 1./q[lp1][i], &Mlp1[0+(i+n2)*n4], 1);
+				}
+				RNP::TBLAS::MultMM<'N','N'>(n2,n2,n2, 1.,kp[lp1],n2, &Mlp1[0+n2*n4],n4, 0.,&Mlp1[0+0*n4],n4);
+				RNP::TBLAS::CopyMatrix<'A'>(n2,n2, &Mlp1[0+0*n4],n4, &Mlp1[0+n2*n4],n4);
+				for(size_t i = 0; i < n2; ++i){
+					RNP::TBLAS::Scale(n2, -1., &Mlp1[0+(i+n2)*n4], 1);
+				}
+
+				//RNP::LinearSolve<'N'>(n4, n4, Ml, n4, Mlp1, n4, NULL, pivots);
+#ifdef DUMP_MATRICES
+			DUMP_STREAM << "M(" << l << ") = " << std::endl;
+# ifdef DUMP_MATRICES_LARGE
+			RNP::IO::PrintMatrix(n4,n4,Ml,n4, DUMP_STREAM) << std::endl << std::endl;
+# else
+			RNP::IO::PrintVector(n4,Ml,1, DUMP_STREAM) << std::endl << std::endl;
+# endif
+			DUMP_STREAM << "M(" << lp1 << ") = " << std::endl;
+# ifdef DUMP_MATRICES_LARGE
+			RNP::IO::PrintMatrix(n4,n4,Mlp1,n4, DUMP_STREAM) << std::endl << std::endl;
+# else
+			RNP::IO::PrintVector(n4,Mlp1,1, DUMP_STREAM) << std::endl << std::endl;
+# endif
+#endif
+
+				rcwa_free(Mlp1);
+				rcwa_free(Ml);
+			}
+			*/
+			
+			//// Begin copy from GetSMatrix
+			// Make Bl in t1
+			RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0.,0., t1,n2);
+			{
+				if(NULL == phi[ip]){
+					if(NULL == kp[ip]){
+						MakeKPMatrix(omega, n, kx, ky, Epsilon_inv[ip], epstype[ip], kp[ip], t1,n2);
+					}else{
+						RNP::TBLAS::CopyMatrix<'A'>(n2,n2, kp[ip],n2, t1,n2);
+					}
+				}else{
+					MultKPMatrix("N", omega, n, kx, ky, Epsilon_inv[ip], epstype[ip], kp[ip], n2, phi[ip],n2, t1,n2);
+				}
+			}
+#ifdef DUMP_MATRICES
+			DUMP_STREAM << "Bl(" << ip << ") = " << std::endl;
+# ifdef DUMP_MATRICES_LARGE
+			RNP::IO::PrintMatrix(n2,n2,t1,n2, DUMP_STREAM) << std::endl << std::endl;
+# else
+			RNP::IO::PrintVector(n2,t1,1, DUMP_STREAM) << std::endl << std::endl;
+# endif
+#endif
+			// Make Blp1 in in1
+			RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0.,0., in1,n2);
+			{
+				if(NULL == phi[iq]){
+					if(NULL == kp[iq]){
+						MakeKPMatrix(omega, n, kx, ky, Epsilon_inv[iq], epstype[iq], kp[iq], in1,n2);
+					}else{
+						RNP::TBLAS::CopyMatrix<'A'>(n2,n2, kp[iq],n2, in1,n2);
+					}
+				}else{
+					MultKPMatrix("N", omega, n, kx, ky, Epsilon_inv[iq], epstype[iq], kp[iq], n2, phi[iq],n2, in1,n2);
+				}
+			}
+#ifdef DUMP_MATRICES
+		DUMP_STREAM << "Bl(" << iq << ") = " << std::endl;
+# ifdef DUMP_MATRICES_LARGE
+		RNP::IO::PrintMatrix(n2,n2,in1,n2, DUMP_STREAM) << std::endl << std::endl;
+# else
+		RNP::IO::PrintVector(n2,in1,1, DUMP_STREAM) << std::endl << std::endl;
+# endif
+#endif
+			int solve_info;
+			// Make Q in in1
+			RNP::LinearSolve<'N'>(n2, n2, t1, n2, in1, n2, &solve_info, iwork);
+			//SingularLinearSolve(n2,n2,n2, t1,n2, in1,n2, DBL_EPSILON);
+			// Now perform the diagonal scalings
+			for(size_t i = 0; i < n2; ++i){
+				RNP::TBLAS::Scale(n2, q[ip][i], &in1[i+0*n2], n2);
+			}
+			{
+				double maxel = 0;
+				for(size_t i = 0; i < n2; ++i){
+					double el = std::abs(q[iq][i]);
+					if(el > maxel){ maxel = el; }
+				}
+				for(size_t i = 0; i < n2; ++i){
+					double el = std::abs(q[iq][i]);
+					if(el < DBL_EPSILON * maxel){
+						RNP::TBLAS::Scale(n2, 0., &in1[0+i*n2], 1);
+					}else{
+						RNP::TBLAS::Scale(n2, 1./q[iq][i], &in1[0+i*n2], 1);
+					}
+				}
+			}
+
+			// Make P in in2
+			if(NULL == phi[iq]){
+				RNP::TBLAS::SetMatrix<'A'>(n2,n2, 0.,1., in2,n2);
+			}else{
+				RNP::TBLAS::CopyMatrix<'A'>(n2,n2, phi[iq],n2, in2,n2);
+			}
+			if(NULL != phi[ip]){
+				RNP::TBLAS::CopyMatrix<'A'>(n2,n2, phi[ip],n2, t1,n2);
+				RNP::LinearSolve<'N'>(n2, n2, t1, n2, in2, n2, &solve_info, iwork);
+			}
+
+			RNP::TBLAS::CopyMatrix<'A'>(n2,n2, in2,n2, t1,n2); // in2 = P, t1 = P, in1 = Q
+			RNP::TBLAS::Axpy(n2*n2, -1., in1,1, in2,1); // in2 = P-Q, t1 = P, in1 = Q
+			RNP::TBLAS::Axpy(n2*n2, 1., t1,1, in1,1); // in2 = P+Q, t1 = P, in1 = P+Q
+			RNP::TBLAS::Scale(n2*n2, 0.5, in1,1);
+			RNP::TBLAS::Scale(n2*n2, 0.5, in2,1);
+		}
+#ifdef DUMP_MATRICES
+		DUMP_STREAM << "Interface1(" << iq << ") = " << std::endl;
+# ifdef DUMP_MATRICES_LARGE
+		RNP::IO::PrintMatrix(n2,n2,in1,n2, DUMP_STREAM) << std::endl << std::endl;
+# else
+		RNP::IO::PrintVector(n2,in1,1, DUMP_STREAM) << std::endl << std::endl;
+# endif
+		DUMP_STREAM << "Interface2(" << iq << ") = " << std::endl;
+# ifdef DUMP_MATRICES_LARGE
+		RNP::IO::PrintMatrix(n2,n2,in2,n2, DUMP_STREAM) << std::endl << std::endl;
+# else
+		RNP::IO::PrintVector(n2,in2,1, DUMP_STREAM) << std::endl << std::endl;
+# endif
+#endif
+
+		//PrintMatrix("in1", n2, n2, in1, n2);
+		//PrintMatrix("in2", n2, n2, in2, n2);
+
+		doublecomplex *Sba = row;
+		doublecomplex *Saa = Sba+n2;
+		doublecomplex *Sbb = row+n2*n4;
+		doublecomplex *Sab = Sbb+n2;
+		
+//printf("Preparing to exchange T to S\n"); fflush(stdout);
+
+		// Exchange to interface S-matrix, and also swap block rows
+		Copy(n2,n2, in1,n2, Saa,n4);
+		Invert(n2, Saa,n4, Sbb, n22, iwork); // Use Sbb as workspace
+		Mult(n2,  1., in2,n2, Saa,n4, 0., Sba,n4);
+		Mult(n2, -1., Saa,n4, in2,n2, 0., Sab,n4);
+		Copy(n2,n2, in1,n2, Sbb,n4);
+		Mult(n2,  1., in2,n2, Sab,n4, 1., Sbb,n4);
+
+//printf("Exchanged T to S\n"); fflush(stdout);
+
+//		PrintMatrix("Saa", n2, n2, Saa, n4);
+//		PrintMatrix("Sab", n2, n2, Sab, n4);
+//		PrintMatrix("Sba", n2, n2, Sba, n4);
+//		PrintMatrix("Sbb", n2, n2, Sbb, n4);
+		
+		// Fold in propagation phases into the S-matrix
+		for(size_t j = 0; j < n2; ++j){
+			doublecomplex sp = std::exp(q[ip][j] * std::complex<double>(0,thickness[ip]));
+			doublecomplex sq = std::exp(q[iq][j] * std::complex<double>(0,thickness[iq]));
+//printf("Scale factor ip j = %f + %f i\n", sp.real(), sp.imag());
+//printf("Scale factor iq j = %f + %f i\n", sq.real(), sq.imag());
+			Scale(n4, sp, &row[0+j*n4]);
+			Scale(n4, sq, &row[0+(j+n2)*n4]);
+		}
+
+//		PrintMatrix("Saa with phase", n2, n2, Saa, n4);
+//		PrintMatrix("Sab with phase", n2, n2, Sab, n4);
+//		PrintMatrix("Sba with phase", n2, n2, Sba, n4);
+//		PrintMatrix("Sbb with phase", n2, n2, Sbb, n4);
+
+//printf("Applied phases\n"); fflush(stdout);
+	}
+	///////////// End copy from GetSMatrix
+	
+	// At this point, the workspace is divided into portions of length 6*n22
+	// for each layer. The interface scattering matrix between layers i and i+1
+	// begins at offset 6*n22*(i+1) in the workspace. The contents of each block
+	// has the form:
+	//   [ Sba Sbb ]
+	//   [ Saa Sab ]
+	// The system of equations has instead a block row of the form:
+	//   [ -Sba  I   0  -Sbb ]
+	//   [ -Saa  0   I  -Sab ]
+	// Assembling all such rows, one obtains a rectangular matrix of size
+	// 4*n*(m-1) by 4*n*m where m is the number of layers.
+	// The labeling of the rows is [ b0, a1, b1, a2, b2, ... am ]
+	// The labeling of the columns is [ a0, b0, a1, b1, a2, b2, ... am, bm ]
+	// The first and last block columns correspond to boundary conditions and
+	// hence must be moved to the RHS. This produces in the end a square matrix.
+	
+	// Prepare the RHS
+	Mult(n4, n2, 1., &work[6*n22], n4, &ab[0], 0, t1);
+	Copy(n4, t1, 1, &ab[n2], 1);
+	Mult(n4, n2, 1., &work[6*n22*(nlayers-1)+n2*n4], n4, &ab[(nlayers-1)*n4+n2], 0, t1);
+	Copy(n4, t1, 1, &ab[(nlayers-1)*n4-n2], 1);
+	
+//	PrintMatrix("RHS0", n4,nlayers, ab, n4);
+	
+	// At this point, we can compute the quantities involved in the LDU decomposition
+	// of the system matrix. The initial diagonal pivot block is
+	//   [ I    0  | -Sbb  0 ]
+	//   [ 0    I  | -Sab  0 ]
+	//   [ --------+-------- ]
+	//   [ 0  -Sba |         ]
+	//   [ 0  -Saa |         ]
+	// Notice that the upper and lower diagonal blocks come from different interfaces.
+	// The first LDU factorization step is trivial, and there are m-1 in total.
+	// Therefore, we need only iterate through the m-2 inner layers.
+	
+	for(size_t i = 1; i < nlayers; i++){
+//printf("i = %d\n", (int)i);
+		// Set pointers to current row of matrices
+		doublecomplex *row = work+6*n22*i;
+		doublecomplex *P = row + 4*n22;
+		doublecomplex *Q = P + n22;
+		doublecomplex *Pprev = P - 6*n22;
+		doublecomplex *Qprev = Pprev + n22;
+			
+		const doublecomplex *Sbb = row-6*n22+n2*n4;
+		const doublecomplex *Sab = Sbb+n2;
+		
+		const doublecomplex *Sba = row;
+		const doublecomplex *Saa = Sba+n2;
+		size_t *ipivP = iwork + n2*i;
+		
+		// Perform LDU factorization step
+		if(1 == i){ // First step is trivial
+			SetMatrix(n2, n2, 1., 0., P, n2);
+			ZeroMatrix(n2, n2, Q, n2);
+		}else{
+			Copy(n2, n2, Sab, n4, t1, n2); // t1 = Sab
+			Copy(n2, n2, Sbb, n4, Q, n2); // Q = Sbb, t1 = Sab
+			LUSolve(n2, n2, Pprev, n2, ipivP-n2, Q, n2); // Q = inv(P) Sbb, t1 = Sab
+//	PrintMatrix("t1(Sab)", n2,n2, Sab, n4);
+//	PrintMatrix("         Sbb", n2,n2, Sbb, n4);
+//	PrintMatrix("invPprev Sbb", n2,n2, Q, n2);
+//	PrintMatrix("Qprev", n2,n2, Qprev, n2);
+			Mult(n2, 1., Qprev, n2, Q, n2, -1., t1, n2); // t1 = Q*inv(P)*Sbb - Sab
+//	PrintMatrix("Qprev invPprev Sbb", n2,n2, t1, n2);
+			Mult(n2, 1., Saa, n4, t1, n2, 0., Q, n2);
+	//PrintMatrix("Saa", n2,n2, Saa, n4);
+	//PrintMatrix("Saa Qprev invPprev Sbb", n2,n2, Q, n2);
+			
+			Mult(n2, 1., Sba, n4, t1, n2, 0., P, n2);
+			for(size_t j = 0; j < n2; ++j){
+				P[j+j*n2] += 1.;
+			}
+			
+	//		PrintMatrix("Q", n2,n2, Q, n2);
+	//		PrintMatrix("P", n2,n2, P, n2);
+		}
+//	PrintMatrix("P", n2,n2, P, n2);
+		LUFactor(n2, P, n2, ipivP);
+//	PrintMatrix("Pfactored", n2,n2, P, n2);
+//	for(size_t i = 0; i < n2; ++i){
+//		printf(" %d", ((int*)ipivP)[i]);
+//	} printf("\n");
+
+//printf("LDU step completed\n"); fflush(stdout);
+	}
+	
+	// Now use LDU factorization to solve
+	//   L D U x = b
+	//   x = U \ (D \ (L \ b))
+	//
+	// Forward pass for D \ (L \ b)
+	for(size_t j = 1; j+1 < nlayers; ++j){
+		// Set pointers to current row of matrices
+		doublecomplex *row = work+6*n22*j;
+		doublecomplex *P = row + 4*n22;
+		doublecomplex *Q = P + n22;
+		doublecomplex *Pprev = P - 6*n22;
+		doublecomplex *Qprev = Pprev + n22;
+			
+		doublecomplex *Sbb = row+n2*n4;
+		doublecomplex *Sab = Sbb+n2;
+		
+		doublecomplex *Sba = row+6*n22;
+		doublecomplex *Saa = Sba+n2;
+		
+		doublecomplex *aj = &ab[j*n4];
+		doublecomplex *bjm1 = aj-n2;
+		doublecomplex *bjp1 = aj+n2;
+		size_t *ipivP = iwork + n2*j;
+		
+		// sub-diagonal block:
+		//   [     P               |  ]
+		//   [     Q            I  |  ]
+		//   [ --------------------+- ]
+		//   [ Sba Q inv(P)   -Sba |  ]
+		//   [ Saa Q inv(P)   -Saa |  ]
+		Copy(n4, bjm1, 1, t1, 1);
+//PrintMatrix("bjm1", n4,1, bjm1, n4);
+//PrintMatrix("Applied matrix", n4,n2, Sba, n4);
+		Mult(n4, n2, 1., Sba, n4, &t1[n2], 1., bjp1);
+		if(j > 1){ // Second iteration should use the fact that Q = 0
+			LUSolve(n2, 1, P, n2, ipivP, t1, n2);
+			Mult(n2, n2, -1., Q, n2, t1, 0., &t1[n2]);
+			Mult(n4, n2,  1., Sba, n4, &t1[n2], 1., bjp1);
+		}
+	}
+//printf("Forward pass completed\n"); fflush(stdout);
+//PrintMatrix("RHS1", n4,nlayers, ab, n4);
+	
+	// Diagonal pass
+	for(size_t j = 2; j < nlayers; ++j){
+		// Set pointers to current row of matrices
+		const doublecomplex *row = work+6*n22*j;
+		const doublecomplex *P = row + 4*n22;
+		const doublecomplex *Q = P + n22;
+		size_t *ipivP = iwork + n2*j;
+		doublecomplex *aj = &ab[j*n4];
+		doublecomplex *bjm1 = aj-n2;
+		// Diaonal block:
+		//   [ P     0 ]
+		//   [ Q     I ]
+		// Inverse:
+		//   [    inv(P)   0 ] [ bjm1 ]
+		//   [ -Q inv(P)   I ] [ aj   ]
+		LUSolve(n2, 1, P, n2, ipivP, bjm1, n2);
+//PrintMatrix("bjm1", n2,1, bjm1, n2);
+		Mult(n2, n2, -1., Q, n2, bjm1, 1., aj);
+//PrintMatrix("Q", n2,n2, Q, n2);
+	}
+//printf("Diagonal pass completed\n"); fflush(stdout);
+//PrintMatrix("RHS2", n4,nlayers, ab, n4);
+	
+	// Backward pass for U \ ...
+	for(size_t j = nlayers-2; j > 0; --j){
+		// Set pointers to current row of matrices
+		doublecomplex *row = work+6*n22*j;
+		doublecomplex *P = row + 4*n22;
+		doublecomplex *Q = P + n22;
+		doublecomplex *Pprev = P - 6*n22;
+		doublecomplex *Qprev = Pprev + n22;
+			
+		doublecomplex *Sbb = row+n2*n4;
+		doublecomplex *Sab = Sbb+n2;
+		
+		doublecomplex *Sba = row+6*n22;
+		doublecomplex *Saa = Sba+n2;
+		
+		doublecomplex *aj = &ab[j*n4];
+		doublecomplex *bjm1 = aj-n2;
+		doublecomplex *bjp1 = aj+n2;
+		size_t *ipivP = iwork + n2*j;
+		
+		// super-diagonal block:
+		//   [ P   0 | -inv(P) Sbb            0 ]
+		//   [ Q   I | Q inv(P) Sbb - Sab     0 ]
+		//   [ ------+------------------------- ]
+		//   [       |                          ]
+		Mult(n2, n2, 1., Sbb, n4, bjp1, 0., t1);
+		if(j > 0){
+			LUSolve(n2, 1, P, n2, ipivP, t1, n2);
+		}
+		Axpy(n2, 1., t1, 1, bjm1, 1);
+		if(j > 0){
+			Mult(n2, n2, -1., Q, n2, t1, 1., aj);
+		}
+		Mult(n2, n2,  1., Sab, n4, bjp1, 1., aj);
+	}
+	
+//printf("Backward pass completed\n"); fflush(stdout);
+//PrintMatrix("RHS3", n4,nlayers, ab, n4);
+	
+	if(NULL == work_){
+		rcwa_free(work);
+	}
+	return 0;
+}
+
 int SolveInterior(
 	size_t nlayers,
 	size_t which_layer,
@@ -1088,6 +1729,16 @@ int SolveInterior(
 		thickness+which_layer, q+which_layer, Epsilon_inv+which_layer, epstype+which_layer, kp+which_layer, phi+which_layer,
 		SlN, work_GetSMatrix, pivots, lwork_GetSMatrix);
 
+#ifdef DUMP_MATRICES
+	if(NULL != a0){
+		DUMP_STREAM << "a0 = " << std::endl;
+		RNP::IO::PrintVector(n2,a0,1, DUMP_STREAM) << std::endl << std::endl;
+	}
+	if(NULL != bN){
+		DUMP_STREAM << "bN = " << std::endl;
+		RNP::IO::PrintVector(n2,bN,1, DUMP_STREAM) << std::endl << std::endl;
+	}
+#endif
 #ifdef DUMP_MATRICES
 	DUMP_STREAM << "S0l(0," << which_layer << ") = " << std::endl;
 # ifdef DUMP_MATRICES_LARGE

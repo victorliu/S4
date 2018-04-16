@@ -1,7 +1,7 @@
 OBJDIR = build
 SHLIB_EXT = dll
 SHLIB_FLAGS = -shared -fpic
-LA_LIBS = -L$(HOME)/code/OpenBLAS -lopenblas -lgfortran -lquadmath
+LA_LIBS = -lopenblas -lgfortran -lquadmath
 LUA_INC = 
 LUA_LIB = -Wl,-Bdynamic -llua -Wl,-Bstatic
 LUA_MODULE_LIB = -DLUA_BUILD_AS_DLL -Wl,-Bdynamic -llua.dll -Wl,-Bstatic

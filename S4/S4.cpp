@@ -1396,7 +1396,7 @@ int Simulation_GetLayerSolution(S4_Simulation *S, S4_Layer *layer, LayerModes **
 	for(int i = 0; i < S->n_layers; ++i){
 		S4_Layer *L = &(S->layer[i]);
 		if(L == layer){
-			if(NULL == L->modes || !sol->solved[i]){
+			if((NULL == L->modes && L->copy < 0) || (L->copy >= 0 && NULL == S->layer[L->copy].modes) || !sol->solved[i]){
 				error = Simulation_ComputeLayerSolution(S, L, layer_modes, layer_solution);
 				if(0 != error){ // should never happen
 					S4_TRACE("< Simulation_GetLayerSolution (failed; Simulation_ComputeLayerSolution returned %d) [omega=%f]\n", error, S->omega[0]);
@@ -1536,24 +1536,50 @@ int Simulation_ComputeLayerSolution(S4_Simulation *S, S4_Layer *L, LayerModes **
 			RNP::LinearSolve<'N'>(n2,1, phicopy,n2, ab0,n2, NULL, NULL);
 		}
 
-		S4_TRACE("I  Calling SolveInterior(layer_count=%d, which_layer=%d, n=%d, lthick,lq,lkp,lphi={\n", S->n_layers, which_layer, S->n_G);
-		for(int i = 0; i < S->n_layers; ++i){
-			S4_TRACE("I    %f, %p (0,0=%f,%f), %p (0,0=%f,%f), %p (0,0=%f,%f)\n", lthick[i],
-				lq[i], lq[i][0].real(), lq[i][0].imag(),
-				lkp[i], NULL != lkp[i] ? lkp[i][0].real() : 0., NULL != lkp[i] ? lkp[i][0].imag() : 0.,
-				lphi[i], NULL != lphi[0] ? lphi[i][0].real() : 1., NULL != lphi[0] ? lphi[i][0].imag() : 0.);
-		}
-		S4_TRACE("I   }, a0[0]=%f,%f, a0[n]=%f,%f, ...) [omega=%f]\n", ab0[0].real(), ab0[0].imag(), ab0[S->n_G].real(), ab0[S->n_G].imag(), S->omega[0]);
+		if(S->options.use_less_memory){
+			S4_TRACE("I  Calling SolveInterior(layer_count=%d, which_layer=%d, n=%d, lthick,lq,lkp,lphi={\n", S->n_layers, which_layer, S->n_G);
+			for(int i = 0; i < S->n_layers; ++i){
+				S4_TRACE("I    %f, %p (0,0=%f,%f), %p (0,0=%f,%f), %p (0,0=%f,%f)\n", lthick[i],
+					lq[i], lq[i][0].real(), lq[i][0].imag(),
+					lkp[i], NULL != lkp[i] ? lkp[i][0].real() : 0., NULL != lkp[i] ? lkp[i][0].imag() : 0.,
+					lphi[i], NULL != lphi[0] ? lphi[i][0].real() : 1., NULL != lphi[0] ? lphi[i][0].imag() : 0.);
+			}
+			S4_TRACE("I   }, a0[0]=%f,%f, a0[n]=%f,%f, ...) [omega=%f]\n", ab0[0].real(), ab0[0].imag(), ab0[S->n_G].real(), ab0[S->n_G].imag(), S->omega[0]);
 
-		error = SolveInterior(
-			S->n_layers, which_layer,
-			S->n_G,
-			S->kx, S->ky,
-			std::complex<double>(S->omega[0], S->omega[1]),
-			lthick, lq, lepsinv, lepstype, lkp, lphi,
-			inc_back ? NULL : ab0, // length 2*n
-			inc_back ? ab0 : NULL, // bN
-			(*layer_solution));
+			error = SolveInterior(
+				S->n_layers, which_layer,
+				S->n_G,
+				S->kx, S->ky,
+				std::complex<double>(S->omega[0], S->omega[1]),
+				lthick, lq, lepsinv, lepstype, lkp, lphi,
+				inc_back ? NULL : ab0, // length 2*n
+				inc_back ? ab0 : NULL, // bN
+				(*layer_solution));
+		}else{
+			// Solve all at once
+			std::complex<double> *pab = sol->ab;
+			memset(pab, 0, sizeof(std::complex<double>) * S->n_layers * n4);
+			if(!inc_back){
+				memcpy(pab, ab0, sizeof(std::complex<double>) * n2);
+			}else{
+				memcpy(&pab[S->n_layers*n4 - n2], ab0, sizeof(std::complex<double>) * n2);
+			}
+			const size_t lwork = 6*S->n_layers*n2*n2;
+			std::complex<double> *work = (std::complex<double>*)S4_malloc(sizeof(std::complex<double>) * lwork);
+			size_t *iwork = (size_t*)S4_malloc(sizeof(size_t) * S->n_layers*n2);
+			SolveAll(
+				S->n_layers, S->n_G, S->kx, S->ky,
+				std::complex<double>(S->omega[0], S->omega[1]),
+				lthick, lq, lepsinv, lepstype, lkp, lphi,
+				pab,
+				work, iwork, lwork
+			);
+			S4_free(iwork);
+			S4_free(work);
+			for(size_t i = 0; i < S->n_layers; ++i){
+				sol->solved[i] = 1;
+			}
+		}
 		S4_free(ab0);
 	}else if(2 == S->exc.type){
 		Excitation_Exterior *ext = &(S->exc.sub.exterior);
@@ -3588,10 +3614,10 @@ int S4_Simulation_ExcitationPlanewave(
 		S->k[1] = k_new[1];
 	}
 
-	S->exc.sub.planewave.hx[0] = amp_u[0]*vn[0] - amp_v[0]*un[0];
-	S->exc.sub.planewave.hx[1] = amp_u[1]*vn[0] - amp_v[1]*un[0];
-	S->exc.sub.planewave.hy[0] = amp_u[0]*vn[1] - amp_v[0]*un[1];
-	S->exc.sub.planewave.hy[1] = amp_u[1]*vn[1] - amp_v[1]*un[1];
+	S->exc.sub.planewave.hx[0] = root_eps*(amp_u[0]*vn[0] - amp_v[0]*un[0]);
+	S->exc.sub.planewave.hx[1] = root_eps*(amp_u[1]*vn[0] - amp_v[1]*un[0]);
+	S->exc.sub.planewave.hy[0] = root_eps*(amp_u[0]*vn[1] - amp_v[0]*un[1]);
+	S->exc.sub.planewave.hy[1] = root_eps*(amp_u[1]*vn[1] - amp_v[1]*un[1]);
 	S->exc.sub.planewave.order = 0;
 	if(kn[2] < 0){
 		S->exc.sub.planewave.backwards = 1;
