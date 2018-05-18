@@ -212,9 +212,9 @@ SEXP R_S4v2_Layer_SetRegionHalfwidths(SEXP sim, SEXP layer, SEXP material, SEXP 
 	}else if(0 == strcmp("circle", shapestr)){
 		type = S4_REGION_TYPE_CIRCLE;
 	}else if(0 == strcmp("interval", shapestr)){
-		type = S4_REGION_TYPE_ELLIPSE;
-	}else if(0 == strcmp("ellipse", shapestr)){
 		type = S4_REGION_TYPE_INTERVAL;
+	}else if(0 == strcmp("ellipse", shapestr)){
+		type = S4_REGION_TYPE_ELLIPSE;
 	}else{
 		error_return("Unrecognized shape");
 	}
