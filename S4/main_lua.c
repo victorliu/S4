@@ -1685,9 +1685,18 @@ static int S4L_Simulation_SetLayerPatternRectangle(lua_State *L){
 		lua_pop(L, 1);
 	}
 	S4_real angle = luaL_checknumber(L, 5) / 360.;
-	ret = S4_Layer_SetRegionHalfwidths(
-		S, layer, M, S4_REGION_TYPE_RECTANGLE, halfwidths, center, &angle
-	);
+	
+	S4_real Lr[4];
+	S4_Simulation_GetLattice(S, Lr);
+	if(0 == Lr[1] && 0 == Lr[2] && 0 == Lr[3]){
+		ret = S4_Layer_SetRegionHalfwidths(
+			S, layer, M, S4_REGION_TYPE_INTERVAL, halfwidths, center, &angle
+		);
+	}else{
+		ret = S4_Layer_SetRegionHalfwidths(
+			S, layer, M, S4_REGION_TYPE_RECTANGLE, halfwidths, center, &angle
+		);
+	}
 	if(0 != ret){
 		S4L_error(L, "SetLayerPatternRectangle: There was a problem allocating the pattern.");
 		return 0;
@@ -3089,7 +3098,7 @@ int luaopen_RCWA(lua_State *L){
 	lua_pushcfunction(L, &S4L_Simulation__gc);
 	lua_settable(L, -3);
 	lua_pop(L, 1);
-	/*
+	
 	luaL_newmetatable(L, "S4.SpectrumSampler");
 	luaL_newlib(L, SpectrumSamplerObj);
 	lua_setfield(L, -2, "__index");
@@ -3105,7 +3114,7 @@ int luaopen_RCWA(lua_State *L){
 	lua_pushcfunction(L, S4L_Interpolator__gc);
 	lua_settable(L, -3);
 	lua_pop(L, 1);
-	*/
+	
 	return 1;
 }
 
