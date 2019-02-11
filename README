@@ -8,3 +8,5 @@ See the S4 manual, in doc/index.html, for a complete
 description of the package and its user interface, as well as
 installation instructions, the license and copyright, contact
 addresses, and other important information.
+
+This fork focuses on HPC compilation, especially on Purdue University clusters.
