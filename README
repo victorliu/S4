@@ -8,3 +8,14 @@ See the S4 manual, in doc/index.html, for a complete
 description of the package and its user interface, as well as
 installation instructions, the license and copyright, contact
 addresses, and other important information.
+
+Sajidmc:
+This fork focuses on HPC compilation, especially on Purdue University clusters.
+We are only using the python extension. 
+
+Note: you must edit the MakefileHPC and manually check/add the paths to each of the libraries
+
+Usage: 
+
+make -f MakefileHPC clean
+make -f MakefileHPC S4_pyext
