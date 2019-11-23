@@ -67,7 +67,7 @@ static double AsNumberPyNumber(PyObject *obj){
 	}
 #if PY_MAJOR_VERSION < 3
 	else if(PyInt_Check(obj)){
-		return (double)PyInt_AsLong(obj);
+		return (double)PyLong_AsLong(obj);
 	}
 #endif
 	return -1.0;
@@ -103,7 +103,7 @@ static int CheckPyInt(PyObject *obj){
 }
 static long GetPyInt(PyObject *obj){
 #if PY_MAJOR_VERSION < 3
-	return PyInt_AsLong(obj);
+	return PyLong_AsLong(obj);
 #else
 	return PyLong_AsLong(obj);
 #endif
@@ -339,16 +339,16 @@ int excitation_converter(PyObject *obj, S4Excitation_Data *data)
 			PyErr_SetString(PyExc_TypeError, "the G index must be a integer.");
 			return 0;
 		}
-		data->exg[2 * i + 0] = PyInt_AsLong(pj);
+		data->exg[2 * i + 0] = PyLong_AsLong(pj);
 
 		//get polarization: 'x' or 'y'
 		pj = PyTuple_GetItem(pi, 1);
-		if(!PyString_Check(pj))
+		if(!PyBytes_Check(pj))
 		{
 			PyErr_SetString(PyExc_TypeError, "polalization should be specified by 'x' or 'y'.");
 			return 0;
 		}
-		PyString_AsStringAndSize(pj, &pol, &polLen);
+		PyBytes_AsStringAndSize(pj, &pol, &polLen);
 		if(1 != polLen || ('x' != pol[0] && 'y' != pol[0]))
 		{
 			PyErr_SetString(PyExc_TypeError, "polalization should be specified by 'x' or 'y'.");
@@ -666,36 +666,24 @@ static PyObject *S4Sim_SetMaterial(S4Sim *self, PyObject *args, PyObject *kwds){
 	static char *kwlist[] = { "Name", "Epsilon", NULL };
 	const char *name;
 	struct epsilon_converter_data epsdata;
-	S4_Material *M;
+	S4_MaterialID M;
+	int type;
+
 	if(!PyArg_ParseTupleAndKeywords(args, kwds, "sO&:SetMaterial", kwlist, &name, &epsilon_converter, &epsdata)){ return NULL; }
 	M = S4_Simulation_GetMaterialByName(self->S, name);
-	if(NULL == M){
-		M = Simulation_AddMaterial(self->S);
-		if(NULL == M){
-			PyErr_Format(PyExc_MemoryError, "SetMaterial: There was a problem allocating the material named '%s'.", name);
-			return NULL;
-		}
-		if(0 == epsdata.type){
-			Material_Init(M, name, NULL);
-		}else{
-			Material_InitTensor(M, name, NULL);
-		}
-	}
 
 	if(0 == epsdata.type){
-		M->eps.s[0] = epsdata.eps[0];
-		M->eps.s[1] = epsdata.eps[1];
+		type = S4_MATERIAL_TYPE_SCALAR_COMPLEX;
 	}else{
-		/* [ a b c ]    [ a b   ]
-		 * [ d e f ] -> [ d e   ]
-		 * [ g h i ]    [     i ]
-		 */
-		M->eps.abcde[0] = epsdata.eps[ 0]; M->eps.abcde[1] = epsdata.eps[ 1];
-		M->eps.abcde[2] = epsdata.eps[ 2]; M->eps.abcde[3] = epsdata.eps[ 3];
-		M->eps.abcde[4] = epsdata.eps[ 6]; M->eps.abcde[5] = epsdata.eps[ 7];
-		M->eps.abcde[6] = epsdata.eps[ 8]; M->eps.abcde[7] = epsdata.eps[ 9];
-		M->eps.abcde[8] = epsdata.eps[16]; M->eps.abcde[9] = epsdata.eps[17];
+		type = S4_MATERIAL_TYPE_XYTENSOR_COMPLEX;
 	}
+
+	M = S4_Simulation_SetMaterial(self->S, M, name, type, epsdata.eps);
+	if( M < 0){
+		PyErr_Format(PyExc_MemoryError, "SetMaterial: There was a problem allocating the material named '%s'.", name);
+		return NULL;
+	}
+
 
 	Py_RETURN_NONE;
 }
@@ -706,63 +694,87 @@ static PyObject *S4Sim_AddMaterial(S4Sim *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *S4Sim_AddLayer(S4Sim *self, PyObject *args, PyObject *kwds){
-	static char *kwlist[] = { "Name", "Thickness", "S4_Material", NULL };
-	S4_Layer *layer;
+	static char *kwlist[] = { "Name", "Thickness", "Material", NULL };
+	S4_LayerID layer;
 	const char *name;
-	double thickness;
+	S4_real thickness;
 	const char *matname;
+	S4_MaterialID M;
+
 	if(!PyArg_ParseTupleAndKeywords(args, kwds, "sds:AddLayer", kwlist, &name, &thickness, &matname)){ return NULL; }
 
-	layer = Simulation_AddLayer(self->S);
-	if(NULL == layer){
+	/*layer = Simulation_AddLayer(self->S);*/
+	/*if(NULL == layer){*/
+		/*PyErr_Format(PyExc_MemoryError, "AddLayer: There was a problem allocating the layer named '%s'.", name);*/
+		/*return NULL;*/
+	/*}*/
+	/*Layer_Init(layer, name, thickness, matname, NULL);*/
+	M = S4_Simulation_GetMaterialByName(self->S, matname);
+	if(M < 0){
+		PyErr_Format(PyExc_MemoryError, "AddLayer: Unknown material '%s'.", matname);
+		return NULL;
+	}
+	layer = S4_Simulation_SetLayer(self->S, -1, name, &thickness, -1, M);
+	if(layer < 0){
 		PyErr_Format(PyExc_MemoryError, "AddLayer: There was a problem allocating the layer named '%s'.", name);
 		return NULL;
 	}
-	Layer_Init(layer, name, thickness, matname, NULL);
 
 	Py_RETURN_NONE;
 }
 
 static PyObject *S4Sim_SetLayer(S4Sim *self, PyObject *args, PyObject *kwds)
 {
-	static char *kwlist[] = { "Name", "Thickness", "S4_Material", NULL };
+	static char *kwlist[] = { "Name", "Thickness", "Material", NULL };
 	const char *name, *material = NULL;
 	double thickness;
-	S4_Layer *layer;
+	S4_LayerID layer;
 	if(!PyArg_ParseTupleAndKeywords(args, kwds, "sd|s:SetLayer", kwlist, &name, &thickness, &material))
 		return NULL;
-	layer = Simulation_GetLayerByName(self->S, name, NULL);
-	if(NULL == layer)
-		S4Sim_AddLayer(self, args, kwds);
+	layer = S4_Simulation_GetLayerByName(self->S, name);
+	if( layer < 0){
+		S4_MaterialID M = S4_Simulation_GetMaterialByName(self->S, material);
+		if(M < 0){
+			PyErr_Format(PyExc_MemoryError, "SetLayer: Unknown material '%s'.", material);
+			return NULL;
+		}
+		layer = S4_Simulation_SetLayer(self->S, -1, name, &thickness, -1, M);
+		if(layer < 0){
+			PyErr_Format(PyExc_MemoryError, "SetLayer: There was a problem allocating the layer named '%s'.", name);
+			return NULL;
+		}
+
+	}
 	else
 	{
-		layer->thickness = thickness;
-		if(NULL != material)
-			layer->material = strdup(material);
-		Simulation_RemoveLayerPatterns(self->S, layer);
+		S4Sim_AddLayer(self, args, kwds);
 	}
 	Py_RETURN_NONE;
 }
 
 static PyObject *S4Sim_AddLayerCopy(S4Sim *self, PyObject *args, PyObject *kwds){
-	static char *kwlist[] = { "Name", "Thickness", "S4_Layer", NULL };
-	S4_Layer *layer;
+	static char *kwlist[] = { "Name", "Thickness", "Layer", NULL };
+	S4_LayerID layer;
 	const char *name;
 	double thickness;
 	const char *layername;
 	if(!PyArg_ParseTupleAndKeywords(args, kwds, "sds:AddLayerCopy", kwlist, &name, &thickness, &layername)){ return NULL; }
 
-	layer = Simulation_AddLayer(self->S);
-	if(NULL == layer){
-		PyErr_Format(PyExc_MemoryError, "AddLayerCopy: There was a problem allocating the layer named '%s'.", name);
+	S4_LayerID Lcopy = S4_Simulation_GetLayerByName(self->S, layername);
+	if(Lcopy < 0){
+		PyErr_Format(PyExc_MemoryError, "AddLayerCopy: Layer not found: '%s'.", layername);
 		return NULL;
 	}
-	Layer_Init(layer, name, thickness, NULL, layername);
+	layer = S4_Simulation_SetLayer(self->S, -1, name, &thickness, Lcopy, -1);
+	if(layer < 0){
+		PyErr_Format(PyExc_MemoryError, "AddLayerCopy: : There was a problem allocating the layer named '%s'.", name);
+		return NULL;
+	}
 
 	Py_RETURN_NONE;
 }
 static PyObject *S4Sim_SetLayerThickness(S4Sim *self, PyObject *args, PyObject *kwds){
-	static char *kwlist[] = { "S4_Layer", "Thickness", NULL };
+	static char *kwlist[] = { "Layer", "Thickness", NULL };
 	S4_Layer *layer;
 	const char *name;
 	double thickness;
@@ -782,7 +794,7 @@ static PyObject *S4Sim_SetLayerThickness(S4Sim *self, PyObject *args, PyObject *
 	Py_RETURN_NONE;
 }
 static PyObject *S4Sim_RemoveLayerRegions(S4Sim *self, PyObject *args, PyObject *kwds){
-	static char *kwlist[] = { "S4_Layer", NULL };
+	static char *kwlist[] = { "Layer", NULL };
 	S4_Layer *layer;
 	const char *name;
 
@@ -798,31 +810,33 @@ static PyObject *S4Sim_RemoveLayerRegions(S4Sim *self, PyObject *args, PyObject 
 	Py_RETURN_NONE;
 }
 static PyObject *S4Sim_SetRegionCircle(S4Sim *self, PyObject *args, PyObject *kwds){
-	static char *kwlist[] = { "S4_Layer", "S4_Material", "Center", "Radius", NULL };
-	S4_Layer *layer;
-	S4_Material *M;
+	static char *kwlist[] = { "Layer", "Material", "Center", "Radius", NULL };
+	S4_LayerID layer;
+	S4_MaterialID M;
 	const char *layername;
 	const char *matname;
-	int material_index;
 	double center[2], radius;
 	int ret;
 
 	if(!PyArg_ParseTupleAndKeywords(args, kwds, "ss(dd)d:SetRegionCircle", kwlist, &layername, &matname, &center[0], &center[1], &radius)){ return NULL; }
-	layer = Simulation_GetLayerByName(self->S, layername, NULL);
-	if(NULL == layer){
+	layer = S4_Simulation_GetLayerByName(self->S, layername);
+	if(layer < 0){
 		PyErr_Format(PyExc_RuntimeError, "SetRegionCircle: S4_Layer named '%s' not found.", layername);
 		return NULL;
 	}
-	if(NULL != layer->copy){
+	if(S4_Layer_IsCopy(self->S, layer)){
 		PyErr_Format(PyExc_RuntimeError, "SetRegionCircle: Cannot pattern a layer copy.");
 		return NULL;
 	}
-	M = Simulation_GetMaterialByName(self->S, matname, &material_index);
-	if(NULL == M){
+	M = S4_Simulation_GetMaterialByName(self->S, matname);
+	if(M < 0){
 		PyErr_Format(PyExc_RuntimeError, "SetRegionCircle: S4_Material named '%s' not found.", matname);
 		return NULL;
 	}
-	ret = Simulation_AddLayerPatternCircle(self->S, layer, material_index, center, radius);
+	/*ret = Simulation_AddLayerPatternCircle(self->S, layer, material_index, center, radius);*/
+	S4_real hw[2] = { radius, radius };
+	ret = S4_Layer_SetRegionHalfwidths(
+		self->S, layer, M, S4_REGION_TYPE_ELLIPSE, hw, center, NULL);
 	if(0 != ret){
 		PyErr_Format(PyExc_MemoryError, "SetRegionCircle: There was a problem allocating the pattern.");
 		return NULL;
@@ -830,100 +844,128 @@ static PyObject *S4Sim_SetRegionCircle(S4Sim *self, PyObject *args, PyObject *kw
 	Py_RETURN_NONE;
 }
 static PyObject *S4Sim_SetRegionEllipse(S4Sim *self, PyObject *args, PyObject *kwds){
-	static char *kwlist[] = { "S4_Layer", "S4_Material", "Center", "Angle", "Halfwidths", NULL };
-	S4_Layer *layer;
-	S4_Material *M;
+	static char *kwlist[] = { "Layer", "Material", "Center", "Angle", "Halfwidths", NULL };
+	S4_LayerID layer;
+	S4_MaterialID M;
 	const char *layername;
 	const char *matname;
-	int material_index;
 	double center[2], tilt, halfwidths[2];
 	int ret;
 
 	if(!PyArg_ParseTupleAndKeywords(args, kwds, "ss(dd)d(dd):SetRegionEllipse", kwlist, &layername, &matname, &center[0], &center[1], &tilt, &halfwidths[0], &halfwidths[1])){ return NULL; }
-	layer = Simulation_GetLayerByName(self->S, layername, NULL);
-	if(NULL == layer){
+	layer = S4_Simulation_GetLayerByName(self->S, layername);
+	if(layer < 0){
 		PyErr_Format(PyExc_RuntimeError, "SetRegionEllipse: S4_Layer named '%s' not found.", layername);
-		return NULL;
+		return 0;
 	}
-	if(NULL != layer->copy){
+	if(S4_Layer_IsCopy(self->S, layer)){
 		PyErr_Format(PyExc_RuntimeError, "SetRegionEllipse: Cannot pattern a layer copy.");
-		return NULL;
+		return 0;
 	}
-	M = Simulation_GetMaterialByName(self->S, matname, &material_index);
-	if(NULL == M){
+	M = S4_Simulation_GetMaterialByName(self->S, matname);
+	if(M < 0){
 		PyErr_Format(PyExc_RuntimeError, "SetRegionEllipse: S4_Material named '%s' not found.", matname);
-		return NULL;
+		return 0;
 	}
-	ret = Simulation_AddLayerPatternEllipse(self->S, layer, material_index, center, (M_PI/180.)*tilt, halfwidths);
+	/*ret = Simulation_AddLayerPatternEllipse(self->S, layer, material_index, center, (M_PI/180.)*tilt, halfwidths);*/
+        S4_real angle = (M_PI/180.0)*tilt;
+	ret = S4_Layer_SetRegionHalfwidths(self->S, layer, M, S4_REGION_TYPE_ELLIPSE, halfwidths, center, &angle);
 	if(0 != ret){
 		PyErr_Format(PyExc_MemoryError, "SetRegionEllipse: There was a problem allocating the pattern.");
-		return NULL;
+		return 0;
 	}
 	Py_RETURN_NONE;
 }
 static PyObject *S4Sim_SetRegionRectangle(S4Sim *self, PyObject *args, PyObject *kwds){
-	static char *kwlist[] = { "S4_Layer", "S4_Material", "Center", "Angle", "Halfwidths", NULL };
-	S4_Layer *layer;
-	S4_Material *M;
+	static char *kwlist[] = { "Layer", "Material", "Center", "Angle", "Halfwidths", NULL };
+	S4_LayerID layer;
+	S4_MaterialID M;
 	const char *layername;
 	const char *matname;
-	int material_index;
 	double center[2], tilt, halfwidths[2];
 	int ret;
 
 	if(!PyArg_ParseTupleAndKeywords(args, kwds, "ss(dd)d(dd):SetRegionRectangle", kwlist, &layername, &matname, &center[0], &center[1], &tilt, &halfwidths[0], &halfwidths[1])){ return NULL; }
-	layer = Simulation_GetLayerByName(self->S, layername, NULL);
-	if(NULL == layer){
+	layer = S4_Simulation_GetLayerByName(self->S, layername);
+	if(layer < 0){
 		PyErr_Format(PyExc_RuntimeError, "SetRegionRectangle: S4_Layer named '%s' not found.", layername);
-		return NULL;
+		return 0;
 	}
-	if(NULL != layer->copy){
+	if(S4_Layer_IsCopy(self->S, layer)){
 		PyErr_Format(PyExc_RuntimeError, "SetRegionRectangle: Cannot pattern a layer copy.");
-		return NULL;
+		return 0;
 	}
-	M = Simulation_GetMaterialByName(self->S, matname, &material_index);
-	if(NULL == M){
+	M = S4_Simulation_GetMaterialByName(self->S, matname);
+	if(M < 0){
 		PyErr_Format(PyExc_RuntimeError, "SetRegionRectangle: S4_Material named '%s' not found.", matname);
-		return NULL;
+		return 0;
 	}
-	ret = Simulation_AddLayerPatternRectangle(self->S, layer, material_index, center, (M_PI/180.)*tilt, halfwidths);
+	/*ret = Simulation_AddLayerPatternRectangle(self->S, layer, material_index, center, (M_PI/180.)*tilt, halfwidths);*/
+
+        S4_real angle = (M_PI/180.0)*tilt;
+
+        // In the new API the region Rectangle is for 2D and Interval for 1D. Ones needs to check
+        // the dimension of the lattice. The program checks that Lr[1:3] is equal zero to determine
+        // the dimensions.
+        S4_real Lr[4];
+        S4_Simulation_GetLattice(self->S, Lr);
+        int lattice1d = 0;
+        if(0 == Lr[1] && 0 == Lr[2] && 0 == Lr[3]){
+                lattice1d = 1;
+        }
+        int AUX_REGION;
+        AUX_REGION = S4_REGION_TYPE_RECTANGLE;
+        if(lattice1d){
+                AUX_REGION = S4_REGION_TYPE_INTERVAL;
+        }
+
+	ret = S4_Layer_SetRegionHalfwidths(
+		/*self->S, layer, M, S4_REGION_TYPE_RECTANGLE, halfwidths, center, &angle*/
+		self->S, layer, M, AUX_REGION, halfwidths, center, &angle
+	);
+
 	if(0 != ret){
 		PyErr_Format(PyExc_MemoryError, "SetRegionRectangle: There was a problem allocating the pattern.");
-		return NULL;
+		return 0;
 	}
 	Py_RETURN_NONE;
 }
 static PyObject *S4Sim_SetRegionPolygon(S4Sim *self, PyObject *args, PyObject *kwds){
-	static char *kwlist[] = { "S4_Layer", "S4_Material", "Center", "Angle", "Vertices", NULL };
-	S4_Layer *layer;
-	S4_Material *M;
+	static char *kwlist[] = { "Layer", "Material", "Center", "Angle", "Vertices", NULL };
+	S4_LayerID layer;
+	S4_MaterialID M;
 	const char *layername;
 	const char *matname;
-	int material_index;
+	/*int material_index;*/
 	double center[2], tilt;
 	struct polygon_converter_data polydata;
 	int ret;
 
 	if(!PyArg_ParseTupleAndKeywords(args, kwds, "ss(dd)dO&:SetRegionPolygon", kwlist, &layername, &matname, &center[0], &center[1], &tilt, &polygon_converter, &polydata)){ return NULL; }
-	layer = Simulation_GetLayerByName(self->S, layername, NULL);
-	if(NULL == layer){
+	layer = S4_Simulation_GetLayerByName(self->S, layername);
+	if(layer < 0){
 		PyErr_Format(PyExc_RuntimeError, "SetRegionPolygon: S4_Layer named '%s' not found.", layername);
-		return NULL;
+		return 0;
 	}
-	if(NULL != layer->copy){
+	if(S4_Layer_IsCopy(self->S, layer)){
 		PyErr_Format(PyExc_RuntimeError, "SetRegionPolygon: Cannot pattern a layer copy.");
-		return NULL;
+		return 0;
 	}
-	M = Simulation_GetMaterialByName(self->S, matname, &material_index);
-	if(NULL == M){
+	M = S4_Simulation_GetMaterialByName(self->S, matname);
+	if(M < 0){
 		PyErr_Format(PyExc_RuntimeError, "SetRegionPolygon: S4_Material named '%s' not found.", matname);
-		return NULL;
+		return 0;
 	}
-	ret = Simulation_AddLayerPatternPolygon(self->S, layer, material_index, center, (M_PI/180.)*tilt, polydata.nvert, polydata.vert);
+
+        S4_real angle = (M_PI/180.0)*tilt;
+	/*ret = Simulation_AddLayerPatternPolygon(self->S, layer, material_index, center, (M_PI/180.)*tilt, polydata.nvert, polydata.vert);*/
+	ret = S4_Layer_SetRegionVertices(
+		self->S, layer, M, S4_REGION_TYPE_POLYGON,
+		polydata.nvert, polydata.vert, center, &angle);
 	free(polydata.vert);
 	if(0 != ret){
 		PyErr_Format(PyExc_MemoryError, "SetRegionPolygon: There was a problem allocating the pattern.");
-		return NULL;
+		return 0;
 	}
 	Py_RETURN_NONE;
 }
@@ -932,7 +974,6 @@ static PyObject *S4Sim_SetExcitationExterior(S4Sim *self, PyObject *args, PyObje
 {
 	static char *kwlist[] = {"Excitations", NULL};
 	S4Excitation_Data exciData = {0, NULL, NULL};	//set exg or ex NULL to get the size of tuple.
-	int err;
 	/*double calls to one function with some flag to get size info,
 	so heap location variable can be initialized. learn from WIN32 API :) */
 	if(!PyArg_ParseTupleAndKeywords(args, kwds, "O&:S4Sim_SetExcitationExterior", kwlist, &excitation_converter, &exciData))
@@ -946,14 +987,10 @@ static PyObject *S4Sim_SetExcitationExterior(S4Sim *self, PyObject *args, PyObje
 		return NULL;
 	}
 
-	err = Simulation_MakeExcitationExterior(self->S, exciData.n, exciData.exg, exciData.ex);
+	S4_Simulation_ExcitationExterior(self->S, exciData.n, exciData.exg, exciData.ex);
 	free(exciData.exg); exciData.exg = NULL;
 	free(exciData.ex); exciData.ex = NULL;
-	if(0 != err)
-	{
-		HandleSolutionErrorCode("S4Sim_SetExcitationExterior", err);
-		return NULL;
-	}
+
 	Py_RETURN_NONE;
 }
 
@@ -980,14 +1017,35 @@ static PyObject *S4Sim_SetExcitationPlanewave(S4Sim *self, PyObject *args, PyObj
 	Py_RETURN_NONE;
 }
 
+/*static PyObject *S4Sim_SetFrequency(S4Sim *self, PyObject *args){*/
+	/*Py_complex f;*/
+	/*if(!PyArg_ParseTuple(args, "D:SetFrequency", &f)){ return NULL; }*/
+
+	/*Simulation_DestroySolution(self->S);*/
+
+	/*self->S->omega[0] = 2*M_PI*f.real;*/
+	/*self->S->omega[1] = 2*M_PI*f.imag;*/
+	/*if(self->S->omega[0] <= 0){*/
+		/*PyErr_Warn(PyExc_RuntimeWarning, "A non-positive frequency was specified.");*/
+	/*}*/
+	/*if(self->S->omega[1] > 0){*/
+		/*PyErr_Warn(PyExc_RuntimeWarning, "A frequency with positive imaginary part was specified.");*/
+	/*}*/
+	/*Py_RETURN_NONE;*/
+/*}*/
+
 static PyObject *S4Sim_SetFrequency(S4Sim *self, PyObject *args){
 	Py_complex f;
 	if(!PyArg_ParseTuple(args, "D:SetFrequency", &f)){ return NULL; }
 
-	Simulation_DestroySolution(self->S);
+	S4_real freq[2] = {
+		f.real,
+		f.imag
+	};
 
-	self->S->omega[0] = 2*M_PI*f.real;
-	self->S->omega[1] = 2*M_PI*f.imag;
+
+	S4_Simulation_SetFrequency(self->S, freq);
+
 	if(self->S->omega[0] <= 0){
 		PyErr_Warn(PyExc_RuntimeWarning, "A non-positive frequency was specified.");
 	}
@@ -1021,7 +1079,7 @@ static PyObject *S4Sim_GetEpsilon(S4Sim *self, PyObject *args){
 
 static PyObject *S4Sim_OutputLayerPatternRealization(S4Sim *self, PyObject *args, PyObject *kwds)
 {
-	static char *kwlist[] = { "S4_Layer", "Nu", "Nv", "Filename", NULL };
+	static char *kwlist[] = { "Layer", "Nu", "Nv", "Filename", NULL };
 	const char *layerName;
 	const char *fileName = NULL;
 	int Nu, Nv;
@@ -1062,7 +1120,7 @@ static PyObject *S4Sim_OutputLayerPatternRealization(S4Sim *self, PyObject *args
 
 static PyObject *S4Sim_OutputLayerPatternPostscript(S4Sim *self, PyObject *args, PyObject *kwds){
 	int ret;
-	static char *kwlist[] = { "S4_Layer", "Filename", NULL };
+	static char *kwlist[] = { "Layer", "Filename", NULL };
 	const char *layername;
 	const char *filename = NULL;
 	S4_Layer *layer;
@@ -1150,7 +1208,7 @@ static PyObject *S4Sim_GetBasisSet(S4Sim *self, PyObject *args){
 static PyObject *S4Sim_GetAmplitudes(S4Sim *self, PyObject *args, PyObject *kwds){
 	int ret, n, i, j;
 	int *G;
-	static char *kwlist[] = { "S4_Layer", "zOffset", NULL };
+	static char *kwlist[] = { "Layer", "zOffset", NULL };
 	const char *layername;
 	double offset = 0;
 	double *amp;
@@ -1187,20 +1245,20 @@ static PyObject *S4Sim_GetAmplitudes(S4Sim *self, PyObject *args, PyObject *kwds
 }
 static PyObject *S4Sim_GetPowerFlux(S4Sim *self, PyObject *args, PyObject *kwds){
 	int ret;
-	static char *kwlist[] = { "S4_Layer", "zOffset", NULL };
+	static char *kwlist[] = { "Layer", "zOffset", NULL };
 	const char *layername;
-	double offset = 0;
-	double power[4];
-	S4_Layer *layer;
+	S4_real offset = 0;
+	S4_real power[4];
+	S4_LayerID layer;
 
 	if(!PyArg_ParseTupleAndKeywords(args, kwds, "s|d:GetPowerFlux", kwlist, &layername, &offset)){ return NULL; }
 
-	layer = Simulation_GetLayerByName(self->S, layername, NULL);
-	if(NULL == layer){
+	layer = S4_Simulation_GetLayerByName(self->S, layername);
+	if( layer < 0 ){
 		PyErr_Format(PyExc_RuntimeError, "GetPowerFlux: S4_Layer named '%s' not found.", layername);
 		return NULL;
 	}
-	ret = Simulation_GetPoyntingFlux(self->S, layer, offset, power);
+	ret = S4_Simulation_GetPowerFlux(self->S, layer, &offset, power);
 	if(0 != ret){
 		HandleSolutionErrorCode("GetPowerFlux", ret);
 		return NULL;
@@ -1214,7 +1272,7 @@ static PyObject *S4Sim_GetPowerFlux(S4Sim *self, PyObject *args, PyObject *kwds)
 static PyObject *S4Sim_GetPowerFluxByOrder(S4Sim *self, PyObject *args, PyObject *kwds){
 	int ret, n, i;
 	int *G;
-	static char *kwlist[] = { "S4_Layer", "zOffset", NULL };
+	static char *kwlist[] = { "Layer", "zOffset", NULL };
 	const char *layername;
 	double offset = 0;
 	double *power;
@@ -1250,7 +1308,7 @@ static PyObject *S4Sim_GetPowerFluxByOrder(S4Sim *self, PyObject *args, PyObject
 }
 static PyObject *S4Sim_GetStressTensorIntegral(S4Sim *self, PyObject *args, PyObject *kwds){
 	int ret;
-	static char *kwlist[] = { "S4_Layer", "zOffset", NULL };
+	static char *kwlist[] = { "Layer", "zOffset", NULL };
 	const char *layername;
 	double offset = 0;
 	double Tint[6];
@@ -1278,7 +1336,7 @@ static PyObject *S4Sim_GetStressTensorIntegral(S4Sim *self, PyObject *args, PyOb
 }
 static PyObject *S4Sim_GetLayerVolumeIntegral(S4Sim *self, PyObject *args, PyObject *kwds){
 	int ret;
-	static char *kwlist[] = { "S4_Layer", "Quantity", NULL };
+	static char *kwlist[] = { "Layer", "Quantity", NULL };
 	const char *layername;
 	const char *strwhat;
 	double integral[2];
@@ -1316,7 +1374,7 @@ static PyObject *S4Sim_GetLayerVolumeIntegral(S4Sim *self, PyObject *args, PyObj
 }
 static PyObject *S4Sim_GetLayerZIntegral(S4Sim *self, PyObject *args, PyObject *kwds){
 	int ret;
-	static char *kwlist[] = { "S4_Layer", "xy", NULL };
+	static char *kwlist[] = { "Layer", "xy", NULL };
 	const char *layername;
 	double integral[6], r[2];
 	S4_Layer *layer;
@@ -1983,7 +2041,7 @@ static PyObject *S4_NewInterpolator(PyObject *self, PyObject *args, PyObject *kw
 //didn't finished yet
 static PyObject *S4_SolveInParallel(PyObject *Self, PyObject *args, PyObject *kwds)
 {
-	static char *kwlist[] = {"S4_Layer", "Simulations", NULL};
+	static char *kwlist[] = {"Layer", "Simulations", NULL};
 	const char *layerName;
 	//S4_solve_in
 	Py_RETURN_NONE;
@@ -2004,7 +2062,7 @@ PyDoc_STRVAR(module_doc, "Stanford Stratified Structure Solver (S4): Fourier Mod
 #if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef S4_module = {
 	PyModuleDef_HEAD_INIT,
-	"S4",
+	"S42",
 	module_doc,
 	sizeof(struct module_state),
 	S4_funcs,
@@ -2014,7 +2072,7 @@ static struct PyModuleDef S4_module = {
 	NULL
 };
 #define INITERROR return NULL
-PyObject * PyInit_S4(void)
+PyObject * PyInit_S42(void)
 #else
 #define INITERROR return
 PyMODINIT_FUNC initS4(void)

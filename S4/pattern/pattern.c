@@ -1347,12 +1347,12 @@ static void sparse_linsolve_d(int n, const double *M, const int *Mcol, int Mnd, 
 			((int*)A->i)[nnz] = i;
 			break;
 		case CHOLMOD_INTLONG:
-			((UF_long*)A->p)[i] = nnz;
+			((SuiteSparse_long*)A->p)[i] = nnz;
 			((int*)A->i)[nnz] = i;
 			break;
 		case CHOLMOD_LONG:
-			((UF_long*)A->p)[i] = nnz;
-			((UF_long*)A->i)[nnz] = i;
+			((SuiteSparse_long*)A->p)[i] = nnz;
+			((SuiteSparse_long*)A->i)[nnz] = i;
 			break;
 		}
 		Ax[nnz] = M[(Mnd+1)*i+0] ;//+ damp;
@@ -1369,7 +1369,7 @@ static void sparse_linsolve_d(int n, const double *M, const int *Mcol, int Mnd, 
 					((int*)A->i)[nnz] = Mcol[Mnd*i+j];
 					break;
 				case CHOLMOD_LONG:
-					((UF_long*)A->i)[nnz] = Mcol[Mnd*i+j];
+					((SuiteSparse_long*)A->i)[nnz] = Mcol[Mnd*i+j];
 					break;
 				}
 				nnz++;
@@ -1381,10 +1381,10 @@ static void sparse_linsolve_d(int n, const double *M, const int *Mcol, int Mnd, 
 		((int*)A->p)[i] = nnz;
 		break;
 	case CHOLMOD_INTLONG:
-		((UF_long*)A->p)[i] = nnz;
+		((SuiteSparse_long*)A->p)[i] = nnz;
 		break;
 	case CHOLMOD_LONG:
-		((UF_long*)A->p)[i] = nnz;
+		((SuiteSparse_long*)A->p)[i] = nnz;
 		break;
 	}
 

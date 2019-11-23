@@ -125,7 +125,7 @@ modules: \
 	$(OBJDIR)/FunctionSampler2D.$(SHLIB_EXT)
 
 $(OBJDIR)/RCWA.$(SHLIB_EXT):
-	 $(CC) $(LUA_INC) -O3 $(SHLIB_FLAGS) -fpic S4/main_lua.c -o $@ $(LUA_MODULE_LIB) -L$(OBJDIR) -lS4 $(LA_LIBS) -lstdc++
+	 $(CC) $(LUA_INC) -shared -O3 $(SHLIB_FLAGS) -fpic S4/main_lua.c -o $@ $(LUA_MODULE_LIB) -L$(OBJDIR) -lS4 $(LA_LIBS) -lstdc++
 $(OBJDIR)/FunctionSampler1D.$(SHLIB_EXT): modules/function_sampler_1d.c modules/function_sampler_1d.h modules/lua_function_sampler_1d.c
 	$(CC) -c $(OPTFLAGS) -fpic -Wall -I. modules/function_sampler_1d.c -o $(OBJDIR)/modules/function_sampler_1d.o
 	$(CC) $(OPTFLAGS) $(SHLIB_FLAGS) -fpic -Wall $(LUA_INC) -o $@ $(OBJDIR)/modules/function_sampler_1d.o modules/lua_function_sampler_1d.c $(LUA_MODULE_LIB)
@@ -146,7 +146,7 @@ clean:
 
 #### S4v2 extension
 $(OBJDIR)/S4v2.$(SHLIB_EXT): $(OBJDIR)/$(S4_LIBNAME) S4/ext_lua.c
-	$(CC) $(SHLIB_FLAGS) $(LUA_INC) S4/ext_lua.c -o $@ $(LUA_MODULE_LIB) -L$(OBJDIR) -lS4 $(LA_LIBS) -lstdc++
+	$(CC) -shared $(SHLIB_FLAGS) $(LUA_INC) -fPIC S4/ext_lua.c -o $@ $(LUA_MODULE_LIB) -L$(OBJDIR) -lS4 $(LA_LIBS) -lstdc++
 $(OBJDIR)/libS4_lua.a: $(OBJDIR)/$(S4_LIBNAME)
 	$(CC) -c $(LUA_INC) S4/ext_lua.c -o $(OBJDIR)/ext_lua.o
 	$(AR) crvs $@ $(OBJDIR)/ext_lua.o

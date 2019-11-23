@@ -1,0 +1,100 @@
+# To build:
+#   make <target>
+# Use the 'lib' target first to build the library, then either the Lua
+# or Python targets are 'S4lua' and 'python_ext', respectively.
+
+# Set these to the flags needed to link against BLAS and Lapack.
+#  If left blank, then performance may be very poor.
+#  On Mac OS,
+#   BLAS_LIB = -framework vecLib
+#   LAPACK_LIB = -framework vecLib
+#  On Debian, with reference BLAS and Lapack (slow)
+#   BLAS_LIB = -lblas
+#   LAPACK_LIB = -llapack
+# MKL
+# BLAS_LIB = -I${MKLROOT}/include -Wl,--start-group  ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm
+
+# LAPACK_LIB = -I${MKLROOT}/include -Wl,--start-group  ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm
+# Openblas
+BLAS_LIB = -lopenblas
+LAPACK_LIB = -lopenblas
+#BLAS_LIB = -lblas
+#LAPACK_LIB = -llapack
+
+# Specify the flags for Lua headers and libraries (only needed for Lua frontend)
+#  On Debian,
+LUA_INC = -I/usr/include/lua5.2
+LUA_LIB = -llua5.2 -ldl -lm
+#LUA_INC = -I/home/jmlloren/SOFTWARE/LUA/include
+#LUA_LIB = -L/home/jmlloren/SOFTWARE/LUA/lib -llua -ldl -lm
+
+# Typically if installed,
+#  FFTW3_INC can be left empty
+#  FFTW3_LIB = -lfftw3
+FFTW3_INC =
+FFTW3_LIB = -lfftw3
+
+# Typically,
+#  PTHREAD_INC = -DHAVE_UNISTD_H -lpthread
+#  PTHREAD_LIB = -lpthread
+PTHREAD_INC = 
+PTHREAD_LIB = 
+
+# Typically if installed,
+CHOLMOD_INC = -I/usr/include/suitesparse
+CHOLMOD_LIB = -lcholmod -lamd -lcolamd -lcamd -lccolamd
+#CHOLMOD_INC = 
+#CHOLMOD_LIB = 
+
+# Specify the MPI library
+MPI_INC =
+MPI_LIB =
+
+# Specify custom compilers if needed
+CXX = /usr/bin/g++
+CC  = /usr/bin/gcc
+
+#CFLAGS += -O3 -fPIC -march=native -fcx-limited-range -fno-exceptions -std=c99 -DENABLE_S4_TRACE
+CFLAGS += -O3 -fPIC -march=native -fcx-limited-range -fno-exceptions -std=c99 
+#CFLAGS += -O0 -ggdb -fPIC -DDUMP_MATRICES -DENABLE_S4_TRACE
+
+OBJDIR = ./build
+S4_BINNAME = $(OBJDIR)/S4
+S4_LIBNAME = $(OBJDIR)/libS4.a
+S4r_LIBNAME = $(OBJDIR)/libS4r.a
+
+##################### DO NOT EDIT BELOW THIS LINE #####################
+
+#### Set the compilation flags
+
+#CPPFLAGS = -I. -IS4 -IS4/RNP -IS4/kiss_fft -fPIC -DENABLE_S4_TRACE
+CPPFLAGS = -I. -IS4 -IS4/RNP -IS4/kiss_fft -fPIC 
+
+ifdef BLAS_LIB
+CPPFLAGS += -DHAVE_BLAS
+endif
+
+ifdef LAPACK_LIB
+CPPFLAGS += -DHAVE_LAPACK
+endif
+
+ifdef FFTW3_LIB
+CPPFLAGS += -DHAVE_FFTW3 $(FFTW3_INC)
+endif
+
+ifdef PTHREAD_LIB
+CPPFLAGS += -DHAVE_LIBPTHREAD $(PTHREAD_INC)
+endif
+
+ifdef CHOLMOD_LIB
+CPPFLAGS += -DHAVE_LIBCHOLMOD $(CHOLMOD_INC)
+endif
+
+ifdef MPI_LIB
+CPPFLAGS += -DHAVE_MPI $(MPI_INC)
+endif
+
+LIBS = $(LAPACK_LIB) $(BLAS_LIB) $(LAPACK_LIB) $(FFTW3_LIB) $(PTHREAD_LIB) $(CHOLMOD_LIB) $(MPI_LIB)
+LA_LIBS = $(LIBS)
+
+SHLIB_EXT = so

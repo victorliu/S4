@@ -1,0 +1,1 @@
+-lopenblas -lopenblas -lopenblas -lfftw3  -lcholmod -lamd -lcolamd -lcamd -lccolamd 
