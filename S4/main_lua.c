@@ -1446,20 +1446,20 @@ static int S4L_Simulation_SetLayer(lua_State *L){
 	S4_real thickness = luaL_checknumber(L, 3);
 
 	name = luaL_checklstring(L, 2, NULL);
+    const char *matname = luaL_checklstring(L, 4, NULL);
+    S4_MaterialID M = S4_Simulation_GetMaterialByName(S, matname);
+    if(M < 0){
+        S4L_error(L, "SetLayer: Unknown material '%s'.", matname);
+    }
 	layer = S4_Simulation_GetLayerByName(S, name);
 	if(layer < 0){
-		const char *matname = luaL_checklstring(L, 4, NULL);
-		S4_MaterialID M = S4_Simulation_GetMaterialByName(S, matname);
-		if(M < 0){
-			S4L_error(L, "SetLayer: Unknown material '%s'.", matname);
-		}
 		layer = S4_Simulation_SetLayer(S, -1, name, &thickness, -1, M);
 		if(layer < 0){
 			S4L_error(L, "SetLayer: There was a problem allocating the layer named '%s'.", name);
 			return 0;
 		}
 	}else{
-		S4_Simulation_SetLayer(S, layer, NULL, &thickness, -1, -1);
+		S4_Simulation_SetLayer(S, layer, NULL, &thickness, -1, M);
 	}
 	return 0;
 }
@@ -1474,11 +1474,11 @@ static int S4L_Simulation_SetLayerThickness(lua_State *L){
 	if(layer < 0){
 		S4L_error(L, "SetLayerThickness: S4_Layer named '%s' not found.", name);
 	}else{
-		S4_real thick = luaL_checknumber(L, 3);
-		if(thick < 0){
+		S4_real thickness = luaL_checknumber(L, 3);
+		if(thickness < 0){
 			S4L_error(L, "SetLayerThickness: Thickness must be non-negative.");
 		}
-		S4_Simulation_SetLayer(S, layer, NULL, &thick, -1, -1);
+		Simulation_ChangeLayerThickness(S, &S->layer[layer], &thickness);
 	}
 	return 0;
 }
